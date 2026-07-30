@@ -12,10 +12,29 @@ if [ "$1" = "start" ]; then
     echo "[1/2] Installing requirements..."
     pip install --user -r ./ai-engine/requirements.txt
 
-    echo "[2/2] Starting FastAPI app on port $PORT..."
     cd ai-engine
-    python -m uvicorn app.main:app --host 0.0.0.0 --port "$PORT"
+    while true; do
+        echo "[2/2] Starting FastAPI app on port $PORT..."
+        python -m uvicorn app.main:app --host 0.0.0.0 --port "$PORT" &
+        UVICORN_PID=$!
+        
+        echo ">>> Server started (PID: $UVICORN_PID). Type 'r' and Enter to reload, or any other key to quit. <<<"
+        read -r input_val
+        
+        if [ "$input_val" = "r" ] || [ "$input_val" = "R" ]; then
+            echo "Stopping server to reload..."
+            kill $UVICORN_PID 2>/dev/null
+            wait $UVICORN_PID 2>/dev/null
+            echo "Reloading..."
+            echo "----------------------------------------"
+        else
+            echo "Stopping server..."
+            kill $UVICORN_PID 2>/dev/null
+            wait $UVICORN_PID 2>/dev/null
+            break
+        fi
+    done
     cd ..
 else
-    echo "Usage: /run start"
+    echo "Usage: ./run start"
 fi

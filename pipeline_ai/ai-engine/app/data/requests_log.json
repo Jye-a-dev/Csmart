@@ -264,5 +264,185 @@
             "flag_for_review": true
         },
         "confidence_score": 0.0
+    },
+    {
+        "endpoint": "text-to-sql",
+        "input": {
+            "question": "danh sach san pham"
+        },
+        "output": {
+            "status": "success",
+            "question": "danh sach san pham",
+            "generated_sql": "SELECT * FROM products",
+            "confidence_score": 0.9,
+            "flag_for_review": false
+        },
+        "confidence_score": 0.9
+    },
+    {
+        "endpoint": "text-to-sql",
+        "input": {
+            "question": "tôi muốn coi user nào login nhiều nhất"
+        },
+        "output": {
+            "status": "success",
+            "question": "tôi muốn coi user nào login nhiều nhất",
+            "generated_sql": "SELECT user_id, COUNT(*) AS login_count FROM orders WHERE status = 'completed' GROUP BY user_id ORDER BY login_count DESC LIMIT 1;",
+            "confidence_score": 0.9,
+            "flag_for_review": false
+        },
+        "confidence_score": 0.9
+    },
+    {
+        "endpoint": "text-to-sql",
+        "input": {
+            "question": "cho xem top 5 khách hàng chi nhiều tiền nhất"
+        },
+        "output": {
+            "status": "success",
+            "question": "cho xem top 5 khách hàng chi nhiều tiền nhất",
+            "generated_sql": "SELECT users.full_name, SUM(products.price * order_items.quantity) AS total_spent FROM users JOIN orders ON users.id = orders.user_id JOIN order_items ON orders.id = order_items.order_id JOIN products ON order_items.product_id = products.id WHERE orders.status = 'completed' GROUP BY users.id, users.full_name ORDER BY total_spent DESC LIMIT 5",
+            "confidence_score": 0.9,
+            "flag_for_review": false
+        },
+        "confidence_score": 0.9
+    },
+    {
+        "endpoint": "text-to-sql",
+        "input": {
+            "question": "Cho xem danh sách các chuyến thăm quan của khách du lịch Vincent"
+        },
+        "output": {
+            "status": "success",
+            "question": "Cho xem danh sách các chuyến thăm quan của khách du lịch Vincent",
+            "generated_sql": "SELECT * FROM tours WHERE customer_id = 'vincent';",
+            "confidence_score": 0.9,
+            "flag_for_review": false
+        },
+        "confidence_score": 0.9
+    },
+    {
+        "endpoint": "text-to-sql",
+        "input": {
+            "question": "Cho xem danh sách các danh sách sản phẩm có giá trên 30000 vnd và có màu vàng hiệu Sony"
+        },
+        "output": {
+            "status": "success",
+            "question": "Cho xem danh sách các danh sách sản phẩm có giá trên 30000 vnd và có màu vàng hiệu Sony",
+            "generated_sql": "SELECT products.name, products.price, products.stock FROM products JOIN order_items ON products.id = order_items.product_id WHERE products.price > 30000 AND products.stock > 0 AND products.color = 'Sony' AND order_items.quantity > 0",
+            "confidence_score": 0.9,
+            "flag_for_review": false
+        },
+        "confidence_score": 0.9
+    },
+    {
+        "endpoint": "extract-ner",
+        "input": {
+            "text": "Hủy đơn hàng số 54321 giúp tôi"
+        },
+        "output": {
+            "status": "success",
+            "intent": "CANCEL_ORDER",
+            "slots": {
+                "order_id": "54321"
+            },
+            "confidence_score": 0.95,
+            "flag_for_review": false
+        },
+        "confidence_score": 0.95
+    },
+    {
+        "endpoint": "extract-ner",
+        "input": {
+            "text": "Hủy đơn hàng số 54321 giúp tôi"
+        },
+        "output": {
+            "status": "success",
+            "intent": "CANCEL_ORDER",
+            "slots": {
+                "order_id": "54321"
+            },
+            "confidence_score": 0.95,
+            "flag_for_review": false
+        },
+        "confidence_score": 0.95
+    },
+    {
+        "endpoint": "extract-ner",
+        "input": {
+            "text": "Hủy đơn hàng số 2013 và các đơn hàng nào có 20 đơn đặt trở xuống"
+        },
+        "output": {
+            "status": "success",
+            "intent": "CANCEL_ORDER",
+            "slots": {
+                "order_id": "2013"
+            },
+            "confidence_score": 0.95,
+            "flag_for_review": false
+        },
+        "confidence_score": 0.95
+    },
+    {
+        "endpoint": "extract-ner",
+        "input": {
+            "text": "Hủy đơn hàng số 2013 và các đơn hàng nào có 20 đơn đặt trở xuống"
+        },
+        "output": {
+            "status": "success",
+            "intent": "CANCEL_ORDER",
+            "slots": {
+                "order_id": "2013",
+                "new_address": null
+            },
+            "confidence_score": 0.92,
+            "flag_for_review": false
+        },
+        "confidence_score": 0.92
+    },
+    {
+        "endpoint": "extract-ner",
+        "input": {
+            "text": "Hủy đơn hàng nào có 20 đơn đặt trở xuống"
+        },
+        "output": {
+            "status": "success",
+            "intent": "CANCEL_ORDER",
+            "slots": {
+                "order_id": null,
+                "new_address": null
+            },
+            "confidence_score": 0.35,
+            "flag_for_review": true
+        },
+        "confidence_score": 0.35
+    },
+    {
+        "endpoint": "text-to-sql",
+        "input": {
+            "question": "Liệt kê danh sách sản phẩm"
+        },
+        "output": {
+            "status": "success",
+            "question": "Liệt kê danh sách sản phẩm",
+            "generated_sql": "SELECT name, price, stock FROM products",
+            "confidence_score": 0.9,
+            "flag_for_review": false
+        },
+        "confidence_score": 0.9
+    },
+    {
+        "endpoint": "text-to-sql",
+        "input": {
+            "question": "huy cac don hang o tphcm"
+        },
+        "output": {
+            "status": "success",
+            "question": "huy cac don hang o tphcm",
+            "generated_sql": "SELECT orders.* FROM orders JOIN users ON orders.user_id = users.id WHERE users.full_name LIKE '%tphcm%'",
+            "confidence_score": 0.9,
+            "flag_for_review": false
+        },
+        "confidence_score": 0.9
     }
 ]

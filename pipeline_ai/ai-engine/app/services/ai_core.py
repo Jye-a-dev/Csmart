@@ -26,17 +26,17 @@ class OneForAllAIEngine:
         if self.llm is None:
             return {"status": "error", "message": "Llama model is not initialized."}
             
-        prompt = f"<|im_start|>system\n{system_prompt}\n<|im_end|>\n<|im_start|>user\n{user_input}\n<|im_end|>\n<|im_start|>assistant\n"
-        
         try:
-            output = self.llm(
-                prompt,
+            output = self.llm.create_chat_completion(
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_input}
+                ],
                 max_tokens=512,
-                stop=["<|im_end|>"],
                 temperature=0.1, # Nhiệt độ thấp để trả về kết quả chính xác, không ảo tưởng
                 response_format={"type": "json_object"} # Ép trả về JSON chuẩn
             )
-            text_response = output["choices"][0]["text"].strip()
+            text_response = output["choices"][0]["message"]["content"].strip()
             return json.loads(text_response)
         except Exception as e:
             return {"status": "error", "message": str(e)}
@@ -54,7 +54,8 @@ class OneForAllAIEngine:
         Nhiệm vụ: Dịch câu hỏi thành câu lệnh SQL Read-Only (SELECT).
         QUY TẮC BẮT BUỘC:
         1. Nếu câu hỏi là Yêu cầu thiết kế Schema/DDL (ví dụ: 'Mỗi khách hàng có tên, email...') hoặc vô nghĩa -> Trả về generated_sql = "-- INVALID_QUERY" và confidence_score = 0.1.
-        2. Nếu là câu hỏi truy vấn hợp lệ -> Sinh câu lệnh SQL chuẩn và confidence_score >= 0.85.
+        2. BẮT BUỘC chỉ sinh câu lệnh SQL Read-Only (SELECT). Tuyệt đối KHÔNG sinh câu lệnh sửa đổi dữ liệu (DELETE, UPDATE, INSERT, DROP, v.v.).
+        3. Nếu câu hỏi yêu cầu xóa/sửa đổi/hủy dữ liệu (ví dụ: 'hủy các đơn hàng ở tphcm'), bạn PHẢI chuyển đổi yêu cầu đó thành câu lệnh SELECT tương ứng để truy vấn/hiển thị danh sách dữ liệu mục tiêu (ví dụ: `SELECT orders.* FROM orders JOIN users ON orders.user_id = users.id WHERE users.full_name LIKE '%tphcm%'` hoặc lọc theo điều kiện tương ứng).
 
         Trả về định dạng JSON duy nhất:
         {"generated_sql": "...", "confidence_score": 0.9, "flag_for_review": false}
