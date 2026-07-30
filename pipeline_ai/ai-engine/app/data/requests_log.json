@@ -444,5 +444,70 @@
             "flag_for_review": false
         },
         "confidence_score": 0.9
+    },
+    {
+        "endpoint": "extract-ner",
+        "input": {
+            "text": "Hủy đơn hàng số 54, 40, 60"
+        },
+        "output": {
+            "status": "success",
+            "intent": "CANCEL_ORDER",
+            "slots": {
+                "order_id": "54",
+                "order_ids": [
+                    "54",
+                    "40",
+                    "60"
+                ],
+                "new_address": null
+            },
+            "confidence_score": 0.92,
+            "flag_for_review": false
+        },
+        "confidence_score": 0.92
+    },
+    {
+        "endpoint": "extract-ner",
+        "input": {
+            "text": "Hủy đơn hàng số 54, 40, 60"
+        },
+        "output": {
+            "status": "success",
+            "intent": "CANCEL_ORDER",
+            "slots": {
+                "order_id": "54",
+                "order_ids": [
+                    "54",
+                    "40",
+                    "60"
+                ],
+                "new_address": null
+            },
+            "confidence_score": 0.92,
+            "flag_for_review": false
+        },
+        "confidence_score": 0.92
+    },
+    {
+        "endpoint": "classify-intent",
+        "input": {
+            "query": "Tìm áo thun nam màu trắng size L dưới 400k"
+        },
+        "output": {
+            "success": true,
+            "status": "success",
+            "query": "Tìm áo thun nam màu trắng size L dưới 400k",
+            "intent": "SEARCH_PRODUCT",
+            "entities": {
+                "product": "áo thun nam",
+                "color": "trắng",
+                "size": "L",
+                "price": "400k"
+            },
+            "confidence_score": 0.95,
+            "flag_for_review": false
+        },
+        "confidence_score": 0.95
     }
 ]
