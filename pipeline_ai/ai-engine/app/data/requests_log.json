@@ -1,0 +1,268 @@
+[
+    {
+        "endpoint": "text-to-sql",
+        "input": {
+            "question": "aaa"
+        },
+        "output": {
+            "status": "success",
+            "question": "aaa",
+            "generated_sql": "SELECT * FROM products LIMIT 10;",
+            "confidence_score": 0.45,
+            "flag_for_review": true
+        },
+        "confidence_score": 0.45
+    },
+    {
+        "endpoint": "text-to-sql",
+        "input": {
+            "question": "aaa"
+        },
+        "output": {
+            "status": "success",
+            "question": "aaa",
+            "generated_sql": "SELECT * FROM products LIMIT 10;",
+            "confidence_score": 0.45,
+            "flag_for_review": true
+        },
+        "confidence_score": 0.45
+    },
+    {
+        "endpoint": "text-to-sql",
+        "input": {
+            "question": "mấy con gà để có sáu chân?"
+        },
+        "output": {
+            "status": "success",
+            "question": "mấy con gà để có sáu chân?",
+            "generated_sql": "select count ( * ) from tàu",
+            "confidence_score": 0.92,
+            "flag_for_review": false
+        },
+        "confidence_score": 0.92
+    },
+    {
+        "endpoint": "text-to-sql",
+        "input": {
+            "question": "Tôi muốn quản lý thông tin khách hàng. Mỗi khách hàng có tên, email và ngày đăng ký. Email phải là duy nhất và không được để trống."
+        },
+        "output": {
+            "status": "success",
+            "question": "Tôi muốn quản lý thông tin khách hàng. Mỗi khách hàng có tên, email và ngày đăng ký. Email phải là duy nhất và không được để trống.",
+            "generated_sql": "select t2.ngày thăm quan , t2.chi tiết về chuyến thăm quan from khách du lịch as t1 join chuyến thăm quan as t2 on t1.id khách du lịch = t2.id khách du lịch where t1.chi tiết về khách du lịch = \"Vincent\"",
+            "confidence_score": 0.92,
+            "flag_for_review": false
+        },
+        "confidence_score": 0.92
+    },
+    {
+        "endpoint": "text-to-sql",
+        "input": {
+            "question": "Tôi muốn quản lý thông tin khách hàng. Mỗi khách hàng có tên, email và ngày đăng ký. Email phải là duy nhất và không được để trống."
+        },
+        "output": {
+            "status": "success",
+            "question": "Tôi muốn quản lý thông tin khách hàng. Mỗi khách hàng có tên, email và ngày đăng ký. Email phải là duy nhất và không được để trống.",
+            "generated_sql": "select t2.ngày thăm quan , t2.chi tiết về chuyến thăm quan from khách du lịch as t1 join chuyến thăm quan as t2 on t1.id khách du lịch = t2.id khách du lịch where t1.chi tiết về khách du lịch = \"Vincent\"",
+            "confidence_score": 0.92,
+            "flag_for_review": false
+        },
+        "confidence_score": 0.92
+    },
+    {
+        "endpoint": "text-to-sql",
+        "input": {
+            "question": "Tôi muốn quản lý thông tin khách hàng. Mỗi khách hàng có tên, email và ngày đăng ký. Email phải là duy nhất và không được để trống."
+        },
+        "output": {
+            "status": "success",
+            "question": "Tôi muốn quản lý thông tin khách hàng. Mỗi khách hàng có tên, email và ngày đăng ký. Email phải là duy nhất và không được để trống.",
+            "generated_sql": "select t2.ngày thăm quan , t2.chi tiết về chuyến thăm quan from khách du lịch as t1 join chuyến thăm quan as t2 on t1.id khách du lịch = t2.id khách du lịch where t1.chi tiết về khách du lịch = \"Vincent\"",
+            "confidence_score": 0.92,
+            "flag_for_review": false
+        },
+        "confidence_score": 0.92
+    },
+    {
+        "endpoint": "text-to-sql",
+        "input": {
+            "question": "Tôi muốn quản lý thông tin khách hàng. Mỗi khách hàng có tên, email và ngày đăng ký. Email phải là duy nhất và không được để trống."
+        },
+        "output": {
+            "status": "success",
+            "question": "Tôi muốn quản lý thông tin khách hàng. Mỗi khách hàng có tên, email và ngày đăng ký. Email phải là duy nhất và không được để trống.",
+            "generated_sql": "SELECT id, full_name, email, created_at FROM users WHERE role = 'CUSTOMER';",
+            "confidence_score": 0.95,
+            "flag_for_review": false
+        },
+        "confidence_score": 0.95
+    },
+    {
+        "endpoint": "text-to-sql",
+        "input": {
+            "question": "Tôi muốn quản lý thông tin khách hàng. Mỗi khách hàng có tên, họ và ngày đăng ký. Email phải là duy nhất và không được để trống."
+        },
+        "output": {
+            "status": "success",
+            "question": "Tôi muốn quản lý thông tin khách hàng. Mỗi khách hàng có tên, họ và ngày đăng ký. Email phải là duy nhất và không được để trống.",
+            "generated_sql": "SELECT id, full_name, email, created_at FROM users WHERE role = 'CUSTOMER';",
+            "confidence_score": 0.95,
+            "flag_for_review": false
+        },
+        "confidence_score": 0.95
+    },
+    {
+        "endpoint": "text-to-sql",
+        "input": {
+            "question": "Tôi muốn quản lý thông tin khách hàng. Mỗi khách hàng có tên, họ, email và ngày đăng ký. Email phải là duy nhất và không được để trống."
+        },
+        "output": {
+            "status": "success",
+            "question": "Tôi muốn quản lý thông tin khách hàng. Mỗi khách hàng có tên, họ, email và ngày đăng ký. Email phải là duy nhất và không được để trống.",
+            "generated_sql": "SELECT id, full_name, email, created_at FROM users WHERE role = 'CUSTOMER';",
+            "confidence_score": 0.95,
+            "flag_for_review": false
+        },
+        "confidence_score": 0.95
+    },
+    {
+        "endpoint": "text-to-sql",
+        "input": {
+            "question": "Tôi muốn quản lý thông tin khách hàng. Mỗi khách hàng có tên, họ, họ lót, email và ngày đăng ký. Email phải là duy nhất và không được để trống."
+        },
+        "output": {
+            "status": "success",
+            "question": "Tôi muốn quản lý thông tin khách hàng. Mỗi khách hàng có tên, họ, họ lót, email và ngày đăng ký. Email phải là duy nhất và không được để trống.",
+            "generated_sql": "SELECT id, full_name, email, created_at FROM users WHERE role = 'CUSTOMER';",
+            "confidence_score": 0.95,
+            "flag_for_review": false
+        },
+        "confidence_score": 0.95
+    },
+    {
+        "endpoint": "text-to-sql",
+        "input": {
+            "question": "Tôi muốn quản lý thông tin khách hàng. Mỗi khách hàng có tên, họ, họ lót."
+        },
+        "output": {
+            "status": "success",
+            "question": "Tôi muốn quản lý thông tin khách hàng. Mỗi khách hàng có tên, họ, họ lót.",
+            "generated_sql": "SELECT id, full_name, email, created_at FROM users WHERE role = 'CUSTOMER';",
+            "confidence_score": 0.95,
+            "flag_for_review": false
+        },
+        "confidence_score": 0.95
+    },
+    {
+        "endpoint": "text-to-sql",
+        "input": {
+            "question": "Tôi muốn quản lý thông tin khách hàng. Mỗi khách hàng có tên, họ, họ lót."
+        },
+        "output": {
+            "status": "success",
+            "question": "Tôi muốn quản lý thông tin khách hàng. Mỗi khách hàng có tên, họ, họ lót.",
+            "generated_sql": "SELECT id, full_name, email, created_at FROM users WHERE role = 'CUSTOMER';",
+            "confidence_score": 0.95,
+            "flag_for_review": false
+        },
+        "confidence_score": 0.95
+    },
+    {
+        "endpoint": "text-to-sql",
+        "input": {
+            "question": "Tôi muốn quản lý thông tin khách hàng. Mỗi khách hàng có tên, họ, họ lót."
+        },
+        "output": {
+            "status": "success",
+            "question": "Tôi muốn quản lý thông tin khách hàng. Mỗi khách hàng có tên, họ, họ lót.",
+            "generated_sql": "SELECT id, full_name, email, created_at FROM users WHERE role = 'CUSTOMER';",
+            "confidence_score": 0.95,
+            "flag_for_review": false
+        },
+        "confidence_score": 0.95
+    },
+    {
+        "endpoint": "text-to-sql",
+        "input": {
+            "question": "Tôi muốn quản lý thông tin khách hàng. Mỗi khách hàng có tên, email và ngày đăng ký. Email phải là duy nhất và không được để trống."
+        },
+        "output": {
+            "status": "success",
+            "question": "Tôi muốn quản lý thông tin khách hàng. Mỗi khách hàng có tên, email và ngày đăng ký. Email phải là duy nhất và không được để trống.",
+            "generated_sql": "-- CANNOT_GENERATE_SQL",
+            "confidence_score": 0.0,
+            "flag_for_review": true
+        },
+        "confidence_score": 0.0
+    },
+    {
+        "endpoint": "text-to-sql",
+        "input": {
+            "question": "Tôi muốn quản lý thông tin khách hàng. Mỗi khách hàng có tên, email và ngày đăng ký. Email phải là duy nhất và không được để trống."
+        },
+        "output": {
+            "status": "success",
+            "question": "Tôi muốn quản lý thông tin khách hàng. Mỗi khách hàng có tên, email và ngày đăng ký. Email phải là duy nhất và không được để trống.",
+            "generated_sql": "-- CANNOT_GENERATE_SQL",
+            "confidence_score": 0.0,
+            "flag_for_review": true
+        },
+        "confidence_score": 0.0
+    },
+    {
+        "endpoint": "text-to-sql",
+        "input": {
+            "question": "Tôi muốn quản lý thông tin khách hàng. Mỗi khách hàng có tên, email và ngày đăng ký. Email phải là duy nhất và không được để trống."
+        },
+        "output": {
+            "status": "success",
+            "question": "Tôi muốn quản lý thông tin khách hàng. Mỗi khách hàng có tên, email và ngày đăng ký. Email phải là duy nhất và không được để trống.",
+            "generated_sql": "-- CANNOT_GENERATE_SQL",
+            "confidence_score": 0.0,
+            "flag_for_review": true
+        },
+        "confidence_score": 0.0
+    },
+    {
+        "endpoint": "text-to-sql",
+        "input": {
+            "question": "Tôi muốn quản lý thông tin khách hàng. Mỗi khách hàng có tên, email và ngày đăng ký. Email phải là duy nhất và không được để trống."
+        },
+        "output": {
+            "status": "success",
+            "question": "Tôi muốn quản lý thông tin khách hàng. Mỗi khách hàng có tên, email và ngày đăng ký. Email phải là duy nhất và không được để trống.",
+            "generated_sql": "-- CANNOT_GENERATE_SQL",
+            "confidence_score": 0.0,
+            "flag_for_review": true
+        },
+        "confidence_score": 0.0
+    },
+    {
+        "endpoint": "text-to-sql",
+        "input": {
+            "question": "Tôi muốn quản lý thông tin khách hàng. Mỗi khách hàng có tên, email và ngày đăng ký. Email phải là duy nhất và không được để trống."
+        },
+        "output": {
+            "status": "success",
+            "question": "Tôi muốn quản lý thông tin khách hàng. Mỗi khách hàng có tên, email và ngày đăng ký. Email phải là duy nhất và không được để trống.",
+            "generated_sql": "-- CANNOT_GENERATE_SQL",
+            "confidence_score": 0.0,
+            "flag_for_review": true
+        },
+        "confidence_score": 0.0
+    },
+    {
+        "endpoint": "text-to-sql",
+        "input": {
+            "question": "Tôi muốn xem khách hàng. Mỗi khách hàng có tên, email và ngày đăng ký. Email phải là duy nhất và không được để trống."
+        },
+        "output": {
+            "status": "success",
+            "question": "Tôi muốn xem khách hàng. Mỗi khách hàng có tên, email và ngày đăng ký. Email phải là duy nhất và không được để trống.",
+            "generated_sql": "-- CANNOT_GENERATE_SQL",
+            "confidence_score": 0.0,
+            "flag_for_review": true
+        },
+        "confidence_score": 0.0
+    }
+]
