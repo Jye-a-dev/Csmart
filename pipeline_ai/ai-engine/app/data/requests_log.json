@@ -509,5 +509,78 @@
             "flag_for_review": false
         },
         "confidence_score": 0.95
+    },
+    {
+        "endpoint": "text-to-sql",
+        "input": {
+            "question": "Liệt kê danh sách sản phẩm có màu xanh"
+        },
+        "output": {
+            "status": "success",
+            "question": "Liệt kê danh sách sản phẩm có màu xanh",
+            "generated_sql": "SELECT products.name, products.price, products.stock FROM products WHERE products.color = 'green'",
+            "confidence_score": 0.9,
+            "flag_for_review": false
+        },
+        "confidence_score": 0.9
+    },
+    {
+        "endpoint": "extract-ner",
+        "input": {
+            "text": "Đổi địa chỉ đơn 98765 sang 123 Nguyễn Trãi, Q1, TP.HCM"
+        },
+        "output": {
+            "status": "success",
+            "intent": "UPDATE_ADDRESS",
+            "slots": {
+                "order_id": "98765",
+                "order_ids": [
+                    "98765"
+                ],
+                "new_address": "123 Nguyễn Trãi, Q1, TP.HCM"
+            },
+            "confidence_score": 0.92,
+            "flag_for_review": false
+        },
+        "confidence_score": 0.92
+    },
+    {
+        "endpoint": "extract-ner",
+        "input": {
+            "text": "Đổi địa chỉ đơn 98765 sang 123 Nguyễn Trãi, Q1, TP.HCM"
+        },
+        "output": {
+            "status": "success",
+            "intent": "UPDATE_ADDRESS",
+            "slots": {
+                "order_id": "98765",
+                "order_ids": [
+                    "98765"
+                ],
+                "new_address": "123 Nguyễn Trãi, Q1, TP.HCM"
+            },
+            "confidence_score": 0.92,
+            "flag_for_review": false
+        },
+        "confidence_score": 0.92
+    },
+    {
+        "endpoint": "classify-intent",
+        "input": {
+            "query": "Có giày sneaker nữ màu hồng không"
+        },
+        "output": {
+            "success": true,
+            "status": "success",
+            "query": "Có giày sneaker nữ màu hồng không",
+            "intent": "SEARCH_PRODUCT",
+            "entities": {
+                "color": "pink",
+                "category": "sneakers"
+            },
+            "confidence_score": 0.95,
+            "flag_for_review": false
+        },
+        "confidence_score": 0.95
     }
 ]
