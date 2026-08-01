@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 from app.services.evaluator import log_request
+from app.services.ner_pipeline import ner_pipeline
 import re
 
 router = APIRouter()
@@ -41,80 +42,19 @@ async def extract_ner(payload: NERRequest):
     if not text:
         raise HTTPException(status_code=400, detail="Text không được để trống.")
 
-    # 1. Trích xuất danh sách mã đơn hàng
-    order_ids = []
-    
-    # Tìm tất cả các mã dạng ORD-xxxxxx
-    ord_matches = re.findall(r'#?(ORD-\d+)', text, re.IGNORECASE)
-    if ord_matches:
-        order_ids.extend(ord_matches)
-        
-    # Tìm cụm danh sách số phân tách bằng dấu phẩy/khoảng trắng sau "đơn hàng", "đơn", "mã", "số"
-    list_match = re.search(r'(?:đơn hàng|đơn|mã|số)\s+([\d\s,]+)', text, re.IGNORECASE)
-    if list_match:
-        candidates = re.findall(r'\b\d+\b', list_match.group(1))
-        # Nếu là danh sách thực sự, hoặc số có độ dài lớn (mã đơn hàng thường có giá trị lớn)
-        if len(candidates) > 1 or (candidates and int(candidates[0]) > 100):
-            for c in candidates:
-                if c not in order_ids:
-                    order_ids.append(c)
-                    
-    # Nếu chưa tìm được gì, tìm các số có từ 4 đến 8 chữ số
-    if not order_ids:
-        num_matches = re.findall(r'#?(\d{4,8})', text)
-        for num in num_matches:
-            if num not in order_ids:
-                order_ids.append(num)
-                
-    # Dự phòng cho số ngắn có tiền tố #
-    if not order_ids:
-        short_num_matches = re.findall(r'#(\d+)', text)
-        for num in short_num_matches:
-            if num not in order_ids:
-                order_ids.append(num)
-
-    order_id = order_ids[0] if order_ids else None
-
-    # 2. Nhận diện Intent
-    text_lower = text.lower()
-    intent = "GENERAL_CHAT"
-    if any(k in text_lower for k in ["hủy", "huy", "del", "delete", "xóa", "xoa", "cancel"]):
-        intent = "CANCEL_ORDER"
-    elif any(k in text_lower for k in ["đổi địa chỉ", "doi dia chi", "địa chỉ mới", "sang số"]):
-        intent = "UPDATE_ADDRESS"
-    elif any(k in text_lower for k in ["giao tới đâu", "giao den dau", "đang ở đâu", "giao tới", "giao đến", "trạng thái", "track"]):
-        intent = "TRACK_ORDER"
-
-    # 3. Trích xuất địa chỉ nhận hàng nếu intent là UPDATE_ADDRESS
-    new_address = None
-    if intent == "UPDATE_ADDRESS":
-        addr_match = re.search(r'(?:sang|đến|về)\s+(?:số\s+)?(.*)$', text, re.IGNORECASE)
-        if addr_match:
-            new_address = addr_match.group(1).strip()
-
-    # 4. Xác định độ tin cậy và cờ kiểm duyệt
-    confidence = 0.35
-    if order_ids:
-        if any("ORD-" in oid for oid in order_ids):
-            confidence = 0.95
-        else:
-            confidence = 0.92
-    
-    if intent == "UPDATE_ADDRESS" and not new_address:
-        confidence = 0.40
-        
-    flag_for_review = confidence < 0.50
+    # Chạy qua component-based pipeline
+    result = ner_pipeline.run(text)
 
     response = {
         "status": "success",
-        "intent": intent,
+        "intent": result.intent,
         "slots": {
-            "order_id": order_id,
-            "order_ids": order_ids if order_ids else None,
-            "new_address": new_address
+            "order_id": result.order_id,
+            "order_ids": result.order_ids,
+            "new_address": result.new_address
         },
-        "confidence_score": confidence,
-        "flag_for_review": flag_for_review
+        "confidence_score": result.confidence_score,
+        "flag_for_review": result.flag_for_review
     }
 
     log_request("extract-ner", {"text": payload.text}, response)
