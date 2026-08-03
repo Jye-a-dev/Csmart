@@ -5,6 +5,7 @@ from app.services.evaluator import log_request
 from PIL import Image
 import io
 import numpy as np
+import time
 
 router = APIRouter()
 
@@ -37,6 +38,8 @@ async def extract_ocr(file: UploadFile = File(...)):
         raise HTTPException(status_code=400, detail="File tải lên phải là định dạng hình ảnh.")
 
     try:
+        start_time = time.time()
+
         # Đọc file ảnh từ memory
         contents = await file.read()
         image = Image.open(io.BytesIO(contents)).convert("RGB")
@@ -71,7 +74,8 @@ async def extract_ocr(file: UploadFile = File(...)):
             }
         }
 
-        log_request("extract-ocr", {"filename": file.filename}, response)
+        execution_time_ms = int((time.time() - start_time) * 1000)
+        await log_request("extract-ocr", {"filename": file.filename}, response, execution_time_ms)
         return response
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Lỗi khi xử lý OCR: {str(e)}")

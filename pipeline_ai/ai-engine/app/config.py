@@ -14,4 +14,7 @@ class Settings:
     VITEXT2SQL_DIR: str = os.path.join(os.path.dirname(BASE_DIR), "vitext2sql")
     VITEXT2SQL_DATA_DIR: str = os.path.join(VITEXT2SQL_DIR, "data", "syllable-level")
 
+    # Cấu hình Database
+    DATABASE_URL: str = os.getenv("DATABASE_URL", "postgres://postgres:123@localhost:5432/csmart_db")
+
 settings = Settings()

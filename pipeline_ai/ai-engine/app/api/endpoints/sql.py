@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 from app.services.ai_core import ai_engine_core
 from app.services.evaluator import log_request
+import time
 
 router = APIRouter()
 
@@ -34,7 +35,7 @@ Dịch ngôn ngữ tự nhiên thành mã SQL Read-Only dựa trên database sch
 * **orders** (id, user_id, status, created_at)
 * **order_items** (id, order_id, product_id, quantity)
 
-**Quy tắc:**
+Quy tắc:
 * Yêu cầu hợp lệ sẽ sinh SQL SELECT kèm độ tin cậy >= 0.85.
 * Yêu cầu độc hại, DDL (tạo bảng, xóa bảng) hoặc không liên quan sẽ trả về `-- INVALID_QUERY` kèm độ tin cậy thấp và gắn cờ kiểm duyệt.
 """
@@ -43,6 +44,8 @@ async def text_to_sql(payload: TextToSQLRequest):
     question = payload.question.strip()
     if not question:
         raise HTTPException(status_code=400, detail="Question không được để trống.")
+    
+    start_time = time.time()
     
     # Gọi trực tiếp bộ não AI chạy Local từ llama-cpp
     result = ai_engine_core.text_to_sql(question)
@@ -67,5 +70,6 @@ async def text_to_sql(payload: TextToSQLRequest):
         "flag_for_review": flag_review
     }
 
-    log_request("text-to-sql", {"question": payload.question}, response)
+    execution_time_ms = int((time.time() - start_time) * 1000)
+    await log_request("text-to-sql", {"question": payload.question}, response, execution_time_ms)
     return response

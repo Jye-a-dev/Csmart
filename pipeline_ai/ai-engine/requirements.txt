@@ -6,3 +6,4 @@ python-multipart>=0.0.9
 huggingface-hub
 --extra-index-url https://abetlen.github.io/llama-cpp-python/whl/cpu
 llama-cpp-python
+asyncpg>=0.29.0

@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 from app.services.evaluator import log_request
 from app.services.ner_pipeline import ner_pipeline
-import re
+import time
 
 router = APIRouter()
 
@@ -42,6 +42,8 @@ async def extract_ner(payload: NERRequest):
     if not text:
         raise HTTPException(status_code=400, detail="Text không được để trống.")
 
+    start_time = time.time()
+
     # Chạy qua component-based pipeline
     result = ner_pipeline.run(text)
 
@@ -57,5 +59,6 @@ async def extract_ner(payload: NERRequest):
         "flag_for_review": result.flag_for_review
     }
 
-    log_request("extract-ner", {"text": payload.text}, response)
+    execution_time_ms = int((time.time() - start_time) * 1000)
+    await log_request("extract-ner", {"text": payload.text}, response, execution_time_ms)
     return response

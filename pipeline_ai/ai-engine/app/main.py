@@ -4,6 +4,7 @@ from app.config import settings
 from app.api.router import api_router
 from app.services.model_loader import model_loader
 from app.services.text_to_sql import vitext2sql_service
+from app.services.database import db_service
 
 import os
 
@@ -13,11 +14,15 @@ async def lifespan(app: FastAPI):
     model_loader.load_models()
     # Nạp dữ liệu ViText2SQL vào memory
     vitext2sql_service.load_dataset()
+    # Kết nối cơ sở dữ liệu PostgreSQL
+    await db_service.connect()
     
     # In link Swagger ra console khi server chạy thành công
     port = os.getenv("PORT", "8000")
     print(f"\n[FastAPI] Swagger UI: http://127.0.0.1:{port}/docs\n")
     yield
+    # Ngắt kết nối cơ sở dữ liệu PostgreSQL
+    await db_service.disconnect()
 
 app = FastAPI(
     title=settings.PROJECT_NAME,

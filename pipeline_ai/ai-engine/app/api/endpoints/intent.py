@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 from app.services.ai_core import ai_engine_core
 from app.services.evaluator import log_request
+import time
 
 router = APIRouter()
 
@@ -39,6 +40,8 @@ async def classify_intent(payload: IntentRequest):
     if not query:
         raise HTTPException(status_code=400, detail="Query không được để trống.")
 
+    start_time = time.time()
+
     # Sử dụng Llama LLM để phân loại Intent động
     result = ai_engine_core.classify_intent(query)
     
@@ -64,5 +67,6 @@ async def classify_intent(payload: IntentRequest):
         "flag_for_review": flag_review
     }
 
-    log_request("classify-intent", {"query": payload.query}, response)
+    execution_time_ms = int((time.time() - start_time) * 1000)
+    await log_request("classify-intent", {"query": payload.query}, response, execution_time_ms)
     return response

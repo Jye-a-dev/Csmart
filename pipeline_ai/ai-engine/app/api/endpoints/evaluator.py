@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
-from app.services.evaluator import SelfEvaluationEngine, LOG_FILE
-import os
+from app.services.evaluator import SelfEvaluationEngine
+from app.services.database import db_service
 import json
 
 router = APIRouter()
@@ -19,23 +19,42 @@ class EvaluationResponse(BaseModel):
     response_model=EvaluationResponse,
     summary="Tự đánh giá và tối ưu hiệu năng hệ thống (Self-Evaluation & Self-Adjustment)",
     description="""
-Đọc nhật ký ghi chép yêu cầu (logs) từ các cuộc gọi API trước đó để tính toán độ chính xác hiện tại của hệ thống, thống kê các yêu cầu Out-of-Distribution (OOD), và tự động đề xuất/cập nhật cấu hình tối ưu.
+Đọc nhật ký ghi chép yêu cầu (logs) từ cơ sở dữ liệu PostgreSQL để tính toán độ chính xác hiện tại của hệ thống, thống kê các yêu cầu Out-of-Distribution (OOD), và tự động đề xuất/cập nhật cấu hình tối ưu.
 """
 )
 async def evaluate_logs():
-    if not os.path.exists(LOG_FILE):
-        return {
-            "status": "success",
-            "message": "Không có log dữ liệu để đánh giá.",
-            "current_accuracy": 1.0,
-            "ood_count": 0,
-            "recommended_adjustment": {}
-        }
-        
     try:
-        with open(LOG_FILE, "r", encoding="utf-8") as f:
-            logs = json.load(f)
+        # Fetch logs from PostgreSQL database
+        rows = await db_service.fetch("""
+            SELECT endpoint, input_text, output_json, confidence_score, flag_for_review, execution_time_ms, created_at 
+            FROM ai_request_logs 
+            ORDER BY created_at DESC 
+            LIMIT 1000
+        """)
         
+        if not rows:
+            return {
+                "status": "success",
+                "message": "Không có log dữ liệu để đánh giá.",
+                "current_accuracy": 1.0,
+                "ood_count": 0,
+                "recommended_adjustment": {}
+            }
+            
+        logs = []
+        for r in rows:
+            output_json = r["output_json"]
+            if isinstance(output_json, str):
+                output_json = json.loads(output_json)
+            logs.append({
+                "endpoint": r["endpoint"],
+                "input_text": r["input_text"],
+                "output_json": output_json,
+                "confidence_score": r["confidence_score"] if r["confidence_score"] is not None else 1.0,
+                "flag_for_review": r["flag_for_review"],
+                "execution_time_ms": r["execution_time_ms"]
+            })
+            
         result = eval_engine.evaluate_and_adjust(logs)
         return {
             "status": "success",
