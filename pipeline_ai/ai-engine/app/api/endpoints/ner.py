@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 from app.services.evaluator import log_request
-from app.services.ner_pipeline import ner_pipeline
+from app.services.ner.pipeline import ner_pipeline
 import time
 
 router = APIRouter()

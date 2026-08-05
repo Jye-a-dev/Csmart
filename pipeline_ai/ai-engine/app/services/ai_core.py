@@ -71,5 +71,36 @@ class OneForAllAIEngine:
         """
         return self._call_llm(system_prompt, query)
 
+    # 3. STREAMING CHATBOT COPILOT
+    def stream_chat(self, history: list[dict]):
+        if self.llm is None:
+            yield "Dịch vụ AI chưa sẵn sàng."
+            return
+            
+        system_prompt = (
+            "Bạn là trợ lý mua sắm AI Copilot thông minh của SmartCart. "
+            "Hãy hỗ trợ và tư vấn mua sắm, trả lời các thắc mắc về đơn hàng, sản phẩm của shop. "
+            "Trả lời ngắn gọn, tự nhiên, thân thiện bằng Tiếng Việt."
+        )
+        
+        messages = [{"role": "system", "content": system_prompt}] + history
+        
+        try:
+            response_stream = self.llm.create_chat_completion(
+                messages=messages,
+                max_tokens=512,
+                temperature=0.7,
+                stream=True
+            )
+            for chunk in response_stream:
+                choices = chunk.get("choices", [])
+                if choices:
+                    delta = choices[0].get("delta", {})
+                    content = delta.get("content", "")
+                    if content:
+                        yield content
+        except Exception as e:
+            yield f"\n[Lỗi AI]: {str(e)}"
+
 # Khởi tạo Instance Singleton
 ai_engine_core = OneForAllAIEngine()

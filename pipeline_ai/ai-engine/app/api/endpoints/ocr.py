@@ -23,14 +23,15 @@ class OCRResponse(BaseModel):
     confidence_score: float = Field(..., description="Độ tin cậy nhận dạng (từ 0.0 đến 1.0).")
     flag_for_review: bool = Field(..., description="Cờ đánh dấu cần kiểm duyệt thủ công nếu độ tin cậy thấp.")
     data: OCRProductData = Field(..., description="Dữ liệu sản phẩm mẫu sau trích xuất thông tin.")
+    similar_products: list = Field(default=[], description="Danh sách các sản phẩm tương tự được đối sánh từ ảnh.")
 
 @router.post(
     "/extract-ocr",
     response_model=OCRResponse,
-    summary="Trích xuất văn bản từ hình ảnh (OCR)",
+    summary="Trích xuất văn bản từ hình ảnh (OCR) & Tìm sản phẩm tương tự",
     description="""
-Nhận diện ký tự quang học (OCR) từ tệp hình ảnh đầu vào (hỗ trợ JPG, PNG, WEBP).
-Sử dụng pipeline nhận dạng cục bộ để trích xuất văn bản thô và cấu trúc hóa thông tin sản phẩm phục vụ e-commerce.
+Nhận diện ký tự quang học (OCR) từ tệp hình ảnh đầu vào.
+Trích xuất các thực thể (như loại áo/quần, màu sắc) từ văn bản nhận diện và sử dụng Hybrid Search đối sánh tìm các sản phẩm tương tự trong database.
 """
 )
 async def extract_ocr(file: UploadFile = File(...)):
@@ -54,11 +55,26 @@ async def extract_ocr(file: UploadFile = File(...)):
         
         full_text = " ".join(extracted_text)
 
+        # Phân tích thực thể màu sắc & loại sản phẩm từ văn bản nhận diện
+        text_lower = full_text.lower()
+        colors = ['đen', 'trắng', 'xanh', 'đỏ', 'vàng', 'hồng', 'xám', 'nâu', 'tím', 'cam']
+        types = ['áo', 'quần', 'váy', 'đầm', 'mũ', 'nón', 'giày', 'dép', 'túi', 'balo', 'khoác', 'thun', 'sơ mi', 'jean']
+        
+        detected_colors = [c for c in colors if c in text_lower]
+        detected_types = [t for t in types if t in text_lower]
+        
+        color_tag = detected_colors[0].capitalize() if detected_colors else "Đen"
+        type_tag = detected_types[0] if detected_types else "áo"
+        
+        # Sử dụng Hybrid Search đối sánh tìm sản phẩm tương tự trong CSDL
+        search_query = f"{type_tag} {color_tag.lower()}"
+        from app.services.hybrid_search import hybrid_search_service
+        similar_products = await hybrid_search_service.search(search_query, limit=5)
+
         # Calculate confidence rate
         confidence = 0.90 if extracted_text else 0.20
         flag_for_review = confidence < 0.50
 
-        # Trả về cấu trúc tương thích ngược kết hợp các chỉ số đánh giá D-E-C-I-D-E
         response = {
             "success": True,
             "status": "success",
@@ -67,11 +83,12 @@ async def extract_ocr(file: UploadFile = File(...)):
             "confidence_score": confidence,
             "flag_for_review": flag_for_review,
             "data": {
-                "name": "Áo Khoác Dù Local Brand",
-                "price": 350000,
-                "color": "Đen",
+                "name": f"{type_tag.capitalize()} {color_tag}",
+                "price": int(similar_products[0]["base_price"]) if similar_products else 350000,
+                "color": color_tag,
                 "raw_text": full_text
-            }
+            },
+            "similar_products": similar_products
         }
 
         execution_time_ms = int((time.time() - start_time) * 1000)

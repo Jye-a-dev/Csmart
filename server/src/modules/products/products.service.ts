@@ -2,10 +2,32 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { ProductsRepository } from './repositories/products.repository';
 import { CreateProductDto, UpdateProductDto } from './dto/product.dto';
 import { Product } from './entities/product.entity';
+import { AiClientService } from '../../common/services/ai-client.service';
 
 @Injectable()
 export class ProductsService {
-  constructor(private readonly productsRepository: ProductsRepository) {}
+  constructor(
+    private readonly productsRepository: ProductsRepository,
+    private readonly aiClient: AiClientService,
+  ) {}
+
+  async hybridSearch(query: string, limit = 10): Promise<any> {
+    const fallback = {
+      success: true,
+      status: 'success',
+      results: [],
+      execution_time_ms: 0,
+    };
+    return this.aiClient.request<any>(
+      '/api/v1/search/hybrid',
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query, limit }),
+      },
+      fallback,
+    );
+  }
 
   async create(dto: CreateProductDto): Promise<Product> {
     return this.productsRepository.createProduct(dto);

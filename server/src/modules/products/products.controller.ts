@@ -60,6 +60,19 @@ export class ProductsController {
     return this.productsService.countBy(filters);
   }
 
+  @Get('search/hybrid')
+  @ApiOperation({
+    summary: 'Hybrid search for products (Semantic Vector + Keyword)',
+  })
+  @ApiQuery({ name: 'query', required: true })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  hybridSearch(
+    @Query('query') query: string,
+    @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
+  ) {
+    return this.productsService.hybridSearch(query, limit || 10);
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Get product by ID' })
   @ApiResponse({ status: 200, type: Product })

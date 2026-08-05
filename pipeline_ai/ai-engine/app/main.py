@@ -12,11 +12,19 @@ import os
 async def lifespan(app: FastAPI):
     # Kích hoạt Singleton ModelLoader nạp model sẵn vào memory khi khởi động
     model_loader.load_models()
+    # Nạp model embeddings
+    from app.services.embedding import embedding_service
+    embedding_service.load_model()
     # Nạp dữ liệu ViText2SQL vào memory
     vitext2sql_service.load_dataset()
     # Kết nối cơ sở dữ liệu PostgreSQL
     await db_service.connect()
     
+    # Trình backfill vector embeddings bất đồng bộ cho sản phẩm chưa có vector
+    from app.services.hybrid_search import hybrid_search_service
+    import asyncio
+    asyncio.create_task(hybrid_search_service.backfill_embeddings())
+
     # In link Swagger ra console khi server chạy thành công
     port = os.getenv("PORT", "8000")
     print(f"\n[FastAPI] Swagger UI: http://127.0.0.1:{port}/docs\n")

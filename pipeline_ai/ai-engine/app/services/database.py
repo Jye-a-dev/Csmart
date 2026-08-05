@@ -24,6 +24,15 @@ class DatabaseService:
                 max_size=10
             )
             logger.info("PostgreSQL database connection pool established successfully")
+            
+            # Setup pgvector and embedding columns dynamically
+            async with self.pool.acquire() as conn:
+                try:
+                    await conn.execute("CREATE EXTENSION IF NOT EXISTS vector;")
+                    await conn.execute("ALTER TABLE products ADD COLUMN IF NOT EXISTS embedding vector(384);")
+                    logger.info("Successfully verified pgvector extension and products embedding column")
+                except Exception as ext_err:
+                    logger.warning(f"Could not initialize pgvector in PostgreSQL: {ext_err}. Hybrid Search will fall back to keyword matching.")
         except Exception as e:
             logger.error(f"Failed to connect to database: {e}")
             raise e
