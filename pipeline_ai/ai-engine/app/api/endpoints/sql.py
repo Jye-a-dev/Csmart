@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
-from app.services.ai_core import ai_engine_core
+from app.services.sql.pipeline import sql_pipeline
 from app.services.evaluator import log_request
 import time
 
@@ -47,27 +47,22 @@ async def text_to_sql(payload: TextToSQLRequest):
     
     start_time = time.time()
     
-    # Gọi trực tiếp bộ não AI chạy Local từ llama-cpp
-    result = ai_engine_core.text_to_sql(question)
+    # Chạy qua component-based pipeline
+    result = sql_pipeline.run(question)
     
     # Kiểm tra nếu mô hình lỗi hoặc chưa khởi tạo
-    if result.get("status") == "error":
+    if result.status == "error":
         raise HTTPException(
             status_code=503, 
-            detail=f"Dịch vụ AI chưa sẵn sàng: {result.get('message', 'Mô hình chưa được nạp hoặc lỗi cấu hình')}"
+            detail=f"Dịch vụ AI chưa sẵn sàng: {result.error_message or 'Mô hình chưa được nạp hoặc lỗi cấu hình'}"
         )
     
-    confidence = result.get("confidence_score", 0.0)
-    sql_text = result.get("generated_sql", "-- CANNOT_GENERATE_SQL")
-    
-    flag_review = True if confidence < 0.70 or "INVALID" in sql_text else False
-
     response = {
         "status": "success",
         "question": payload.question,
-        "generated_sql": sql_text,
-        "confidence_score": confidence,
-        "flag_for_review": flag_review
+        "generated_sql": result.generated_sql,
+        "confidence_score": result.confidence_score,
+        "flag_for_review": result.flag_for_review
     }
 
     execution_time_ms = int((time.time() - start_time) * 1000)

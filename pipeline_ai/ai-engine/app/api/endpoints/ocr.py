@@ -1,6 +1,6 @@
 from fastapi import APIRouter, UploadFile, File, HTTPException
 from pydantic import BaseModel, Field
-from app.services.model_loader import model_loader
+from app.services.ocr.pipeline import ocr_pipeline
 from app.services.evaluator import log_request
 from PIL import Image
 import io
@@ -46,47 +46,28 @@ async def extract_ocr(file: UploadFile = File(...)):
         image = Image.open(io.BytesIO(contents)).convert("RGB")
         image_np = np.array(image)
 
-        # Chạy OCR Inference
-        if model_loader.ocr_pipeline is None:
-             raise HTTPException(status_code=500, detail="OCR Pipeline chưa được khởi tạo.")
+        # Chạy qua component-based pipeline
+        result = await ocr_pipeline.run(image_np)
 
-        prediction_groups = model_loader.ocr_pipeline.recognize([image_np])
-        extracted_text = [text for text, box in prediction_groups[0]]
-        
-        full_text = " ".join(extracted_text)
+        if result.status == "error":
+            raise HTTPException(status_code=500, detail=result.error_message or "Lỗi khi xử lý OCR.")
 
-        # Phân tích thực thể màu sắc & loại sản phẩm từ văn bản nhận diện
-        text_lower = full_text.lower()
-        colors = ['đen', 'trắng', 'xanh', 'đỏ', 'vàng', 'hồng', 'xám', 'nâu', 'tím', 'cam']
-        types = ['áo', 'quần', 'váy', 'đầm', 'mũ', 'nón', 'giày', 'dép', 'túi', 'balo', 'khoác', 'thun', 'sơ mi', 'jean']
-        
-        detected_colors = [c for c in colors if c in text_lower]
-        detected_types = [t for t in types if t in text_lower]
-        
-        color_tag = detected_colors[0].capitalize() if detected_colors else "Đen"
-        type_tag = detected_types[0] if detected_types else "áo"
-        
-        # Sử dụng Hybrid Search đối sánh tìm sản phẩm tương tự trong CSDL
-        search_query = f"{type_tag} {color_tag.lower()}"
-        from app.services.hybrid_search import hybrid_search_service
-        similar_products = await hybrid_search_service.search(search_query, limit=5)
-
-        # Calculate confidence rate
-        confidence = 0.90 if extracted_text else 0.20
-        flag_for_review = confidence < 0.50
+        color_tag = result.detected_color
+        type_tag = result.detected_type
+        similar_products = result.similar_products
 
         response = {
             "success": True,
             "status": "success",
-            "extracted_words": extracted_text,
-            "raw_text": full_text,
-            "confidence_score": confidence,
-            "flag_for_review": flag_for_review,
+            "extracted_words": result.extracted_words,
+            "raw_text": result.raw_text,
+            "confidence_score": result.confidence_score,
+            "flag_for_review": result.flag_for_review,
             "data": {
                 "name": f"{type_tag.capitalize()} {color_tag}",
                 "price": int(similar_products[0]["base_price"]) if similar_products else 350000,
                 "color": color_tag,
-                "raw_text": full_text
+                "raw_text": result.raw_text
             },
             "similar_products": similar_products
         }
