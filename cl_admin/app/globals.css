@@ -26,3 +26,69 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Custom Neo-Brutalist Keyframes & Animations */
+@keyframes marquee {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+.animate-marquee {
+  display: flex;
+  width: max-content;
+  animation: marquee 25s linear infinite;
+}
+
+@keyframes scanline {
+  0% {
+    transform: translateY(-100%);
+  }
+  100% {
+    transform: translateY(1000%);
+  }
+}
+
+.animate-scanline {
+  animation: scanline 8s linear infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+.animate-blink {
+  animation: blink 1s step-end infinite;
+}
+
+/* Custom Brutalist Utilities */
+.btn-brutal {
+  border: 2px solid #09090B;
+  box-shadow: 4px 4px 0px 0px #09090B;
+  transition: all 0.15s cubic-bezier(0.165, 0.84, 0.44, 1);
+}
+
+.btn-brutal:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0px 0px #09090B;
+}
+
+.btn-brutal:active {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0px 0px #09090B;
+}
+
+.card-brutal {
+  border: 2px solid #09090B;
+  box-shadow: 4px 4px 0px 0px #09090B;
+  transition: all 0.25s cubic-bezier(0.165, 0.84, 0.44, 1);
+}
+
+.card-brutal:hover {
+  transform: translateY(-4px);
+  box-shadow: 6px 6px 0px 0px #F97316;
+}

@@ -6,8 +6,8 @@ import PublicSetup from "@/components/layouts/(public)/PublicSetup";
 import "../globals.css";
 
 export const metadata: Metadata = {
-  title: "Template React",
-  description: "Giao diện template React đơn giản.",
+  title: "CSMART_OS Admin Console",
+  description: "Bảng điều khiển quản trị hệ thống Csmart AI.",
 };
 
 type PublicLayoutProps = {
@@ -16,9 +16,9 @@ type PublicLayoutProps = {
 
 export default function PublicLayout({ children }: PublicLayoutProps) {
   return (
-    <html lang="vi">
-      <body className="min-h-screen bg-[#f6f4ef] text-neutral-900">
-        <div className="mx-auto flex min-h-screen w-full max-w-350 flex-col border-x border-neutral-200 bg-white">
+    <html lang="vi" className="scroll-smooth">
+      <body className="min-h-screen bg-[#FAFAFA] text-[#09090B] antialiased">
+        <div className="min-h-screen w-full bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] bg-size-[16px_16px]">
           <PublicSetup>{children}</PublicSetup>
         </div>
       </body>
