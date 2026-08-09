@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { apiClient } from '@/libs/api-client';
-import { Product, CreateProductDto, UpdateProductDto, ProductStatus } from '@/types/api';
+import { Product, CreateProductDto, UpdateProductDto, ProductStatus } from '@/types/entities/product';
 
 export function useProducts() {
   const [loading, setLoading] = useState<boolean>(false);

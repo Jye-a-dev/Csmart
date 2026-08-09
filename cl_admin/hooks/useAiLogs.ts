@@ -4,7 +4,7 @@ import {
   AiRequestLog,
   CreateAiRequestLogDto,
   UpdateAiRequestLogDto,
-} from '@/types/api';
+} from '@/types/ai/log';
 
 export function useAiLogs() {
   const [loading, setLoading] = useState<boolean>(false);

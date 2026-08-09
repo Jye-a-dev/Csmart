@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { apiClient } from '@/libs/api-client';
-import { Category, CreateCategoryDto, UpdateCategoryDto } from '@/types/api';
+import { Category, CreateCategoryDto, UpdateCategoryDto } from '@/types/entities/category';
 
 export function useCategories() {
   const [loading, setLoading] = useState<boolean>(false);

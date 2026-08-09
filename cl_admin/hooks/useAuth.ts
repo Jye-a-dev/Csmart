@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { apiClient } from '@/libs/api-client';
-import { LoginDto, RegisterDto, AuthResponseDto } from '@/types/api';
+import { LoginDto, RegisterDto, AuthResponseDto } from '@/types/common/auth';
+import { User } from '@/types/entities/user';
 
 export function useAuth() {
   const [loading, setLoading] = useState<boolean>(false);
@@ -16,6 +17,7 @@ export function useAuth() {
       });
       if (typeof window !== 'undefined' && response.access_token) {
         localStorage.setItem('access_token', response.access_token);
+        localStorage.setItem('user', JSON.stringify(response.user));
       }
       return response;
     } catch (err) {
@@ -36,6 +38,7 @@ export function useAuth() {
       });
       if (typeof window !== 'undefined' && response.access_token) {
         localStorage.setItem('access_token', response.access_token);
+        localStorage.setItem('user', JSON.stringify(response.user));
       }
       return response;
     } catch (err) {
@@ -53,12 +56,12 @@ export function useAuth() {
       await apiClient<void>('/auth/logout', {
         method: 'POST',
       });
-    } catch (err) {
-      setError(err as Error);
-      // Even if API request fails, we should clear the local token
+    } catch {
+      // Bỏ qua lỗi kết nối API khi đăng xuất
     } finally {
       if (typeof window !== 'undefined') {
         localStorage.removeItem('access_token');
+        localStorage.removeItem('user');
       }
       setLoading(false);
     }
@@ -69,6 +72,17 @@ export function useAuth() {
     return !!localStorage.getItem('access_token');
   }, []);
 
+  const getCurrentUser = useCallback((): User | null => {
+    if (typeof window === 'undefined') return null;
+    const userStr = localStorage.getItem('user');
+    if (!userStr) return null;
+    try {
+      return JSON.parse(userStr) as User;
+    } catch {
+      return null;
+    }
+  }, []);
+
   return {
     loading,
     error,
@@ -76,5 +90,6 @@ export function useAuth() {
     login,
     logout,
     isAuthenticated,
+    getCurrentUser,
   };
 }

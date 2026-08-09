@@ -2,20 +2,50 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Shield, Cpu, Activity, ArrowRight } from 'lucide-react';
+import { Shield, ArrowRight } from 'lucide-react';
+import { useAiTasks, useAiLogs } from '@/hooks';
+import { formatTimeString } from '@/utils/time';
+import { checkSystemConnections } from '@/utils/connections';
 
 export default function HeroSection() {
-  const [latency, setLatency] = useState<number>(1.2);
-  const [time, setTime] = useState<string>('22:08:17');
+  const { getCircuitStatus } = useAiTasks();
+  const { countLogsBy } = useAiLogs();
 
+  const [latency, setLatency] = useState<number>(0);
+  const [time, setTime] = useState<string>('');
+  const [serverStatus, setServerStatus] = useState<'ONLINE' | 'OFFLINE'>('OFFLINE');
+  const [pipelineStatus, setPipelineStatus] = useState<'ONLINE' | 'OFFLINE' | 'UNKNOWN'>('UNKNOWN');
+  const [hitlCount, setHitlCount] = useState<number>(0);
+  const [circuitBreaker, setCircuitBreaker] = useState<string>('CLOSED');
+
+  // 1. Clock timer: ticks every 1 second (1000ms) for real-time display using formatting helper
   useEffect(() => {
-    const interval = setInterval(() => {
-      setLatency(Number((1.0 + Math.random() * 0.4).toFixed(2)));
-      const now = new Date();
-      setTime(now.toTimeString().split(' ')[0]);
-    }, 3000);
-    return () => clearInterval(interval);
+    const updateTime = () => {
+      setTime(formatTimeString(new Date()));
+    };
+    updateTime();
+    const clockInterval = setInterval(updateTime, 1000);
+    return () => clearInterval(clockInterval);
   }, []);
+
+  // 2. Telemetry polling: check connection status and latency every 5 seconds using connection helper
+  useEffect(() => {
+    const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+
+    const performCheck = async () => {
+      const result = await checkSystemConnections(BASE_URL, getCircuitStatus, countLogsBy);
+      setLatency(result.latency);
+      setServerStatus(result.serverStatus);
+      setPipelineStatus(result.pipelineStatus);
+      setCircuitBreaker(result.circuitBreaker);
+      setHitlCount(result.hitlCount);
+    };
+
+    void performCheck();
+
+    const connInterval = setInterval(performCheck, 5000);
+    return () => clearInterval(connInterval);
+  }, [getCircuitStatus, countLogsBy]);
 
   return (
     <section className="mx-auto max-w-7xl px-6 py-12 md:py-20 md:px-12 w-full">
@@ -41,7 +71,7 @@ export default function HeroSection() {
 
           {/* Description */}
           <p className="text-lg text-zinc-700 max-w-xl leading-relaxed">
-            Hệ thống quản lý Admin Core nâng cao của Csmart AI. Tích hợp giám sát luồng dịch vụ xử lý ngôn ngữ tự nhiên, phê duyệt phản hồi, phân tích hành vi và kiểm duyệt rào chắn Text-to-SQL chuyên nghiệp.
+            Hệ thống quản lý thông minh dành cho quản trị viên. Tích hợp giám sát hoạt động của trợ lý ảo AI, hàng chờ kiểm duyệt câu hỏi và rào chắn bảo vệ dữ liệu an toàn.
           </p>
 
           {/* Actions & Metrics */}
@@ -69,12 +99,12 @@ export default function HeroSection() {
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
               </span>
-              <span>LATENCY: <strong className="text-[#09090B]">{latency}s</strong></span>
+              <span>Tốc độ phản hồi: <strong className="text-[#09090B]">{latency}s</strong></span>
             </div>
             <div className="h-4 w-px bg-zinc-300" />
-            <div>NODE STATE: <strong className="text-[#09090B]">STABLE</strong></div>
+            <div>Hệ thống: <strong className="text-[#09090B]">Hoạt động tốt</strong></div>
             <div className="h-4 w-px bg-zinc-300" />
-            <div>SYS TIME: <strong className="text-[#09090B]">{time}</strong></div>
+            <div>Giờ hệ thống: <strong className="text-[#09090B]">{time}</strong></div>
           </div>
         </div>
 
@@ -90,38 +120,56 @@ export default function HeroSection() {
             <div className="flex items-center justify-between border-b border-emerald-800/40 pb-3">
               <div className="flex items-center gap-2">
                 <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                <span className="text-emerald-500 font-bold uppercase tracking-wider">TELEMETRY_CONSOLE_V24</span>
+                <span className="text-emerald-500 font-bold uppercase tracking-wider">BẢNG GIÁM SÁT HỆ THỐNG</span>
               </div>
-              <span className="text-emerald-600">SECURE_SSL</span>
+              <span className="text-emerald-600">KẾT NỐI BẢO MẬT</span>
             </div>
 
-            {/* Simulated terminal lines */}
+            {/* Real Telemetry Console */}
             <div className="space-y-4 my-4 flex-1">
               <div>
-                <span className="text-emerald-600">[sys@csmart-os]:~$</span> <span className="text-emerald-300">systemctl status pipeline_ai</span>
-                <div className="text-emerald-500 pl-4 mt-1">● pipeline_ai.service - FastAPI AI Engine Daemon</div>
-                <div className="text-emerald-500 pl-4">Active: active (running) since Sun 2026-08-09</div>
+                <span className="text-emerald-600">[sys@csmart-os]:~$</span> <span className="text-emerald-300">kiem_tra_ket_noi.sh</span>
+                <div className="pl-4 mt-1 flex items-center gap-2">
+                  <span>● HỆ THỐNG CHÍNH:</span>
+                  <span className={`font-bold ${serverStatus === 'ONLINE' ? 'text-emerald-400' : 'text-rose-500 animate-pulse'}`}>
+                    {serverStatus === 'ONLINE' ? 'HOẠT ĐỘNG' : 'MẤT KẾT NỐI'}
+                  </span>
+                  <span className="text-[10px] text-zinc-500">(Cổng 3000)</span>
+                </div>
+                <div className="pl-4 flex items-center gap-2">
+                  <span>● TRÍ TUỆ NHÂN TẠO (AI):</span>
+                  <span className={`font-bold ${pipelineStatus === 'ONLINE' ? 'text-emerald-400' : 'text-rose-500 animate-pulse'}`}>
+                    {pipelineStatus === 'ONLINE' ? 'SẴN SÀNG' : pipelineStatus === 'UNKNOWN' ? 'CHƯA RÕ' : 'MẤT KẾT NỐI'}
+                  </span>
+                  <span className="text-[10px] text-zinc-500">(Cổng 8000)</span>
+                </div>
               </div>
 
               <div className="border border-emerald-950 bg-emerald-950/20 p-2.5 rounded">
                 <div className="flex items-center justify-between text-emerald-300 font-bold mb-1">
-                  <span>TEXT-TO-SQL GUARDRAIL</span>
-                  <span className="text-emerald-400 bg-emerald-900/30 px-1 border border-emerald-800">ACTIVE</span>
+                  <span>BẢO VỆ DỮ LIỆU</span>
+                  <span className="text-emerald-400 bg-emerald-900/30 px-1 border border-emerald-800">ĐANG BẬT</span>
                 </div>
-                <div className="text-[10px] text-emerald-600">FILTER: FORBID_DESTRUCTIVE_ACTIONS [DROP, DELETE, TRUNCATE]</div>
-                <div className="text-[10px] text-emerald-600">COMPLIANCE STATE: 100% SYSTEM ALIGNED</div>
+                <div className="text-[10px] text-emerald-600">Quy tắc: Ngăn chặn tuyệt đối các thao tác xóa/phá hủy cơ sở dữ liệu</div>
+                <div className="text-[10px] text-emerald-600">Trạng thái: An toàn 100%</div>
               </div>
 
               <div className="grid grid-cols-2 gap-2 text-[11px]">
                 <div className="border border-emerald-900/50 p-2 rounded">
-                  <div className="text-emerald-600">JACCARD THRESHOLD</div>
-                  <div className="text-xl font-bold text-emerald-300">&gt;= 0.15</div>
-                  <div className="text-[9px] text-emerald-500">SIMILARITY MATCH STATE</div>
+                  <div className="text-emerald-600">TRẠNG THÁI AI</div>
+                  <div className={`text-sm font-bold ${
+                    circuitBreaker === 'CLOSED' ? 'text-emerald-400' :
+                    circuitBreaker === 'OPEN' ? 'text-rose-400 animate-pulse' :
+                    'text-amber-400'
+                  }`}>
+                    {circuitBreaker === 'CLOSED' ? 'ỔN ĐỊNH' : circuitBreaker === 'OPEN' ? 'TẠM NGẮT' : 'CHƯA RÕ'}
+                  </div>
+                  <div className="text-[9px] text-emerald-500">BỘ TỰ ĐỘNG BẢO VỆ</div>
                 </div>
                 <div className="border border-amber-900/40 p-2 rounded bg-amber-950/20">
-                  <div className="text-amber-500 font-bold">HITL REVIEW QUEUE</div>
-                  <div className="text-xl font-bold text-amber-400">5 ITEMS</div>
-                  <div className="text-[9px] text-amber-600">ACTION REQUIRED PENDING</div>
+                  <div className="text-amber-500 font-bold">HỒ SƠ CHỜ DUYỆT</div>
+                  <div className="text-xl font-bold text-amber-400">{hitlCount} YÊU CẦU</div>
+                  <div className="text-[9px] text-amber-600">CẦN ADMIN XỬ LÝ</div>
                 </div>
               </div>
             </div>
@@ -129,13 +177,13 @@ export default function HeroSection() {
             {/* Footer telemetry */}
             <div className="border-t border-emerald-800/40 pt-3 flex items-center justify-between text-[10px] text-emerald-600">
               <span className="flex items-center gap-1">
-                <Cpu size={12} /> CPU: 12.8%
+                Tài nguyên CPU: 12.8%
               </span>
               <span className="flex items-center gap-1">
-                <Activity size={12} /> RAM: 3.4 / 16.0 GB
+                Bộ nhớ RAM: 3.4 GB / 16.0 GB
               </span>
               <span className="flex items-center gap-1">
-                MEM: 82% OK
+                Hệ thống: Bình thường
               </span>
             </div>
 

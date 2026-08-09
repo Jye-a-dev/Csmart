@@ -6,6 +6,13 @@ import { setupSwagger } from './swagger/swagger.config';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  // Enable CORS for client applications
+  app.enableCors({
+    origin: '*',
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+    credentials: true,
+  });
+
   // Enable global validation pipe
   app.useGlobalPipes(
     new ValidationPipe({

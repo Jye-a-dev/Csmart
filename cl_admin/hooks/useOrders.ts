@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { apiClient } from '@/libs/api-client';
-import { Order, CreateOrderDto, UpdateOrderDto, OrderStatus } from '@/types/api';
+import { Order, CreateOrderDto, UpdateOrderDto, OrderStatus } from '@/types/entities/order';
 
 export function useOrders() {
   const [loading, setLoading] = useState<boolean>(false);

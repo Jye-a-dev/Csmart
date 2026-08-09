@@ -7,7 +7,7 @@ import {
   UpdateUserDto,
   CreateUserAddressDto,
   UpdateUserAddressDto,
-} from '@/types/api';
+} from '@/types/entities/user';
 
 export function useUsers() {
   const [loading, setLoading] = useState<boolean>(false);

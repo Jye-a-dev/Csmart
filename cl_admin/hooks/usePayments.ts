@@ -6,7 +6,7 @@ import {
   UpdatePaymentDto,
   PaymentStatus,
   PaymentMethod,
-} from '@/types/api';
+} from '@/types/entities/payment';
 
 export function usePayments() {
   const [loading, setLoading] = useState<boolean>(false);

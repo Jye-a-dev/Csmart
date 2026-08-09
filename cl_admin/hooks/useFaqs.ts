@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { apiClient } from '@/libs/api-client';
-import { Faq, CreateFaqDto, UpdateFaqDto } from '@/types/api';
+import { Faq, CreateFaqDto, UpdateFaqDto } from '@/types/common/faq';
 
 export function useFaqs() {
   const [loading, setLoading] = useState<boolean>(false);

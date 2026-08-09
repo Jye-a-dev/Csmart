@@ -1,6 +1,6 @@
 'use client';
 
-import { HeroSection, BentoGrid, MonorepoStack } from './sections';
+import { HeroSection, BentoGrid, InteractiveAiDemo, MonorepoStack } from './sections';
 
 export default function MainPage() {
   return (
@@ -11,7 +11,10 @@ export default function MainPage() {
       {/* 4. Bento Grid Features (3 Cards) */}
       <BentoGrid />
       
-      {/* 5. Monorepo Stack Summary */}
+      {/* 5. Interactive AI Playground */}
+      <InteractiveAiDemo />
+      
+      {/* 6. Monorepo Stack Summary */}
       <MonorepoStack />
     </div>
   );

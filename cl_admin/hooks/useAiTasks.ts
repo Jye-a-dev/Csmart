@@ -5,7 +5,7 @@ import {
   SubmitEvaluateResponse,
   JobStatusResponse,
   CircuitBreakerState,
-} from '@/types/api';
+} from '@/types/ai/task';
 
 export function useAiTasks() {
   const [loading, setLoading] = useState<boolean>(false);

@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { ChatStreamDto } from '@/types/api';
+import { ChatStreamDto } from '@/types/ai/copilot';
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 

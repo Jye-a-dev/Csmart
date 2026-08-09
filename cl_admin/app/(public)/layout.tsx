@@ -6,7 +6,7 @@ import PublicSetup from "@/components/layouts/(public)/PublicSetup";
 import "../globals.css";
 
 export const metadata: Metadata = {
-  title: "CSMART_OS Admin Console",
+  title: "CSMART Admin Console",
   description: "Bảng điều khiển quản trị hệ thống Csmart AI.",
 };
 

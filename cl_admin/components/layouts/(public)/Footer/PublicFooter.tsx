@@ -19,7 +19,7 @@ export default function PublicFooter() {
                 <Terminal size={16} />
               </div>
               <span className="font-extrabold tracking-tighter text-sm uppercase text-[#FAFAFA]">
-                CSMART_OS v2.4
+                CSMART_Admin
               </span>
             </div>
             <p className="text-zinc-400 leading-relaxed max-w-xs text-[11px]">
