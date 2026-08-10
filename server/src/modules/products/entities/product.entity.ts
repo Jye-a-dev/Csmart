@@ -20,8 +20,8 @@ export class Product {
   @ApiProperty({ example: 'awesome-product' })
   slug: string;
 
-  @ApiProperty({ example: 1, required: false })
-  category_id?: number;
+  @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440000', required: false })
+  category_id?: string;
 
   @ApiProperty({ example: 'Product description details', required: false })
   description?: string;

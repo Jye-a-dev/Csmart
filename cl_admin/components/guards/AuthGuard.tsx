@@ -1,9 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useLayoutEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks';
 import { Loader2, ShieldAlert, LogOut, Home } from 'lucide-react';
+
+const useSafeLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect;
 
 interface AuthGuardProps {
   children: React.ReactNode;
@@ -15,10 +17,10 @@ export default function AuthGuard({ children }: AuthGuardProps) {
   const [checking, setChecking] = useState<boolean>(true);
   const [authorized, setAuthorized] = useState<boolean>(false);
 
-  useEffect(() => {
+  useSafeLayoutEffect(() => {
     const verifyAuth = () => {
       if (!isAuthenticated()) {
-        router.push('/login');
+        router.replace('/login');
         return;
       }
 
@@ -36,7 +38,7 @@ export default function AuthGuard({ children }: AuthGuardProps) {
 
   const handleLogout = async () => {
     await logout();
-    router.push('/login');
+    router.replace('/login');
   };
 
   // 1. Loading Screen (Màn hình đang tải thông tin xác thực)

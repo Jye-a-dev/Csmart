@@ -8,6 +8,7 @@ import {
   IsEnum,
   IsArray,
   IsObject,
+  IsUUID,
 } from 'class-validator';
 import { ProductStatus } from '../entities/product.entity';
 
@@ -24,10 +25,10 @@ export class CreateProductDto {
   @IsString()
   slug: string;
 
-  @ApiProperty({ example: 1, required: false })
+  @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440000', required: false })
   @IsOptional()
-  @IsInt()
-  category_id?: number;
+  @IsUUID()
+  category_id?: string;
 
   @ApiProperty({ example: 'Product description details', required: false })
   @IsOptional()

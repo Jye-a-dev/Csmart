@@ -8,6 +8,7 @@ import {
   Delete,
   Query,
   ParseIntPipe,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
 import { CategoriesService } from './categories.service';
@@ -47,18 +48,18 @@ export class CategoriesController {
 
   @Get('count/by')
   @ApiOperation({ summary: 'Count categories by filter' })
-  @ApiQuery({ name: 'parent_id', required: false, type: Number })
+  @ApiQuery({ name: 'parent_id', required: false, type: String })
   @ApiResponse({ status: 200, type: Number })
   countBy(@Query('parent_id') parentId?: string) {
     const filters: Record<string, any> = {};
-    if (parentId) filters.parent_id = parseInt(parentId, 10);
+    if (parentId) filters.parent_id = parentId;
     return this.categoriesService.countBy(filters);
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Get category by ID' })
+  @ApiOperation({ summary: 'Get category by UUID' })
   @ApiResponse({ status: 200, type: Category })
-  findOne(@Param('id', ParseIntPipe) id: number) {
+  findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.categoriesService.findOne(id);
   }
 
@@ -66,7 +67,7 @@ export class CategoriesController {
   @ApiOperation({ summary: 'Update category' })
   @ApiResponse({ status: 200, type: Category })
   update(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() updateCategoryDto: UpdateCategoryDto,
   ) {
     return this.categoriesService.update(id, updateCategoryDto);
@@ -75,7 +76,7 @@ export class CategoriesController {
   @Delete(':id')
   @ApiOperation({ summary: 'Delete category' })
   @ApiResponse({ status: 200, description: 'Category deleted' })
-  remove(@Param('id', ParseIntPipe) id: number) {
+  remove(@Param('id', ParseUUIDPipe) id: string) {
     return this.categoriesService.remove(id);
   }
 }

@@ -19,8 +19,6 @@ import {
   Menu,
   X
 } from 'lucide-react';
-import '../globals.css';
-
 type DashboardLayoutProps = {
   children: ReactNode;
 };
@@ -51,16 +49,14 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
   const navItems = [
     { name: 'Tổng Quan', href: '/dashboard', icon: LayoutDashboard },
-    { name: 'Đơn Hàng', href: '#orders', icon: ShoppingBag },
-    { name: 'Sản Phẩm', href: '#products', icon: Package },
+    { name: 'Đơn Hàng', href: '/orders', icon: ShoppingBag },
+    { name: 'Sản Phẩm', href: '/products', icon: Package },
     { name: 'Khách Hàng', href: '#customers', icon: Users },
     { name: 'Cài Đặt', href: '#settings', icon: Settings },
   ];
 
   return (
-    <html lang="vi" className="scroll-smooth">
-      <body className="min-h-screen bg-[#FAFAFA] text-[#09090B] antialiased">
-        <AuthGuard>
+    <AuthGuard>
           <div className="flex min-h-screen w-full">
             
             {/* Desktop Left Sidebar */}
@@ -219,7 +215,5 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
           </div>
         </AuthGuard>
-      </body>
-    </html>
   );
 }

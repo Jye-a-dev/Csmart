@@ -68,7 +68,7 @@ export function useCategories() {
     }
   }, []);
 
-  const findOneCategory = useCallback(async (id: number): Promise<Category> => {
+  const findOneCategory = useCallback(async (id: string): Promise<Category> => {
     setLoading(true);
     setError(null);
     try {
@@ -81,7 +81,7 @@ export function useCategories() {
     }
   }, []);
 
-  const updateCategory = useCallback(async (id: number, dto: UpdateCategoryDto): Promise<Category> => {
+  const updateCategory = useCallback(async (id: string, dto: UpdateCategoryDto): Promise<Category> => {
     setLoading(true);
     setError(null);
     try {
@@ -97,7 +97,7 @@ export function useCategories() {
     }
   }, []);
 
-  const removeCategory = useCallback(async (id: number): Promise<void> => {
+  const removeCategory = useCallback(async (id: string): Promise<void> => {
     setLoading(true);
     setError(null);
     try {

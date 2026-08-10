@@ -5,7 +5,7 @@ import { useOrders, useProducts, useAiLogs } from '@/hooks';
 import { Order, OrderStatus } from '@/types/entities/order';
 import { AiRequestLog } from '@/types/ai/log';
 import { ProductStatus } from '@/types/entities/product';
-import { StatsGrid, OrdersTable, HitlQueue } from './sections';
+import { StatsGrid, DashboardBento } from './sections';
 
 export default function DashboardPage() {
   const { findAllOrders, countAllOrders, updateOrder } = useOrders();
@@ -118,32 +118,19 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="space-y-10">
-      
-      {/* 3 Main Indicators (Bento Grid) */}
+    <div className="space-y-10 font-sans">
       <StatsGrid stats={stats} />
-
-      {/* Main Bento Row (2 Columns Layout) */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        
-        {/* Column 1: Recent Orders List (8 Cols) */}
-        <div className="lg:col-span-8">
-          <OrdersTable orders={orders} loading={loading} onRefresh={fetchDashboardData} />
-        </div>
-
-        {/* Column 2: HITL AI Actions Queue (4 Cols) */}
-        <div className="lg:col-span-4">
-          <HitlQueue
-            recentLogs={recentLogs}
-            actionLoadingId={actionLoadingId}
-            onApproveCancel={handleApproveCancel}
-            onApproveChangeAddress={handleApproveChangeAddress}
-            onReject={handleRejectRequest}
-          />
-        </div>
-
-      </div>
-
+      
+      <DashboardBento
+        orders={orders}
+        loading={loading}
+        onRefresh={fetchDashboardData}
+        recentLogs={recentLogs}
+        actionLoadingId={actionLoadingId}
+        onApproveCancel={handleApproveCancel}
+        onApproveChangeAddress={handleApproveChangeAddress}
+        onReject={handleRejectRequest}
+      />
     </div>
   );
 }

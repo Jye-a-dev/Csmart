@@ -10,6 +10,7 @@
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
     "dev": "nest start --watch",
+    "dev:all": "concurrently --kill-others-on-fail --names \"SERVER,PIPELINE\" --prefix-colors \"cyan,magenta\" \"nest start --watch\" \"cd ../pipeline_ai/ai-engine && python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload\"",
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
@@ -40,6 +41,7 @@
     "swagger-ui-express": "^5.0.1"
   },
   "devDependencies": {
+    "concurrently": "^9.1.2",
     "@eslint/eslintrc": "^3.2.0",
     "@eslint/js": "^9.18.0",
     "@nestjs/cli": "^11.0.0",

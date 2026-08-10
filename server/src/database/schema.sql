@@ -77,11 +77,11 @@ CREATE TABLE user_addresses (
 -- 2. BẢNG QUẢN LÝ DANH MỤC & SẢN PHẨM (CATEGORIES & PRODUCTS)
 -- ============================================================================
 CREATE TABLE categories (
-    id SERIAL PRIMARY KEY,
+    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
     slug VARCHAR(120) UNIQUE NOT NULL,
     description TEXT,
-    parent_id INT REFERENCES categories(id) ON DELETE SET NULL,
+    parent_id UUID REFERENCES categories(id) ON DELETE SET NULL,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 
@@ -90,7 +90,7 @@ CREATE TABLE products (
     sku VARCHAR(50) UNIQUE NOT NULL,
     name VARCHAR(255) NOT NULL,
     slug VARCHAR(255) UNIQUE NOT NULL,
-    category_id INT REFERENCES categories(id) ON DELETE SET NULL,
+    category_id UUID REFERENCES categories(id) ON DELETE SET NULL,
     description TEXT,
     base_price NUMERIC(12, 2) NOT NULL CHECK (base_price >= 0),
     discount_price NUMERIC(12, 2) CHECK (discount_price >= 0),

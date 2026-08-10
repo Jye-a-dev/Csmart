@@ -24,13 +24,13 @@ export class CategoriesRepository extends BaseRepository {
     const sql = `
       SELECT id, name, slug, description, parent_id, created_at
       FROM categories
-      ORDER BY id DESC
+      ORDER BY created_at DESC
       LIMIT $1 OFFSET $2
     `;
     return this.query<Category>(sql, [limit, offset]);
   }
 
-  async findCategoryById(id: number): Promise<Category | null> {
+  async findCategoryById(id: string): Promise<Category | null> {
     const sql = `
       SELECT id, name, slug, description, parent_id, created_at
       FROM categories
@@ -40,7 +40,7 @@ export class CategoriesRepository extends BaseRepository {
   }
 
   async updateCategory(
-    id: number,
+    id: string,
     dto: UpdateCategoryDto,
   ): Promise<Category | null> {
     const updates: string[] = [];
@@ -78,9 +78,9 @@ export class CategoriesRepository extends BaseRepository {
     return this.queryOne<Category>(sql, params);
   }
 
-  async deleteCategory(id: number): Promise<boolean> {
+  async deleteCategory(id: string): Promise<boolean> {
     const sql = `DELETE FROM categories WHERE id = $1 RETURNING id`;
-    const res = await this.queryOne<{ id: number }>(sql, [id]);
+    const res = await this.queryOne<{ id: string }>(sql, [id]);
     return !!res;
   }
 }

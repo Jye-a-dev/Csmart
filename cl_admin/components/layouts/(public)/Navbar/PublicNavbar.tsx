@@ -1,12 +1,42 @@
 'use client';
 
 import Link from 'next/link';
+import { useSyncExternalStore } from 'react';
 import { Terminal, LogOut } from 'lucide-react';
 import { useAuth } from '@/hooks';
+import type { User } from '@/types/entities/user';
+
+// Read user from localStorage — called on every external store change
+function getUserSnapshot(): User | null {
+  const str = localStorage.getItem('user');
+  if (!str) return null;
+  try {
+    return JSON.parse(str) as User;
+  } catch {
+    return null;
+  }
+}
+
+// SSR snapshot: always null (no localStorage on server)
+function getServerSnapshot(): null {
+  return null;
+}
+
+// Subscribe to localStorage changes (cross-tab and same-tab via custom event)
+function subscribe(callback: () => void): () => void {
+  window.addEventListener('storage', callback);
+  window.addEventListener('auth-change', callback);
+  return () => {
+    window.removeEventListener('storage', callback);
+    window.removeEventListener('auth-change', callback);
+  };
+}
 
 export default function PublicNavbar() {
-  const { getCurrentUser, logout } = useAuth();
-  const user = getCurrentUser();
+  const { logout } = useAuth();
+
+  // useSyncExternalStore: no useEffect, no setState, SSR-safe
+  const user = useSyncExternalStore(subscribe, getUserSnapshot, getServerSnapshot);
 
   return (
     <nav className="sticky top-0 z-40 w-full bg-[#FAFAFA]/95 backdrop-blur-md border-b-2 border-[#09090B] px-6 py-4 md:px-12">
@@ -63,7 +93,7 @@ export default function PublicNavbar() {
                 onClick={logout}
                 className="btn-brutal inline-flex items-center justify-center gap-1.5 bg-[#FAFAFA] text-[#09090B] font-mono font-bold text-xs px-4 py-2 uppercase cursor-pointer border-2 border-[#09090B] shadow-[2px_2px_0px_0px_#09090B] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all hover:bg-zinc-100"
               >
-                <LogOut size={12} />
+                <Terminal size={12} />
                 Thoát
               </button>
             </div>

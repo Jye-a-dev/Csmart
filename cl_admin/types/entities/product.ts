@@ -10,7 +10,7 @@ export interface Product {
   sku: string;
   name: string;
   slug: string;
-  category_id?: number;
+  category_id?: string; // UUID reference to categories
   description?: string;
   base_price: number;
   discount_price?: number;
@@ -27,7 +27,7 @@ export interface CreateProductDto {
   sku: string;
   name: string;
   slug: string;
-  category_id?: number;
+  category_id?: string; // UUID reference to categories
   description?: string;
   base_price: number;
   discount_price?: number;
