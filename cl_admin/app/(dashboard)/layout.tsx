@@ -51,7 +51,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     { name: 'Tổng Quan', href: '/dashboard', icon: LayoutDashboard },
     { name: 'Đơn Hàng', href: '/orders', icon: ShoppingBag },
     { name: 'Sản Phẩm', href: '/products', icon: Package },
-    { name: 'Khách Hàng', href: '#customers', icon: Users },
+    { name: 'Khách Hàng', href: '/customers', icon: Users },
     { name: 'Cài Đặt', href: '#settings', icon: Settings },
   ];
 

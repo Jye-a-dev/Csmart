@@ -44,4 +44,8 @@ export class AiLogsService {
   async countBy(filters: Record<string, any>): Promise<number> {
     return this.aiLogsRepository.countBy('ai_request_logs', filters);
   }
+
+  async updateReviewId(logId: number, reviewId: number): Promise<void> {
+    return this.aiLogsRepository.updateReviewId(logId, reviewId);
+  }
 }

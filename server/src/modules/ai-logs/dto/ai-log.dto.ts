@@ -41,6 +41,11 @@ export class CreateAiRequestLogDto {
   @IsOptional()
   @IsInt()
   execution_time_ms?: number;
+
+  @ApiProperty({ example: 7, required: false })
+  @IsOptional()
+  @IsInt()
+  review_id?: number;
 }
 
 export class UpdateAiRequestLogDto extends PartialType(CreateAiRequestLogDto) {}

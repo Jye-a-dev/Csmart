@@ -8,12 +8,12 @@ export class ProductsRepository extends BaseRepository {
   async createProduct(dto: CreateProductDto): Promise<Product> {
     const sql = `
       INSERT INTO products (
-        sku, name, slug, category_id, description, base_price, 
-        discount_price, stock_quantity, status, is_published, tags, attributes
+        sku, name, slug, category_id, description, short_description, specifications, colors, base_price, 
+        discount_price, stock_quantity, status, is_published, tags, attributes, images
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
-      RETURNING id, sku, name, slug, category_id, description, base_price, 
-                discount_price, stock_quantity, status, is_published, tags, attributes, created_at, updated_at
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+      RETURNING id, sku, name, slug, category_id, description, short_description, specifications, colors, base_price, 
+                discount_price, stock_quantity, status, is_published, tags, attributes, images, created_at, updated_at
     `;
     const params = [
       dto.sku,
@@ -21,6 +21,9 @@ export class ProductsRepository extends BaseRepository {
       dto.slug,
       dto.category_id || null,
       dto.description || null,
+      dto.short_description || null,
+      dto.specifications || null,
+      dto.colors ? JSON.stringify(dto.colors) : '[]',
       dto.base_price,
       dto.discount_price !== undefined ? dto.discount_price : null,
       dto.stock_quantity !== undefined ? dto.stock_quantity : 0,
@@ -28,14 +31,15 @@ export class ProductsRepository extends BaseRepository {
       dto.is_published !== undefined ? dto.is_published : true,
       dto.tags || null,
       dto.attributes ? JSON.stringify(dto.attributes) : '{}',
+      dto.images || [],
     ];
     return (await this.queryOne<Product>(sql, params))!;
   }
 
   async findAllProducts(limit = 10, offset = 0): Promise<Product[]> {
     const sql = `
-      SELECT id, sku, name, slug, category_id, description, base_price, 
-             discount_price, stock_quantity, status, is_published, tags, attributes, created_at, updated_at
+      SELECT id, sku, name, slug, category_id, description, short_description, specifications, colors, base_price, 
+             discount_price, stock_quantity, status, is_published, tags, attributes, images, created_at, updated_at
       FROM products
       ORDER BY id DESC
       LIMIT $1 OFFSET $2
@@ -45,8 +49,8 @@ export class ProductsRepository extends BaseRepository {
 
   async findProductById(id: number): Promise<Product | null> {
     const sql = `
-      SELECT id, sku, name, slug, category_id, description, base_price, 
-             discount_price, stock_quantity, status, is_published, tags, attributes, created_at, updated_at
+      SELECT id, sku, name, slug, category_id, description, short_description, specifications, colors, base_price, 
+             discount_price, stock_quantity, status, is_published, tags, attributes, images, created_at, updated_at
       FROM products
       WHERE id = $1
     `;
@@ -67,6 +71,9 @@ export class ProductsRepository extends BaseRepository {
       slug: 'slug',
       category_id: 'category_id',
       description: 'description',
+      short_description: 'short_description',
+      specifications: 'specifications',
+      colors: 'colors',
       base_price: 'base_price',
       discount_price: 'discount_price',
       stock_quantity: 'stock_quantity',
@@ -74,13 +81,14 @@ export class ProductsRepository extends BaseRepository {
       is_published: 'is_published',
       tags: 'tags',
       attributes: 'attributes',
+      images: 'images',
     };
 
     const dtoRecord = dto as Record<string, any>;
     for (const key of Object.keys(fieldsMapping)) {
       if (dtoRecord[key] !== undefined) {
         updates.push(`${fieldsMapping[key]} = $${paramIndex++}`);
-        if (key === 'attributes') {
+        if (key === 'attributes' || key === 'colors') {
           params.push(JSON.stringify(dtoRecord[key]));
         } else {
           params.push(dtoRecord[key]);
@@ -98,8 +106,8 @@ export class ProductsRepository extends BaseRepository {
       UPDATE products
       SET ${updates.join(', ')}
       WHERE id = $${paramIndex}
-      RETURNING id, sku, name, slug, category_id, description, base_price, 
-                discount_price, stock_quantity, status, is_published, tags, attributes, created_at, updated_at
+      RETURNING id, sku, name, slug, category_id, description, short_description, specifications, colors, base_price, 
+                discount_price, stock_quantity, status, is_published, tags, attributes, images, created_at, updated_at
     `;
     return this.queryOne<Product>(sql, params);
   }

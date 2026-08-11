@@ -12,11 +12,11 @@ export class AiLogsRepository extends BaseRepository {
     const sql = `
       INSERT INTO ai_request_logs (
         endpoint, user_id, input_text, output_json, 
-        confidence_score, flag_for_review, execution_time_ms
+        confidence_score, flag_for_review, execution_time_ms, review_id
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
       RETURNING id, endpoint, user_id, input_text, output_json, 
-                confidence_score, flag_for_review, execution_time_ms, created_at
+                confidence_score, flag_for_review, execution_time_ms, review_id, created_at
     `;
     const params = [
       dto.endpoint,
@@ -26,6 +26,7 @@ export class AiLogsRepository extends BaseRepository {
       dto.confidence_score !== undefined ? dto.confidence_score : null,
       dto.flag_for_review !== undefined ? dto.flag_for_review : false,
       dto.execution_time_ms !== undefined ? dto.execution_time_ms : null,
+      dto.review_id !== undefined ? dto.review_id : null,
     ];
     return (await this.queryOne<AiRequestLog>(sql, params))!;
   }
@@ -33,7 +34,7 @@ export class AiLogsRepository extends BaseRepository {
   async findAllLogs(limit = 10, offset = 0): Promise<AiRequestLog[]> {
     const sql = `
       SELECT id, endpoint, user_id, input_text, output_json, 
-             confidence_score, flag_for_review, execution_time_ms, created_at
+             confidence_score, flag_for_review, execution_time_ms, review_id, created_at
       FROM ai_request_logs
       ORDER BY id DESC
       LIMIT $1 OFFSET $2
@@ -44,7 +45,7 @@ export class AiLogsRepository extends BaseRepository {
   async findLogById(id: number): Promise<AiRequestLog | null> {
     const sql = `
       SELECT id, endpoint, user_id, input_text, output_json, 
-             confidence_score, flag_for_review, execution_time_ms, created_at
+             confidence_score, flag_for_review, execution_time_ms, review_id, created_at
       FROM ai_request_logs
       WHERE id = $1
     `;
@@ -101,5 +102,13 @@ export class AiLogsRepository extends BaseRepository {
     const sql = `DELETE FROM ai_request_logs WHERE id = $1 RETURNING id`;
     const res = await this.queryOne<{ id: number }>(sql, [id]);
     return !!res;
+  }
+
+  /** Liên kết log với HITL review entry sau khi enqueue */
+  async updateReviewId(logId: number, reviewId: number): Promise<void> {
+    await this.pool.query(
+      `UPDATE ai_request_logs SET review_id = $1 WHERE id = $2`,
+      [reviewId, logId],
+    );
   }
 }

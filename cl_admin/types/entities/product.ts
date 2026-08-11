@@ -5,6 +5,12 @@ export enum ProductStatus {
   DISCONTINUED = 'DISCONTINUED',
 }
 
+export interface ProductColor {
+  name: string;
+  hex?: string;
+  in_stock: boolean;
+}
+
 export interface Product {
   id: number;
   sku: string;
@@ -12,6 +18,9 @@ export interface Product {
   slug: string;
   category_id?: string; // UUID reference to categories
   description?: string;
+  short_description?: string;
+  specifications?: string;
+  colors?: ProductColor[];
   base_price: number;
   discount_price?: number;
   stock_quantity: number;
@@ -19,6 +28,7 @@ export interface Product {
   is_published: boolean;
   tags?: string[];
   attributes?: Record<string, unknown>;
+  images?: string[];
   created_at: string;
   updated_at: string;
 }
@@ -29,6 +39,9 @@ export interface CreateProductDto {
   slug: string;
   category_id?: string; // UUID reference to categories
   description?: string;
+  short_description?: string;
+  specifications?: string;
+  colors?: ProductColor[];
   base_price: number;
   discount_price?: number;
   stock_quantity?: number;
@@ -36,6 +49,7 @@ export interface CreateProductDto {
   is_published?: boolean;
   tags?: string[];
   attributes?: Record<string, unknown>;
+  images?: string[];
 }
 
 export type UpdateProductDto = Partial<CreateProductDto>;

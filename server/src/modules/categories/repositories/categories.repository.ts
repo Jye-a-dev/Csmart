@@ -7,22 +7,24 @@ import { CreateCategoryDto, UpdateCategoryDto } from '../dto/category.dto';
 export class CategoriesRepository extends BaseRepository {
   async createCategory(dto: CreateCategoryDto): Promise<Category> {
     const sql = `
-      INSERT INTO categories (name, slug, description, parent_id)
-      VALUES ($1, $2, $3, $4)
-      RETURNING id, name, slug, description, parent_id, created_at
+      INSERT INTO categories (name, slug, description, parent_id, image_url_1, image_url_2)
+      VALUES ($1, $2, $3, $4, $5, $6)
+      RETURNING id, name, slug, description, parent_id, image_url_1, image_url_2, created_at
     `;
     const params = [
       dto.name,
       dto.slug,
       dto.description || null,
       dto.parent_id || null,
+      dto.image_url_1 || null,
+      dto.image_url_2 || null,
     ];
     return (await this.queryOne<Category>(sql, params))!;
   }
 
   async findAllCategories(limit = 10, offset = 0): Promise<Category[]> {
     const sql = `
-      SELECT id, name, slug, description, parent_id, created_at
+      SELECT id, name, slug, description, parent_id, image_url_1, image_url_2, created_at
       FROM categories
       ORDER BY created_at DESC
       LIMIT $1 OFFSET $2
@@ -32,7 +34,7 @@ export class CategoriesRepository extends BaseRepository {
 
   async findCategoryById(id: string): Promise<Category | null> {
     const sql = `
-      SELECT id, name, slug, description, parent_id, created_at
+      SELECT id, name, slug, description, parent_id, image_url_1, image_url_2, created_at
       FROM categories
       WHERE id = $1
     `;
@@ -63,6 +65,14 @@ export class CategoriesRepository extends BaseRepository {
       updates.push(`parent_id = $${paramIndex++}`);
       params.push(dto.parent_id);
     }
+    if (dto.image_url_1 !== undefined) {
+      updates.push(`image_url_1 = $${paramIndex++}`);
+      params.push(dto.image_url_1);
+    }
+    if (dto.image_url_2 !== undefined) {
+      updates.push(`image_url_2 = $${paramIndex++}`);
+      params.push(dto.image_url_2);
+    }
 
     if (updates.length === 0) {
       return this.findCategoryById(id);
@@ -73,7 +83,7 @@ export class CategoriesRepository extends BaseRepository {
       UPDATE categories
       SET ${updates.join(', ')}
       WHERE id = $${paramIndex}
-      RETURNING id, name, slug, description, parent_id, created_at
+      RETURNING id, name, slug, description, parent_id, image_url_1, image_url_2, created_at
     `;
     return this.queryOne<Category>(sql, params);
   }

@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useProducts, useCategories } from '@/hooks';
 import { Product, CreateProductDto, UpdateProductDto } from '@/types/entities/product';
 import { Category } from '@/types/entities/category';
-import { ProductsTable, ProductModal } from '@/components/pages/ProductsPage/sections';
+import { ProductsTable, ProductModal, ConfirmDeleteModal } from '@/components/pages/ProductsPage/sections';
 import { CategoryProductsHeader } from './sections';
 
 interface CategoryProductsPageProps {
@@ -39,6 +39,10 @@ export default function CategoryProductsPage({ categorySlug }: CategoryProductsP
   // Modals Visibility
   const [isProductOpen, setIsProductOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+
+  // Confirm Delete Modal State
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [deleteProductId, setDeleteProductId] = useState<number | null>(null);
 
   const loadData = useCallback(async () => {
     if (!categorySlug) return;
@@ -107,14 +111,21 @@ export default function CategoryProductsPage({ categorySlug }: CategoryProductsP
     void loadData();
   };
 
-  const handleProductDelete = async (id: number) => {
-    if (confirm('Bạn có chắc chắn muốn xóa sản phẩm này?')) {
-      try {
-        await removeProduct(id);
-        void loadData();
-      } catch {
-        alert('Không thể xóa sản phẩm. Có thể sản phẩm đang tồn tại trong đơn hàng.');
-      }
+  const handleProductDeleteClick = (id: number) => {
+    setDeleteProductId(id);
+    setIsDeleteOpen(true);
+  };
+
+  const handleConfirmProductDelete = async () => {
+    if (!deleteProductId) return;
+    try {
+      await removeProduct(deleteProductId);
+      void loadData();
+    } catch (err) {
+      console.error(err);
+      alert('Không thể xóa sản phẩm. Có thể sản phẩm đang tồn tại trong đơn hàng.');
+    } finally {
+      setDeleteProductId(null);
     }
   };
 
@@ -145,7 +156,7 @@ export default function CategoryProductsPage({ categorySlug }: CategoryProductsP
         categories={categories}
         loading={overallLoading}
         onEdit={handleProductEdit}
-        onDelete={handleProductDelete}
+        onDelete={handleProductDeleteClick}
         searchTerm={productSearch}
         setSearchTerm={setProductSearch}
         selectedCategory={selectedCatFilter}
@@ -158,7 +169,19 @@ export default function CategoryProductsPage({ categorySlug }: CategoryProductsP
         onClose={() => setIsProductOpen(false)}
         product={selectedProduct}
         categories={categories}
+        defaultCategoryId={currentCategory?.id}
         onSubmit={handleProductSubmit}
+      />
+
+      <ConfirmDeleteModal
+        isOpen={isDeleteOpen}
+        onClose={() => {
+          setIsDeleteOpen(false);
+          setDeleteProductId(null);
+        }}
+        onConfirm={handleConfirmProductDelete}
+        title="XÁC NHẬN XÓA SẢN PHẨM"
+        message="Bạn có chắc chắn muốn xóa sản phẩm này không? Tất cả dữ liệu liên quan sẽ bị xóa."
       />
     </div>
   );

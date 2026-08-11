@@ -8,8 +8,8 @@ import {
   IsEnum,
   IsArray,
   IsObject,
-  IsUUID,
 } from 'class-validator';
+import { Transform } from 'class-transformer';
 import { ProductStatus } from '../entities/product.entity';
 
 export class CreateProductDto {
@@ -25,15 +25,46 @@ export class CreateProductDto {
   @IsString()
   slug: string;
 
-  @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440000', required: false })
+  @ApiProperty({
+    example: '550e8400-e29b-41d4-a716-446655440000',
+    required: false,
+  })
+  @Transform(({ value }) => {
+    if (
+      value === null ||
+      value === undefined ||
+      value === '' ||
+      value === 'null' ||
+      value === 'undefined'
+    )
+      return undefined;
+    return String(value);
+  })
   @IsOptional()
-  @IsUUID()
   category_id?: string;
 
   @ApiProperty({ example: 'Product description details', required: false })
   @IsOptional()
   @IsString()
   description?: string;
+
+  @ApiProperty({ example: 'Short description text', required: false })
+  @IsOptional()
+  @IsString()
+  short_description?: string;
+
+  @ApiProperty({ example: 'Specifications text/HTML', required: false })
+  @IsOptional()
+  @IsString()
+  specifications?: string;
+
+  @ApiProperty({
+    example: [{ name: 'Đen', hex: '#000000', in_stock: true }],
+    required: false,
+  })
+  @IsOptional()
+  @IsArray()
+  colors?: Record<string, any>[];
 
   @ApiProperty({ example: 99.99 })
   @IsNumber()
@@ -73,6 +104,12 @@ export class CreateProductDto {
   @IsOptional()
   @IsObject()
   attributes?: Record<string, any>;
+
+  @ApiProperty({ example: ['data:image/jpeg;base64,...'], required: false })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  images?: string[];
 }
 
 export class UpdateProductDto extends PartialType(CreateProductDto) {}

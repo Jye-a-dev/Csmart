@@ -44,4 +44,8 @@ export class OrdersService {
   async countBy(filters: Record<string, any>): Promise<number> {
     return this.ordersRepository.countBy('orders', filters);
   }
+
+  async getTotalRevenue(): Promise<number> {
+    return this.ordersRepository.getTotalRevenue();
+  }
 }

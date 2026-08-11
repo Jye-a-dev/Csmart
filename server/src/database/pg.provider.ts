@@ -17,6 +17,17 @@ export const PgProvider: Provider = {
     try {
       const client = await pool.connect();
       logger.log('Database connection established successfully');
+
+      // Auto-migrate database table schema for category and product images if columns do not exist
+      await client.query(`
+        ALTER TABLE categories ADD COLUMN IF NOT EXISTS image_url_1 TEXT;
+        ALTER TABLE categories ADD COLUMN IF NOT EXISTS image_url_2 TEXT;
+        ALTER TABLE products ADD COLUMN IF NOT EXISTS images TEXT[] DEFAULT '{}';
+        ALTER TABLE products ADD COLUMN IF NOT EXISTS short_description TEXT;
+        ALTER TABLE products ADD COLUMN IF NOT EXISTS specifications TEXT;
+        ALTER TABLE products ADD COLUMN IF NOT EXISTS colors JSONB DEFAULT '[]';
+      `);
+
       client.release();
     } catch (error) {
       const errorStack = error instanceof Error ? error.stack : undefined;

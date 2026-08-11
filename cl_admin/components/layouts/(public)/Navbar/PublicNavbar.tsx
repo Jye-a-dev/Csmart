@@ -2,21 +2,31 @@
 
 import Link from 'next/link';
 import { useSyncExternalStore } from 'react';
-import { Terminal, LogOut } from 'lucide-react';
+import { Terminal } from 'lucide-react';
 import { useAuth } from '@/hooks';
 import type { User } from '@/types/entities/user';
 
+// Module-level cache — giữ stable reference giữa các lần render
+let _cachedRaw: string | null = null;
+let _cachedUser: User | null = null;
+
 // Read user from localStorage — called on every external store change
 function getUserSnapshot(): User | null {
-  const str = localStorage.getItem('user');
-  if (!str) return null;
-  try {
-    return JSON.parse(str) as User;
-  } catch {
+  const raw = localStorage.getItem('user');
+  // Chỉ parse lại khi raw string thực sự thay đổi → trả stable reference
+  if (raw === _cachedRaw) return _cachedUser;
+  _cachedRaw = raw;
+  if (!raw) {
+    _cachedUser = null;
     return null;
   }
+  try {
+    _cachedUser = JSON.parse(raw) as User;
+  } catch {
+    _cachedUser = null;
+  }
+  return _cachedUser;
 }
-
 // SSR snapshot: always null (no localStorage on server)
 function getServerSnapshot(): null {
   return null;

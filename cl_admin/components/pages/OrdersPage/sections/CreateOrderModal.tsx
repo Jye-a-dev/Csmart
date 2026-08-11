@@ -166,7 +166,7 @@ export default function CreateOrderModal({
               type="text"
               value={newAddress}
               onChange={(e) => setNewAddress(e.target.value)}
-              placeholder="Số nhà, Tên đường, Quận/Huyện, Thành phố..."
+              placeholder="Số nhà, Tên đường, Quận/Huyện (cũ), Thành phố..."
               className="w-full px-3 py-2 border-2 border-[#09090B] text-sm focus:outline-none shadow-[2px_2px_0px_0px_#09090B]"
               required
             />

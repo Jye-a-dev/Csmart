@@ -8,7 +8,7 @@ import { ProductStatus } from '@/types/entities/product';
 import { StatsGrid, DashboardBento } from './sections';
 
 export default function DashboardPage() {
-  const { findAllOrders, countAllOrders, updateOrder } = useOrders();
+  const { findAllOrders, countAllOrders, getTotalRevenue, updateOrder } = useOrders();
   const { countProductsBy } = useProducts();
   const { countLogsBy, findAllLogs, updateLog } = useAiLogs();
 
@@ -32,26 +32,24 @@ export default function DashboardPage() {
       const recentOrders = await findAllOrders({ limit: 8 });
       setOrders(recentOrders);
 
-      // Tính tổng doanh thu thực tế từ các đơn hàng thành công (DELIVERED hoặc SHIPPED)
-      const completedRevenue = recentOrders
-        .filter(o => o.status === OrderStatus.DELIVERED || o.status === OrderStatus.SHIPPED)
-        .reduce((sum, o) => sum + Number(o.total_amount), 0);
+      // 2. Lấy tổng doanh thu thực tế trực tiếp từ toàn bộ đơn hàng trong DB
+      const completedRevenue = await getTotalRevenue();
 
-      // 2. Đọc tổng số lượng đơn hàng
+      // 3. Đọc tổng số lượng đơn hàng
       const orderCount = await countAllOrders();
 
-      // 3. Đọc số lượng sản phẩm hết hàng
+      // 4. Đọc số lượng sản phẩm hết hàng
       const outOfStockCount = await countProductsBy({ status: ProductStatus.OUT_OF_STOCK });
 
-      // 4. Đếm số yêu cầu cần duyệt kiểm duyệt thủ công (HITL)
+      // 5. Đếm số yêu cầu cần duyệt kiểm duyệt thủ công (HITL)
       const reviewCount = await countLogsBy({ flag_for_review: true });
 
-      // 5. Lấy danh sách nhật ký câu lệnh AI gần đây
+      // 6. Lấy danh sách nhật ký câu lệnh AI gần đây
       const logs = await findAllLogs({ limit: 10 });
       setRecentLogs(logs);
 
       setStats({
-        todayRevenue: completedRevenue || 24500000, // Fallback nếu DB trống
+        todayRevenue: completedRevenue, // Dữ liệu thật từ DB, không mock fallback
         totalOrders: orderCount,
         outOfStock: outOfStockCount,
         pendingReview: reviewCount
@@ -61,7 +59,7 @@ export default function DashboardPage() {
     } finally {
       setLoading(false);
     }
-  }, [findAllOrders, countAllOrders, countProductsBy, countLogsBy, findAllLogs]);
+  }, [findAllOrders, getTotalRevenue, countAllOrders, countProductsBy, countLogsBy, findAllLogs]);
 
   useEffect(() => {
     const timer = setTimeout(() => {

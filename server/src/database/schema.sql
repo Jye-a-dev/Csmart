@@ -82,6 +82,8 @@ CREATE TABLE categories (
     slug VARCHAR(120) UNIQUE NOT NULL,
     description TEXT,
     parent_id UUID REFERENCES categories(id) ON DELETE SET NULL,
+    image_url_1 TEXT,
+    image_url_2 TEXT,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 
@@ -185,3 +187,39 @@ CREATE INDEX idx_orders_user ON orders(user_id);
 CREATE INDEX idx_orders_code ON orders(order_code);
 CREATE INDEX idx_order_items_shipping ON order_items(shipping_status);
 CREATE INDEX idx_order_items_tracking ON order_items(tracking_number);
+
+-- ============================================================================
+-- 6. BẢNG HUMAN-IN-THE-LOOP (HITL) REVIEW QUEUE
+-- ============================================================================
+
+-- Enum trạng thái review
+CREATE TYPE hitl_status AS ENUM (
+    'PENDING',   -- Chờ Admin/Support xem xét
+    'APPROVED',  -- Đã duyệt — kết quả AI được chấp nhận
+    'REJECTED',  -- Đã từ chối — kết quả AI bị loại bỏ
+    'LABELLED'   -- Đã gán nhãn — dùng để fine-tune lại model
+);
+
+-- Hàng chờ review thủ công cho các AI request có flag_for_review=true hoặc confidence thấp
+CREATE TABLE ai_review_queue (
+    id SERIAL PRIMARY KEY,
+    log_id INT REFERENCES ai_request_logs(id) ON DELETE CASCADE,
+    endpoint VARCHAR(50) NOT NULL,
+    user_id INT REFERENCES users(id) ON DELETE SET NULL,
+    input_text TEXT,
+    output_json JSONB NOT NULL,
+    confidence_score REAL,
+    reviewer_id INT REFERENCES users(id) ON DELETE SET NULL,
+    status hitl_status DEFAULT 'PENDING' NOT NULL,
+    reviewer_note TEXT,
+    corrected_label TEXT,
+    reviewed_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+CREATE INDEX idx_review_queue_status ON ai_review_queue(status);
+CREATE INDEX idx_review_queue_endpoint ON ai_review_queue(endpoint);
+CREATE INDEX idx_review_queue_user ON ai_review_queue(user_id);
+
+-- Liên kết log với review queue entry (nếu bị flag)
+ALTER TABLE ai_request_logs ADD COLUMN IF NOT EXISTS review_id INT REFERENCES ai_review_queue(id) ON DELETE SET NULL;

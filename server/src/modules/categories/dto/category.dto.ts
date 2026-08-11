@@ -1,5 +1,6 @@
 import { ApiProperty, PartialType } from '@nestjs/swagger';
-import { IsString, IsOptional, IsUUID } from 'class-validator';
+import { IsString, IsOptional } from 'class-validator';
+import { Transform } from 'class-transformer';
 
 export class CreateCategoryDto {
   @ApiProperty({ example: 'Electronics' })
@@ -17,8 +18,21 @@ export class CreateCategoryDto {
 
   @ApiProperty({ example: null, required: false })
   @IsOptional()
-  @IsUUID()
-  parent_id?: string;
+  @Transform(({ value }: { value: unknown }) =>
+    value === '' || value === 'null' || value === 'undefined' ? null : value,
+  )
+  @IsString()
+  parent_id?: string | null;
+
+  @ApiProperty({ example: null, required: false })
+  @IsOptional()
+  @IsString()
+  image_url_1?: string | null;
+
+  @ApiProperty({ example: null, required: false })
+  @IsOptional()
+  @IsString()
+  image_url_2?: string | null;
 }
 
 export class UpdateCategoryDto extends PartialType(CreateCategoryDto) {}

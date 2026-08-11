@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Category, CreateCategoryDto, UpdateCategoryDto } from '@/types/entities/category';
 import { X } from 'lucide-react';
+import CategoryImagePicker from './CategoryImagePicker';
 
 interface CategoryModalProps {
   isOpen: boolean;
@@ -23,6 +24,8 @@ export default function CategoryModal({
   const [slug, setSlug] = useState('');
   const [parentId, setParentId] = useState<string | undefined>(undefined);
   const [description, setDescription] = useState('');
+  const [imageUrl1, setImageUrl1] = useState<string | null>(null);
+  const [imageUrl2, setImageUrl2] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   const generateSlug = (text: string): string => {
@@ -52,11 +55,15 @@ export default function CategoryModal({
           setSlug(category.slug);
           setParentId(category.parent_id || undefined);
           setDescription(category.description || '');
+          setImageUrl1(category.image_url_1 || null);
+          setImageUrl2(category.image_url_2 || null);
         } else {
           setName('');
           setSlug('');
           setParentId(undefined);
           setDescription('');
+          setImageUrl1(null);
+          setImageUrl2(null);
         }
       }, 0);
       return () => clearTimeout(timer);
@@ -72,12 +79,19 @@ export default function CategoryModal({
 
     setSubmitting(true);
     try {
+      const cleanParentId = parentId && parentId !== 'null' && parentId !== 'undefined' && parentId.trim() !== '' ? parentId : undefined;
       const payload: CreateCategoryDto = {
         name,
         slug,
-        parent_id: parentId || undefined,
-        description: description || undefined
+        parent_id: cleanParentId,
+        description: description || undefined,
+        image_url_1: imageUrl1 ? imageUrl1 : null,
+        image_url_2: imageUrl2 ? imageUrl2 : null
       };
+
+      if (!payload.parent_id) {
+        delete payload.parent_id;
+      }
 
       await onSubmit(category?.id, payload);
       onClose();
@@ -89,14 +103,13 @@ export default function CategoryModal({
     }
   };
 
-  // Filter out self from parent candidates to prevent circular reference
-  const availableParents = categories.filter(c => !category || c.id !== category.id);
-
   if (!isOpen) return null;
+
+  const availableParents = categories.filter((c) => !category || c.id !== category.id);
 
   return (
     <div className="fixed inset-0 bg-[#09090B]/50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white border-4 border-[#09090B] w-full max-w-md p-6 shadow-[8px_8px_0px_0px_#09090B] relative">
+      <div className="bg-white border-4 border-[#09090B] w-full max-w-lg p-6 shadow-[8px_8px_0px_0px_#09090B] relative max-h-[90vh] overflow-y-auto">
         <button
           onClick={onClose}
           disabled={submitting}
@@ -106,7 +119,7 @@ export default function CategoryModal({
         </button>
 
         <h2 className="text-xl font-extrabold uppercase border-b-2 border-[#09090B] pb-3 mb-6">
-          {category ? '📝 Sửa danh mục' : '➕ Thêm danh mục mới'}
+          {category ? '📝 Sửa Danh Mục' : '➕ Thêm Danh Mục Mới'}
         </h2>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -116,8 +129,8 @@ export default function CategoryModal({
               type="text"
               value={name}
               onChange={handleNameChange}
-              placeholder="Vd: Quần áo nam"
-              className="w-full px-3 py-2 border-2 border-[#09090B] text-sm focus:outline-none bg-white"
+              placeholder="Ví dụ: Áo Sơ Mi"
+              className="w-full px-3 py-2 border-2 border-[#09090B] font-mono text-sm focus:outline-none bg-white"
               required
             />
           </div>
@@ -128,20 +141,20 @@ export default function CategoryModal({
               type="text"
               value={slug}
               onChange={(e) => setSlug(e.target.value)}
-              placeholder="quan-ao-nam"
+              placeholder="ao-so-mi"
               className="w-full px-3 py-2 border-2 border-[#09090B] font-mono text-sm focus:outline-none bg-white"
               required
             />
           </div>
 
           <div>
-            <label className="block text-xs font-mono font-bold uppercase mb-1">Danh Mục Cha</label>
+            <label className="block text-xs font-mono font-bold uppercase mb-1">Danh Mục Cha (Tùy chọn)</label>
             <select
               value={parentId || ''}
               onChange={(e) => setParentId(e.target.value || undefined)}
               className="w-full px-3 py-2 border-2 border-[#09090B] font-mono text-xs font-bold focus:outline-none bg-white cursor-pointer"
             >
-              <option value="">Không có</option>
+              <option value="">Không có (Danh mục gốc)</option>
               {availableParents.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.name}
@@ -151,13 +164,19 @@ export default function CategoryModal({
           </div>
 
           <div>
-            <label className="block text-xs font-mono font-bold uppercase mb-1">Mô tả danh mục</label>
+            <label className="block text-xs font-mono font-bold uppercase mb-1">Mô tả</label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Nhập mô tả danh mục..."
-              className="w-full px-3 py-2 border-2 border-[#09090B] text-sm focus:outline-none h-20 resize-none bg-white"
+              placeholder="Mô tả chi tiết về danh mục này..."
+              className="w-full px-3 py-2 border-2 border-[#09090B] font-sans text-xs focus:outline-none h-20 resize-none bg-white"
             />
+          </div>
+
+          {/* Local Image Uploaders */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 border-2 border-[#09090B] p-3 bg-zinc-100">
+            <CategoryImagePicker label="Hình ảnh 1 (Local)" imageUrl={imageUrl1} onChange={setImageUrl1} />
+            <CategoryImagePicker label="Hình ảnh 2 (Local)" imageUrl={imageUrl2} onChange={setImageUrl2} />
           </div>
 
           <div className="flex justify-end gap-3 border-t-2 border-[#09090B] pt-4 mt-6">

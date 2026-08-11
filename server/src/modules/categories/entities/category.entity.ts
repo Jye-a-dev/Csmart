@@ -16,6 +16,12 @@ export class Category {
   @ApiProperty({ example: null, required: false })
   parent_id?: string;
 
+  @ApiProperty({ example: 'data:image/png;base64,...', required: false })
+  image_url_1?: string;
+
+  @ApiProperty({ example: 'data:image/png;base64,...', required: false })
+  image_url_2?: string;
+
   @ApiProperty({ example: '2026-08-02T22:06:59.000Z' })
   created_at: Date;
 }

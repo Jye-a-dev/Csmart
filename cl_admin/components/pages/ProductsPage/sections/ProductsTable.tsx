@@ -1,8 +1,9 @@
 'use client';
 
+import { useState } from 'react';
 import { Product, ProductStatus } from '@/types/entities/product';
 import { Category } from '@/types/entities/category';
-import { Search, ChevronDown, Edit, Trash2 } from 'lucide-react';
+import { Search, Edit, Trash2, Filter } from 'lucide-react';
 
 interface ProductsTableProps {
   products: Product[];
@@ -12,8 +13,8 @@ interface ProductsTableProps {
   onDelete: (id: number) => void;
   searchTerm: string;
   setSearchTerm: (val: string) => void;
-  selectedCategory: string;
-  setSelectedCategory: (val: string) => void;
+  selectedCategory?: string;
+  setSelectedCategory?: (val: string) => void;
 }
 
 export default function ProductsTable({
@@ -24,9 +25,9 @@ export default function ProductsTable({
   onDelete,
   searchTerm,
   setSearchTerm,
-  selectedCategory,
-  setSelectedCategory
+  selectedCategory = 'ALL',
 }: ProductsTableProps) {
+  const [statusFilter, setStatusFilter] = useState<string>('ALL');
 
   const getStatusStyle = (status: ProductStatus) => {
     switch (status) {
@@ -52,13 +53,14 @@ export default function ProductsTable({
   const filteredProducts = products.filter(p => {
     const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
                           p.sku.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCat = selectedCategory === 'ALL' || String(p.category_id) === selectedCategory;
-    return matchesSearch && matchesCat;
+    const matchesCat = !selectedCategory || selectedCategory === 'ALL' || String(p.category_id) === selectedCategory;
+    const matchesStatus = statusFilter === 'ALL' || p.status === statusFilter;
+    return matchesSearch && matchesCat && matchesStatus;
   });
 
   return (
     <div className="space-y-6">
-      {/* Filters */}
+      {/* Filters Bar */}
       <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
         <div className="md:col-span-8 relative">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-zinc-500">
@@ -75,19 +77,18 @@ export default function ProductsTable({
         
         <div className="md:col-span-4 relative">
           <select
-            value={selectedCategory}
-            onChange={(e) => setSelectedCategory(e.target.value)}
-            className="w-full px-4 py-3 border-2 border-[#09090B] focus:outline-none font-mono text-sm bg-white shadow-[3px_3px_0px_0px_#09090B] appearance-none cursor-pointer"
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="w-full px-4 py-3 border-2 border-[#09090B] focus:outline-none font-mono text-xs font-bold uppercase bg-white shadow-[3px_3px_0px_0px_#09090B] appearance-none cursor-pointer text-[#09090B]"
           >
-            <option value="ALL">TẤT CẢ DANH MỤC</option>
-            {categories.map((cat) => (
-              <option key={cat.id} value={cat.id}>
-                {cat.name.toUpperCase()}
-              </option>
-            ))}
+            <option value="ALL">🔍 LỌC THEO: TẤT CẢ TRẠNG THÁI</option>
+            <option value={ProductStatus.IN_STOCK}>🟢 CÒN HÀNG (IN_STOCK)</option>
+            <option value={ProductStatus.OUT_OF_STOCK}>🔴 HẾT HÀNG (OUT_OF_STOCK)</option>
+            <option value={ProductStatus.PRE_ORDER}>🟡 ĐẶT TRƯỚC (PRE_ORDER)</option>
+            <option value={ProductStatus.DISCONTINUED}>⚪ NGỪNG BÁN (DISCONTINUED)</option>
           </select>
           <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-zinc-600">
-            <ChevronDown size={16} />
+            <Filter size={16} />
           </div>
         </div>
       </div>
@@ -127,13 +128,38 @@ export default function ProductsTable({
                       {p.sku}
                     </td>
                     <td className="py-4 px-4 font-bold text-[#09090B] max-w-xs truncate" title={p.name}>
-                      {p.name}
+                      <div className="flex items-center gap-2.5">
+                        {p.images && p.images.length > 0 ? (
+                          /* eslint-disable-next-line @next/next/no-img-element */
+                          <img
+                            src={p.images[0]}
+                            alt={p.name}
+                            className="w-9 h-9 object-cover border-2 border-[#09090B] shrink-0 bg-white"
+                          />
+                        ) : (
+                          <div className="w-9 h-9 border-2 border-dashed border-zinc-300 bg-zinc-100 shrink-0 flex items-center justify-center text-[10px] font-mono text-zinc-400">
+                            N/A
+                          </div>
+                        )}
+                        <span className="truncate">{p.name}</span>
+                      </div>
                     </td>
                     <td className="py-4 px-4 text-zinc-500 font-mono text-xs">
                       {getCategoryName(p.category_id)}
                     </td>
                     <td className="py-4 px-4 text-right font-mono font-bold text-[#09090B]">
-                      {Number(p.base_price).toLocaleString('vi-VN')}đ
+                      {p.discount_price !== undefined && p.discount_price !== null && Number(p.discount_price) > 0 ? (
+                        <div className="flex flex-col items-end">
+                          <span className="text-[#F97316] font-extrabold text-sm">
+                            {Number(p.discount_price).toLocaleString('vi-VN')}đ
+                          </span>
+                          <span className="text-zinc-400 text-xs line-through font-normal">
+                            {Number(p.base_price).toLocaleString('vi-VN')}đ
+                          </span>
+                        </div>
+                      ) : (
+                        <span>{Number(p.base_price).toLocaleString('vi-VN')}đ</span>
+                      )}
                     </td>
                     <td className="py-4 px-4 text-center font-mono text-[#09090B]">
                       {p.stock_quantity}

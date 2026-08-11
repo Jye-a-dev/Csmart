@@ -113,6 +113,19 @@ export function useOrders() {
     }
   }, []);
 
+  const getTotalRevenue = useCallback(async (): Promise<number> => {
+    setLoading(true);
+    setError(null);
+    try {
+      return await apiClient<number>('/orders/revenue/total');
+    } catch (err) {
+      setError(err as Error);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   return {
     loading,
     error,
@@ -120,8 +133,10 @@ export function useOrders() {
     findAllOrders,
     countAllOrders,
     countOrdersBy,
+    getTotalRevenue,
     findOneOrder,
     updateOrder,
     removeOrder,
   };
 }
+

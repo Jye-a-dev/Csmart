@@ -25,6 +25,9 @@ export class AiRequestLog {
   @ApiProperty({ example: 120, required: false })
   execution_time_ms?: number;
 
+  @ApiProperty({ example: 7, required: false })
+  review_id?: number;
+
   @ApiProperty({ example: '2026-08-02T22:06:59.000Z' })
   created_at: Date;
 }

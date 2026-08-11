@@ -5,3 +5,8 @@ export { default as CategoryModal } from './CategoryModal';
 export { default as ProductsHeader } from './ProductsHeader';
 export { default as ProductsTabs } from './ProductsTabs';
 export { default as CategoryCard } from './CategoryCard';
+export { default as ConfirmDeleteModal } from './ConfirmDeleteModal';
+export { default as ProductRichTextEditor } from './ProductRichTextEditor';
+export { default as ProductImagePicker } from './ProductImagePicker';
+export { default as CategoryImagePicker } from './CategoryImagePicker';
+export { default as ProductColorManager } from './ProductColorManager';

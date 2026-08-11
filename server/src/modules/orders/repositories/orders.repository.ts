@@ -1,11 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { BaseRepository } from '../../../database/base.repository';
 import { Order, OrderItem } from '../entities/order.entity';
-import {
-  CreateOrderDto,
-  UpdateOrderDto,
-  CreateOrderItemDto,
-} from '../dto/order.dto';
+import { CreateOrderDto, UpdateOrderDto } from '../dto/order.dto';
 
 @Injectable()
 export class OrdersRepository extends BaseRepository {
@@ -165,5 +161,15 @@ export class OrdersRepository extends BaseRepository {
     const sql = `DELETE FROM orders WHERE id = $1 RETURNING id`;
     const res = await this.queryOne<{ id: number }>(sql, [id]);
     return !!res;
+  }
+
+  async getTotalRevenue(): Promise<number> {
+    const sql = `
+      SELECT COALESCE(SUM(total_amount), 0)::numeric as total_revenue
+      FROM orders
+      WHERE status IN ('DELIVERED', 'SHIPPED', 'PROCESSING')
+    `;
+    const res = await this.queryOne<{ total_revenue: string | number }>(sql);
+    return Number(res?.total_revenue || 0);
   }
 }

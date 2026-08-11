@@ -17,6 +17,8 @@ import { AiLogsModule } from './modules/ai-logs/ai-logs.module';
 import { CommonServicesModule } from './common/services/common-services.module';
 import { AiTasksModule } from './modules/ai-tasks/ai-tasks.module';
 import { CopilotModule } from './modules/copilot/copilot.module';
+import { AiProxyModule } from './modules/ai-proxy/ai-proxy.module';
+import { HitlModule } from './modules/hitl/hitl.module';
 
 @Module({
   imports: [
@@ -45,6 +47,8 @@ import { CopilotModule } from './modules/copilot/copilot.module';
     PaymentsModule,
     FaqsModule,
     AiLogsModule,
+    AiProxyModule,
+    HitlModule,
   ],
 
   controllers: [AppController],

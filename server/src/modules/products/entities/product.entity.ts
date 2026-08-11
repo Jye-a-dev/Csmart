@@ -20,11 +20,26 @@ export class Product {
   @ApiProperty({ example: 'awesome-product' })
   slug: string;
 
-  @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440000', required: false })
+  @ApiProperty({
+    example: '550e8400-e29b-41d4-a716-446655440000',
+    required: false,
+  })
   category_id?: string;
 
   @ApiProperty({ example: 'Product description details', required: false })
   description?: string;
+
+  @ApiProperty({ example: 'Short summary of the product', required: false })
+  short_description?: string;
+
+  @ApiProperty({ example: 'Technical specifications', required: false })
+  specifications?: string;
+
+  @ApiProperty({
+    example: [{ name: 'Đen', hex: '#000000', in_stock: true }],
+    required: false,
+  })
+  colors?: Record<string, any>[];
 
   @ApiProperty({ example: 99.99 })
   base_price: number;
@@ -46,6 +61,9 @@ export class Product {
 
   @ApiProperty({ example: { color: 'red', size: 'M' }, required: false })
   attributes?: Record<string, any>;
+
+  @ApiProperty({ example: ['data:image/jpeg;base64,...'], required: false })
+  images?: string[];
 
   @ApiProperty({ example: '2026-08-02T22:06:59.000Z' })
   created_at: Date;

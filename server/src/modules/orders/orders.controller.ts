@@ -45,6 +45,13 @@ export class OrdersController {
     return this.ordersService.countAll();
   }
 
+  @Get('revenue/total')
+  @ApiOperation({ summary: 'Get total revenue from successful orders' })
+  @ApiResponse({ status: 200, type: Number })
+  getTotalRevenue() {
+    return this.ordersService.getTotalRevenue();
+  }
+
   @Get('count/by')
   @ApiOperation({ summary: 'Count orders by filter' })
   @ApiQuery({ name: 'user_id', required: false, type: Number })
