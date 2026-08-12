@@ -1,4 +1,6 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Inject } from '@nestjs/common';
+import { Pool } from 'pg';
+import { PG_CONNECTION } from '../../database/pg.provider';
 import { AiClientService } from '../../common/services/ai-client.service';
 import { AiLogsService } from '../ai-logs/ai-logs.service';
 import { HitlService } from '../hitl/hitl.service';
@@ -20,6 +22,7 @@ export class AiProxyService {
     private readonly aiClient: AiClientService,
     private readonly aiLogsService: AiLogsService,
     private readonly hitlService: HitlService,
+    @Inject(PG_CONNECTION) private readonly pool: Pool,
   ) {}
 
   /**
@@ -185,9 +188,11 @@ export class AiProxyService {
       generated_sql: '-- INVALID_QUERY',
       confidence_score: 0,
       flag_for_review: true,
+      result: [] as unknown[],
+      error: 'FastAPI AI Engine connection failed',
     };
 
-    return this.proxyAndLog(
+    const res = await this.proxyAndLog(
       'text-to-sql',
       () =>
         this.aiClient.request<typeof fallback>(
@@ -203,5 +208,56 @@ export class AiProxyService {
       userId,
       fallback,
     );
+
+    // Execute the generated SQL query against PostgreSQL database if present
+    const sql = res.generated_sql?.trim();
+    if (sql && !sql.startsWith('--')) {
+      // Guardrail: Only allow read-only SELECT or WITH statements
+      const cleanSql = sql.toLowerCase();
+      if (!cleanSql.startsWith('select') && !cleanSql.startsWith('with')) {
+        return {
+          ...res,
+          result: [],
+          error: 'Chỉ cho phép thực thi truy vấn READ-ONLY (SELECT)',
+        };
+      }
+
+      const startTime = Date.now();
+      try {
+        const queryRes = await this.pool.query(sql);
+        return {
+          ...res,
+          result: this.sanitizeSqlRows(queryRes.rows as Record<string, unknown>[]),
+          execution_time_ms: Date.now() - startTime,
+        };
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        return {
+          ...res,
+          result: [],
+          error: `SQL Execution Error: ${msg}`,
+          execution_time_ms: Date.now() - startTime,
+        };
+      }
+    }
+
+    return res;
+  }
+
+  /** Redact sensitive security attributes (password_hash, tokens, secrets) from SQL results */
+  private sanitizeSqlRows(rows: Record<string, unknown>[]): Record<string, unknown>[] {
+    const sensitiveKeys = ['password', 'password_hash', 'secret', 'token', 'access_token', 'refresh_token'];
+    return rows.map((row) => {
+      if (!row || typeof row !== 'object') return row;
+      const cleanRow: Record<string, unknown> = {};
+      for (const [key, value] of Object.entries(row)) {
+        if (sensitiveKeys.some((s) => key.toLowerCase().includes(s))) {
+          cleanRow[key] = '[REDACTED]';
+        } else {
+          cleanRow[key] = value;
+        }
+      }
+      return cleanRow;
+    });
   }
 }

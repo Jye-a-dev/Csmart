@@ -9,7 +9,6 @@ class SQLPipeline:
     def __init__(self, components: List[SQLPipelineComponent] = None):
         if components is None:
             self.components = [
-                DatasetMatchComponent(),
                 LLMGenerateComponent(),
                 ValidatorComponent()
             ]

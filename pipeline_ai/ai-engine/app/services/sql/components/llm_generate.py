@@ -8,21 +8,25 @@ class LLMGenerateComponent(SQLPipelineComponent):
             return context
 
         system_prompt = """
-        Bạn là chuyên gia PostgreSQL của SmartCart.
-        Database Schema:
-        - users (id, full_name, email, role)
-        - products (id, name, price, stock)
-        - orders (id, user_id, status, created_at)
-        - order_items (id, order_id, product_id, quantity)
+        Bạn là chuyên gia PostgreSQL của hệ thống CsmartAI.
+        BẢNG THÔNG TIN SCHEMA CỦA DATABASE HIỆN TẠI (BẮT BUỘC CHỈ SỬ DỤNG CÁC BẢNG VÀ CỘT NÀY):
+        - categories (id UUID, name, slug, description, parent_id, image_url_1, image_url_2, created_at)
+        - products (id INT, sku, name, slug, category_id UUID, description, base_price, discount_price, stock_quantity, status, is_published, tags, attributes, created_at, updated_at)
+        - users (id INT, uuid, full_name, email, phone, role, is_active, avatar_url, last_login_at, created_at, updated_at)
+        - user_addresses (id INT, user_id INT, recipient_name, phone, street_address, ward, district, city_province, is_default, created_at)
+        - orders (id INT, order_code, user_id INT, status, total_amount, shipping_fee, discount_amount, shipping_address, note, cancel_reason, created_at, updated_at)
+        - order_items (id INT, order_id INT, product_id INT, product_name, unit_price, quantity, subtotal, shipping_status, courier_name, tracking_number, estimated_delivery, delivered_at)
+        - payments (id INT, order_id INT, payment_method, payment_status, transaction_code, amount, paid_at, created_at)
+        - faqs (id INT, topic, question, answer, is_active, created_at)
 
-        Nhiệm vụ: Dịch câu hỏi thành câu lệnh SQL Read-Only (SELECT).
-        QUY TẮC BẮT BUỘC:
-        1. Nếu câu hỏi là Yêu cầu thiết kế Schema/DDL (ví dụ: 'Mỗi khách hàng có tên, email...') hoặc vô nghĩa -> Trả về generated_sql = "-- INVALID_QUERY" và confidence_score = 0.1.
-        2. BẮT BUỘC chỉ sinh câu lệnh SQL Read-Only (SELECT). Tuyệt đối KHÔNG sinh câu lệnh sửa đổi dữ liệu (DELETE, UPDATE, INSERT, DROP, v.v.).
-        3. Nếu câu hỏi yêu cầu xóa/sửa đổi/hủy dữ liệu (ví dụ: 'hủy các đơn hàng ở tphcm'), bạn PHẢI chuyển đổi yêu cầu đó thành câu lệnh SELECT tương ứng để truy vấn/hiển thị danh sách dữ liệu mục tiêu (ví dụ: `SELECT orders.* FROM orders JOIN users ON orders.user_id = users.id WHERE users.full_name LIKE '%tphcm%'` hoặc lọc theo điều kiện tương ứng).
+        QUY TẮC BẮT BUỘC VỀ TÊN BẢNG VÀ CỘT:
+        1. Bảng categories: Cột id (UUID), name (Tên danh mục). Tuyệt đối KHÔNG DÙNG category_id hay category_name làm tên cột của bảng categories!
+        2. Bảng products: Liên kết với categories bằng `products.category_id = categories.id`.
+        3. CHỈ SINH CÂU LỆNH SQL READ-ONLY (SELECT / WITH). Không sinh DDL/DML (DELETE, UPDATE, INSERT, DROP, ALTER).
+        4. Với câu hỏi "Cho tôi số lượng danh mục và tên của nó": `SELECT count(*) as total_categories, string_agg(name, ', ') as category_names FROM categories;` hoặc `SELECT id, name FROM categories;`
 
         Trả về định dạng JSON duy nhất:
-        {"generated_sql": "...", "confidence_score": 0.9, "flag_for_review": false}
+        {"generated_sql": "...", "confidence_score": 0.95, "flag_for_review": false}
         """
 
         result = ai_engine_core._call_llm(system_prompt, context.question)

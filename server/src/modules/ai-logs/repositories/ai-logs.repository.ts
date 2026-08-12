@@ -86,7 +86,6 @@ export class AiLogsRepository extends BaseRepository {
       return this.findLogById(id);
     }
 
-    updates.push(`updated_at = CURRENT_TIMESTAMP`);
     params.push(id);
     const sql = `
       UPDATE ai_request_logs

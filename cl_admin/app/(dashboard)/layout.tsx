@@ -17,7 +17,14 @@ import {
   ShieldCheck,
   Terminal,
   Menu,
-  X
+  X,
+  Bot,
+  ScrollText,
+  FlaskConical,
+  DatabaseZap,
+  CreditCard,
+  FolderTree,
+  HelpCircle,
 } from 'lucide-react';
 type DashboardLayoutProps = {
   children: ReactNode;
@@ -47,13 +54,37 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     router.push('/login');
   };
 
-  const navItems = [
-    { name: 'Tổng Quan', href: '/dashboard', icon: LayoutDashboard },
-    { name: 'Đơn Hàng', href: '/orders', icon: ShoppingBag },
-    { name: 'Sản Phẩm', href: '/products', icon: Package },
-    { name: 'Khách Hàng', href: '/customers', icon: Users },
-    { name: 'Cài Đặt', href: '#settings', icon: Settings },
+  const navGroups = [
+    {
+      label: 'NGHIỆP VỤ',
+      items: [
+        { name: 'Tổng Quan', href: '/dashboard', icon: LayoutDashboard },
+        { name: 'Đơn Hàng', href: '/orders', icon: ShoppingBag },
+        { name: 'Sản Phẩm', href: '/products', icon: Package },
+        { name: 'Danh Mục', href: '/categories', icon: FolderTree },
+        { name: 'Thanh Toán', href: '/payments', icon: CreditCard },
+        { name: 'Khách Hàng', href: '/customers', icon: Users },
+      ],
+    },
+    {
+      label: 'AI & VẬN HÀNH',
+      items: [
+        { name: 'HITL Queue', href: '/hitl', icon: Bot },
+        { name: 'AI Logs', href: '/ai-logs', icon: ScrollText },
+        { name: 'AI Evaluator', href: '/ai-evaluator', icon: FlaskConical },
+        { name: 'SQL Console', href: '/sql-console', icon: DatabaseZap },
+      ],
+    },
+    {
+      label: 'HỆ THỐNG',
+      items: [
+        { name: 'FAQs', href: '/faqs', icon: HelpCircle },
+        { name: 'Cài Đặt', href: '/settings', icon: Settings },
+      ],
+    },
   ];
+  // flat list for mobile (reuse same structure)
+  const navItems = navGroups.flatMap((g) => g.items);
 
   return (
     <AuthGuard>
@@ -73,24 +104,31 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 </div>
 
                 {/* Nav Menu */}
-                <nav className="p-4 space-y-2">
-                  {navItems.map((item) => {
-                    const isActive = pathname === item.href;
-                    return (
-                      <a
-                        key={item.name}
-                        href={item.href}
-                        className={`flex items-center gap-3 px-4 py-3 font-mono text-sm font-bold border-2 transition-all shadow-[2px_2px_0px_0px_#09090B] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 ${
-                          isActive
-                            ? 'bg-[#F97316] text-white border-[#09090B]'
-                            : 'bg-white text-[#09090B] border-[#09090B] hover:bg-zinc-50'
-                        }`}
-                      >
-                        <item.icon size={18} />
-                        {item.name}
-                      </a>
-                    );
-                  })}
+                <nav className="p-4 space-y-4 overflow-y-auto flex-1">
+                  {navGroups.map((group) => (
+                    <div key={group.label}>
+                      <p className="font-mono text-[9px] font-black text-zinc-400 uppercase tracking-widest px-2 mb-1.5">{group.label}</p>
+                      <div className="space-y-1">
+                        {group.items.map((item) => {
+                          const isActive = pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href));
+                          return (
+                            <a
+                              key={item.name}
+                              href={item.href}
+                              className={`flex items-center gap-3 px-3 py-2.5 font-mono text-xs font-bold border-2 transition-all shadow-[2px_2px_0px_0px_#09090B] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 ${
+                                isActive
+                                  ? 'bg-[#F97316] text-white border-[#09090B]'
+                                  : 'bg-white text-[#09090B] border-[#09090B] hover:bg-zinc-50'
+                              }`}
+                            >
+                              <item.icon size={15} />
+                              {item.name}
+                            </a>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
                 </nav>
               </div>
 
