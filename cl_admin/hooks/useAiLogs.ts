@@ -73,7 +73,7 @@ export function useAiLogs() {
     }
   }, []);
 
-  const findOneLog = useCallback(async (id: number): Promise<AiRequestLog> => {
+  const findOneLog = useCallback(async (id: string): Promise<AiRequestLog> => {
     setLoading(true);
     setError(null);
     try {
@@ -86,7 +86,7 @@ export function useAiLogs() {
     }
   }, []);
 
-  const updateLog = useCallback(async (id: number, dto: UpdateAiRequestLogDto): Promise<AiRequestLog> => {
+  const updateLog = useCallback(async (id: string, dto: UpdateAiRequestLogDto): Promise<AiRequestLog> => {
     setLoading(true);
     setError(null);
     try {
@@ -102,11 +102,26 @@ export function useAiLogs() {
     }
   }, []);
 
-  const removeLog = useCallback(async (id: number): Promise<void> => {
+  const removeLog = useCallback(async (id: string): Promise<void> => {
     setLoading(true);
     setError(null);
     try {
       await apiClient<void>(`/ai-logs/${id}`, {
+        method: 'DELETE',
+      });
+    } catch (err) {
+      setError(err as Error);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const removeAllLogs = useCallback(async (): Promise<number> => {
+    setLoading(true);
+    setError(null);
+    try {
+      return await apiClient<number>('/ai-logs', {
         method: 'DELETE',
       });
     } catch (err) {
@@ -127,5 +142,6 @@ export function useAiLogs() {
     findOneLog,
     updateLog,
     removeLog,
+    removeAllLogs,
   };
 }

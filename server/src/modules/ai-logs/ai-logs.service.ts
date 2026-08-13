@@ -15,7 +15,7 @@ export class AiLogsService {
     return this.aiLogsRepository.findAllLogs(limit, offset);
   }
 
-  async findOne(id: number): Promise<AiRequestLog> {
+  async findOne(id: string): Promise<AiRequestLog> {
     const log = await this.aiLogsRepository.findLogById(id);
     if (!log) {
       throw new NotFoundException(`AI request log with ID ${id} not found`);
@@ -23,7 +23,7 @@ export class AiLogsService {
     return log;
   }
 
-  async update(id: number, dto: UpdateAiRequestLogDto): Promise<AiRequestLog> {
+  async update(id: string, dto: UpdateAiRequestLogDto): Promise<AiRequestLog> {
     await this.findOne(id);
     const updated = await this.aiLogsRepository.updateLog(id, dto);
     if (!updated) {
@@ -32,9 +32,13 @@ export class AiLogsService {
     return updated;
   }
 
-  async remove(id: number): Promise<void> {
+  async remove(id: string): Promise<void> {
     await this.findOne(id);
     await this.aiLogsRepository.deleteLog(id);
+  }
+
+  async removeAll(): Promise<number> {
+    return this.aiLogsRepository.deleteAllLogs();
   }
 
   async countAll(): Promise<number> {
@@ -45,7 +49,7 @@ export class AiLogsService {
     return this.aiLogsRepository.countBy('ai_request_logs', filters);
   }
 
-  async updateReviewId(logId: number, reviewId: number): Promise<void> {
+  async updateReviewId(logId: string, reviewId: string): Promise<void> {
     return this.aiLogsRepository.updateReviewId(logId, reviewId);
   }
 }

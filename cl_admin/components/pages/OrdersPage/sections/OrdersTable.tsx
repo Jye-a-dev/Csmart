@@ -22,7 +22,7 @@ interface OrdersTableProps {
   onRefresh: () => void;
   onViewDetails: (order: Order) => void;
   onOpenEdit: (order: Order) => void;
-  onDelete: (id: number) => void;
+  onDelete: (id: string) => void;
   formatUserUuid: (user: User) => string;
 }
 

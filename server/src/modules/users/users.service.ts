@@ -32,7 +32,7 @@ export class UsersService {
     return this.usersRepository.findAllUsers(limit, offset);
   }
 
-  async findOne(id: number): Promise<User> {
+  async findOne(id: string): Promise<User> {
     const user = await this.usersRepository.findUserById(id);
     if (!user) {
       throw new NotFoundException(`User with ID ${id} not found`);
@@ -46,7 +46,7 @@ export class UsersService {
     return this.usersRepository.findUserByEmail(email);
   }
 
-  async update(id: number, dto: UpdateUserDto): Promise<User> {
+  async update(id: string, dto: UpdateUserDto): Promise<User> {
     await this.findOne(id);
     let passwordHash: string | undefined;
     if (dto.password) {
@@ -63,7 +63,7 @@ export class UsersService {
     return updated;
   }
 
-  async remove(id: number): Promise<void> {
+  async remove(id: string): Promise<void> {
     await this.findOne(id);
     await this.usersRepository.deleteUser(id);
   }
@@ -76,27 +76,27 @@ export class UsersService {
     return this.usersRepository.countBy('users', filters);
   }
 
-  async updateLastLogin(id: number): Promise<void> {
+  async updateLastLogin(id: string): Promise<void> {
     await this.usersRepository.updateLastLogin(id);
   }
 
   // Address operations
   async createAddress(
-    userId: number,
+    userId: string,
     dto: CreateUserAddressDto,
   ): Promise<UserAddress> {
     await this.findOne(userId);
     return this.usersRepository.createAddress(userId, dto);
   }
 
-  async findAddresses(userId: number): Promise<UserAddress[]> {
+  async findAddresses(userId: string): Promise<UserAddress[]> {
     await this.findOne(userId);
     return this.usersRepository.findAddressesByUserId(userId);
   }
 
   async updateAddress(
-    userId: number,
-    addressId: number,
+    userId: string,
+    addressId: string,
     dto: UpdateUserAddressDto,
   ): Promise<UserAddress> {
     const address = await this.usersRepository.findAddressById(addressId);
@@ -116,7 +116,7 @@ export class UsersService {
     return updated;
   }
 
-  async removeAddress(userId: number, addressId: number): Promise<void> {
+  async removeAddress(userId: string, addressId: string): Promise<void> {
     const address = await this.usersRepository.findAddressById(addressId);
     if (!address || address.user_id !== userId) {
       throw new NotFoundException(

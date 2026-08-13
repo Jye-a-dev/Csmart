@@ -10,7 +10,7 @@ interface OrderDetailModalProps {
   order: Order | null;
   users: User[];
   formatUserUuid: (user: User) => string;
-  onQuickStatusUpdate: (id: number, status: OrderStatus) => Promise<void>;
+  onQuickStatusUpdate: (id: string, status: OrderStatus) => Promise<void>;
   onOpenEdit: (order: Order) => void;
 }
 

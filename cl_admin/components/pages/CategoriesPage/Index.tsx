@@ -4,8 +4,13 @@ import { useState, useEffect, useCallback } from 'react';
 import { useProducts, useCategories } from '@/hooks';
 import { Category, CreateCategoryDto, UpdateCategoryDto } from '@/types/entities/category';
 import { Product } from '@/types/entities/product';
-import { FolderTree, Plus, RefreshCw, Search, ArrowLeft } from 'lucide-react';
+import { FolderTree, Search } from 'lucide-react';
 import { CategoryCard, CategoryModal, ConfirmDeleteModal } from '@/components/pages/ProductsPage/sections';
+import {
+  CategoriesHeader,
+  CategoriesBreadcrumb,
+  CategoriesStats,
+} from './sections';
 
 export default function CategoriesPage() {
   const { loading: productsLoading, findAllProducts } = useProducts();
@@ -71,7 +76,7 @@ export default function CategoriesPage() {
     }
   };
 
-  const activeParent = activeParentId ? categories.find((c) => c.id === activeParentId) : null;
+  const activeParent = activeParentId ? (categories.find((c) => c.id === activeParentId) ?? null) : null;
 
   const filtered = categories.filter((c) => {
     if (search.trim()) {
@@ -91,78 +96,34 @@ export default function CategoriesPage() {
 
   return (
     <div className="space-y-8 font-sans">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b-4 border-[#09090B] pb-6">
-        <div>
-          <div className="flex items-center gap-3 mb-1">
-            <div className="p-2 bg-[#09090B] text-[#F97316]"><FolderTree size={20} /></div>
-            <h1 className="text-3xl font-extrabold tracking-tight uppercase text-[#09090B]">
-              {activeParent ? `Danh mục con: ${activeParent.name}` : 'Quản Lý Danh Mục'}
-            </h1>
-          </div>
-          <p className="font-mono text-xs text-zinc-500">
-            {activeParent
-              ? `Các danh mục con thuộc "${activeParent.name}"`
-              : `${rootCount} danh mục cha · ${subCount} danh mục con · ${products.length} sản phẩm`}
-          </p>
-        </div>
-        <div className="flex items-center gap-3 shrink-0">
-          {activeParentId && (
-            <button
-              onClick={() => setActiveParentId(null)}
-              className="px-4 py-3 border-2 border-[#09090B] bg-white font-mono font-bold text-xs uppercase shadow-[3px_3px_0px_0px_#09090B] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all cursor-pointer flex items-center gap-1.5"
-            >
-              <ArrowLeft size={14} /> Danh mục cha
-            </button>
-          )}
-          <button
-            onClick={load}
-            className="p-3 border-2 border-[#09090B] bg-white shadow-[3px_3px_0px_0px_#09090B] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all cursor-pointer"
-          >
-            <RefreshCw size={15} className={overallLoading ? 'animate-spin' : ''} />
-          </button>
-          <button
-            onClick={() => { setSelectedCategory(null); setIsCategoryOpen(true); }}
-            className="px-5 py-3 border-2 border-[#09090B] bg-[#F97316] text-[#09090B] font-mono font-bold uppercase shadow-[3px_3px_0px_0px_#09090B] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all cursor-pointer flex items-center gap-2 text-xs"
-          >
-            <Plus size={15} /> Thêm Danh Mục
-          </button>
-        </div>
-      </div>
+      {/* Header Section */}
+      <CategoriesHeader
+        activeParent={activeParent}
+        rootCount={rootCount}
+        subCount={subCount}
+        productsCount={products.length}
+        overallLoading={overallLoading}
+        onBackToParent={() => setActiveParentId(null)}
+        onRefresh={load}
+        onOpenCreate={() => { setSelectedCategory(null); setIsCategoryOpen(true); }}
+      />
 
-      {/* Breadcrumb Banner */}
-      {activeParent && (
-        <div className="flex items-center justify-between p-3 border-2 border-[#09090B] bg-[#FAFAFA] font-mono text-xs font-bold">
-          <div className="flex items-center gap-2">
-            <FolderTree size={14} className="text-[#F97316]" />
-            <span>DANH MỤC CON THUỘC: <strong className="uppercase underline">{activeParent.name}</strong></span>
-          </div>
-          <button onClick={() => setActiveParentId(null)} className="text-rose-600 underline hover:text-rose-800 cursor-pointer text-xs">
-            ← Tất cả cha
-          </button>
-        </div>
-      )}
+      {/* Breadcrumb Section */}
+      <CategoriesBreadcrumb
+        activeParent={activeParent}
+        onClearParent={() => setActiveParentId(null)}
+      />
 
-      {/* Stats Bar */}
+      {/* Stats Bar Section */}
       {!activeParentId && (
-        <div className="grid grid-cols-3 gap-4">
-          {[
-            { label: 'Danh mục cha', value: rootCount, color: 'bg-blue-400' },
-            { label: 'Danh mục con', value: subCount, color: 'bg-purple-400' },
-            { label: 'Sản phẩm', value: products.length, color: 'bg-emerald-400' },
-          ].map((s) => (
-            <div key={s.label} className="border-2 border-[#09090B] shadow-[3px_3px_0px_0px_#09090B] bg-white p-4 flex items-center gap-3">
-              <div className={`w-3 h-10 border-2 border-[#09090B] ${s.color}`} />
-              <div>
-                <div className="font-mono text-xl font-black text-[#09090B]">{s.value}</div>
-                <div className="font-mono text-[10px] text-zinc-500 uppercase">{s.label}</div>
-              </div>
-            </div>
-          ))}
-        </div>
+        <CategoriesStats
+          rootCount={rootCount}
+          subCount={subCount}
+          productsCount={products.length}
+        />
       )}
 
-      {/* Search */}
+      {/* Search Bar */}
       <div className="relative">
         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-zinc-400">
           <Search size={15} />
@@ -205,6 +166,7 @@ export default function CategoriesPage() {
         onClose={() => setIsCategoryOpen(false)}
         category={selectedCategory}
         categories={categories}
+        defaultParentId={activeParentId ?? undefined}
         onSubmit={handleSubmit}
       />
 

@@ -15,7 +15,7 @@ export class OrdersService {
     return this.ordersRepository.findAllOrders(limit, offset);
   }
 
-  async findOne(id: number): Promise<Order> {
+  async findOne(id: string): Promise<Order> {
     const order = await this.ordersRepository.findOrderById(id);
     if (!order) {
       throw new NotFoundException(`Order with ID ${id} not found`);
@@ -23,7 +23,7 @@ export class OrdersService {
     return order;
   }
 
-  async update(id: number, dto: UpdateOrderDto): Promise<Order> {
+  async update(id: string, dto: UpdateOrderDto): Promise<Order> {
     await this.findOne(id);
     const updated = await this.ordersRepository.updateOrder(id, dto);
     if (!updated) {
@@ -32,7 +32,7 @@ export class OrdersService {
     return updated;
   }
 
-  async remove(id: number): Promise<void> {
+  async remove(id: string): Promise<void> {
     await this.findOne(id);
     await this.ordersRepository.deleteOrder(id);
   }

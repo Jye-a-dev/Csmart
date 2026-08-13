@@ -15,7 +15,7 @@ export class FaqsService {
     return this.faqsRepository.findAllFaqs(limit, offset);
   }
 
-  async findOne(id: number): Promise<Faq> {
+  async findOne(id: string): Promise<Faq> {
     const faq = await this.faqsRepository.findFaqById(id);
     if (!faq) {
       throw new NotFoundException(`Faq with ID ${id} not found`);
@@ -23,7 +23,7 @@ export class FaqsService {
     return faq;
   }
 
-  async update(id: number, dto: UpdateFaqDto): Promise<Faq> {
+  async update(id: string, dto: UpdateFaqDto): Promise<Faq> {
     await this.findOne(id);
     const updated = await this.faqsRepository.updateFaq(id, dto);
     if (!updated) {
@@ -32,7 +32,7 @@ export class FaqsService {
     return updated;
   }
 
-  async remove(id: number): Promise<void> {
+  async remove(id: string): Promise<void> {
     await this.findOne(id);
     await this.faqsRepository.deleteFaq(id);
   }

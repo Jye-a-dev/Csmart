@@ -16,11 +16,11 @@ export enum PaymentStatus {
 }
 
 export class Payment {
-  @ApiProperty({ example: 1 })
-  id: number;
+  @ApiProperty({ example: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11' })
+  id: string;
 
-  @ApiProperty({ example: 1 })
-  order_id: number;
+  @ApiProperty({ example: 'b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a22' })
+  order_id: string;
 
   @ApiProperty({ example: 'CREDIT_CARD', enum: PaymentMethod })
   payment_method: PaymentMethod;

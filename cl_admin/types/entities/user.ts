@@ -1,5 +1,5 @@
 export interface User {
-  id: number;
+  id: string;
   uuid: string;
   full_name: string;
   email: string;
@@ -13,8 +13,8 @@ export interface User {
 }
 
 export interface UserAddress {
-  id: number;
-  user_id: number;
+  id: string;
+  user_id: string;
   recipient_name: string;
   phone: string;
   street_address: string;

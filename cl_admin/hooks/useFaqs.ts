@@ -69,7 +69,7 @@ export function useFaqs() {
     }
   }, []);
 
-  const findOneFaq = useCallback(async (id: number): Promise<Faq> => {
+  const findOneFaq = useCallback(async (id: string): Promise<Faq> => {
     setLoading(true);
     setError(null);
     try {
@@ -82,7 +82,7 @@ export function useFaqs() {
     }
   }, []);
 
-  const updateFaq = useCallback(async (id: number, dto: UpdateFaqDto): Promise<Faq> => {
+  const updateFaq = useCallback(async (id: string, dto: UpdateFaqDto): Promise<Faq> => {
     setLoading(true);
     setError(null);
     try {
@@ -98,7 +98,7 @@ export function useFaqs() {
     }
   }, []);
 
-  const removeFaq = useCallback(async (id: number): Promise<void> => {
+  const removeFaq = useCallback(async (id: string): Promise<void> => {
     setLoading(true);
     setError(null);
     try {

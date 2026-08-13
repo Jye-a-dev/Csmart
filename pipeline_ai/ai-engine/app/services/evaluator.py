@@ -49,35 +49,5 @@ class SelfEvaluationEngine:
         }
 
 async def log_request(endpoint: str, input_data: dict, output_data: dict, execution_time_ms: int = None):
-    try:
-        # Extract inputs to log
-        input_text = (
-            input_data.get("question") 
-            or input_data.get("query") 
-            or input_data.get("text") 
-            or input_data.get("filename")
-            or ""
-        )
-        confidence_score = output_data.get("confidence_score")
-        flag_for_review = output_data.get("flag_for_review", False)
-
-        query = """
-            INSERT INTO ai_request_logs (
-                endpoint, user_id, input_text, output_json, 
-                confidence_score, flag_for_review, execution_time_ms
-            )
-            VALUES ($1, $2, $3, $4, $5, $6, $7)
-        """
-        await db_service.execute(
-            query,
-            endpoint,
-            None,  # user_id is None since we don't have user authentication in AI engine yet
-            input_text,
-            json.dumps(output_data),
-            confidence_score,
-            flag_for_review,
-            execution_time_ms
-        )
-        logger.info(f"Successfully logged AI request to database: {endpoint}")
-    except Exception as e:
-        logger.error(f"Failed to write request log to database: {e}")
+    """Centralized logging is handled by NestJS AiProxyService to prevent duplicate log records."""
+    return

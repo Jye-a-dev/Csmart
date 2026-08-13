@@ -15,7 +15,7 @@ interface CustomersTableProps {
   onViewDetails: (user: User) => void;
   onOpenEdit: (user: User) => void;
   onToggleActive: (user: User) => void;
-  onDelete: (id: number) => void;
+  onDelete: (id: string) => void;
 }
 
 export default function CustomersTable({
@@ -153,7 +153,7 @@ export default function CustomersTable({
                       </div>
                       <div>
                         <span className="font-extrabold text-[#09090B] block text-sm">{user.full_name}</span>
-                        <span className="text-[10px] text-zinc-500 font-mono">ID: #{user.id} | {user.uuid.substring(0, 8)}...</span>
+                        <span className="text-[10px] text-zinc-500 font-mono">ID: {String(user.uuid || user.id || '').slice(0, 8)}...</span>
                       </div>
                     </div>
                   </td>

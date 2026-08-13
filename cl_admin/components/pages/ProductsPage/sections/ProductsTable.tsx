@@ -10,7 +10,7 @@ interface ProductsTableProps {
   categories: Category[];
   loading: boolean;
   onEdit: (product: Product) => void;
-  onDelete: (id: number) => void;
+  onDelete: (id: string) => void;
   searchTerm: string;
   setSearchTerm: (val: string) => void;
   selectedCategory?: string;
@@ -47,7 +47,7 @@ export default function ProductsTable({
   const getCategoryName = (id?: string) => {
     if (!id) return 'Không danh mục';
     const cat = categories.find(c => c.id === id);
-    return cat ? cat.name : `Danh mục (${id.slice(0,8)}...)`;
+    return cat ? cat.name : `Danh mục (${String(id).slice(0, 8)}...)`;
   };
 
   const filteredProducts = products.filter(p => {

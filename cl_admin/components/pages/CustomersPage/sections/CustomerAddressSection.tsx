@@ -5,11 +5,11 @@ import { MapPin, Plus, Trash2 } from 'lucide-react';
 import { UserAddress, CreateUserAddressDto } from '@/types/entities/user';
 
 interface CustomerAddressSectionProps {
-  userId: number;
+  userId: string;
   addresses: UserAddress[];
   loadingAddresses: boolean;
-  createAddress: (userId: number, dto: CreateUserAddressDto) => Promise<UserAddress>;
-  removeAddress: (userId: number, addressId: number) => Promise<void>;
+  createAddress: (userId: string, dto: CreateUserAddressDto) => Promise<UserAddress>;
+  removeAddress: (userId: string, addressId: string) => Promise<void>;
   onRefresh: () => void;
 }
 
@@ -70,7 +70,7 @@ export default function CustomerAddressSection({
     }
   };
 
-  const handleDeleteAddress = async (addressId: number) => {
+  const handleDeleteAddress = async (addressId: string) => {
     if (confirm('Bạn có chắc muốn xóa địa chỉ này?')) {
       try {
         await removeAddress(userId, addressId);

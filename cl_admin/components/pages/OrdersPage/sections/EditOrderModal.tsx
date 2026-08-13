@@ -8,7 +8,7 @@ interface EditOrderModalProps {
   isOpen: boolean;
   onClose: () => void;
   order: Order | null;
-  onUpdate: (id: number, payload: UpdateOrderDto) => Promise<void>;
+  onUpdate: (id: string, payload: UpdateOrderDto) => Promise<void>;
 }
 
 export default function EditOrderModal({

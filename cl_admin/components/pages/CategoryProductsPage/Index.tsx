@@ -42,7 +42,7 @@ export default function CategoryProductsPage({ categorySlug }: CategoryProductsP
 
   // Confirm Delete Modal State
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
-  const [deleteProductId, setDeleteProductId] = useState<number | null>(null);
+  const [deleteProductId, setDeleteProductId] = useState<string | null>(null);
 
   const loadData = useCallback(async () => {
     if (!categorySlug) return;
@@ -58,20 +58,25 @@ export default function CategoryProductsPage({ categorySlug }: CategoryProductsP
 
         // Find all products to filter
         const prodsData = await findAllProducts({ limit: 150 });
-        const filteredProds = prodsData?.filter(p => p.category_id === cat.id) || [];
-        setProducts(filteredProds);
+        setProducts(prodsData || []);
       }
     } catch (err) {
-      console.error('Failed to load category products data:', err);
+      console.error('Failed to load category products data', err);
     }
   }, [categorySlug, findAllCategories, findAllProducts]);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      void loadData();
-    }, 0);
-    return () => clearTimeout(timer);
+    const t = setTimeout(() => void loadData(), 0);
+    return () => clearTimeout(t);
   }, [loadData]);
+
+  // Sync category state if categories change
+  useEffect(() => {
+    if (categorySlug && categories.length > 0) {
+      const cat = categories.find(c => c.slug === categorySlug);
+      if (cat) setCurrentCategory(cat);
+    }
+  }, [categorySlug, categories]);
 
   // Handle category filter dropdown changes
   useEffect(() => {
@@ -95,7 +100,7 @@ export default function CategoryProductsPage({ categorySlug }: CategoryProductsP
   }, [categorySlug, categories]);
 
   // Product CRUD handlers
-  const handleProductSubmit = async (id?: number, payload?: CreateProductDto | UpdateProductDto) => {
+  const handleProductSubmit = async (id?: string, payload?: CreateProductDto | UpdateProductDto) => {
     if (!payload) return;
     if (id) {
       await updateProduct(id, payload as UpdateProductDto);
@@ -111,7 +116,7 @@ export default function CategoryProductsPage({ categorySlug }: CategoryProductsP
     void loadData();
   };
 
-  const handleProductDeleteClick = (id: number) => {
+  const handleProductDeleteClick = (id: string) => {
     setDeleteProductId(id);
     setIsDeleteOpen(true);
   };

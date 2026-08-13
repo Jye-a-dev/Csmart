@@ -51,14 +51,14 @@ export function useProducts() {
   }, []);
 
   const countProductsBy = useCallback(async (filters?: {
-    category_id?: number;
+    category_id?: string;
     status?: ProductStatus;
   }): Promise<number> => {
     setLoading(true);
     setError(null);
     try {
       const queryParams: Record<string, string> = {};
-      if (filters?.category_id !== undefined) queryParams.category_id = String(filters.category_id);
+      if (filters?.category_id !== undefined) queryParams.category_id = filters.category_id;
       if (filters?.status) queryParams.status = filters.status;
 
       return await apiClient<number>('/products/count/by', {
@@ -87,7 +87,7 @@ export function useProducts() {
     }
   }, []);
 
-  const findOneProduct = useCallback(async (id: number): Promise<Product> => {
+  const findOneProduct = useCallback(async (id: string): Promise<Product> => {
     setLoading(true);
     setError(null);
     try {
@@ -100,7 +100,7 @@ export function useProducts() {
     }
   }, []);
 
-  const updateProduct = useCallback(async (id: number, dto: UpdateProductDto): Promise<Product> => {
+  const updateProduct = useCallback(async (id: string, dto: UpdateProductDto): Promise<Product> => {
     setLoading(true);
     setError(null);
     try {
@@ -116,7 +116,7 @@ export function useProducts() {
     }
   }, []);
 
-  const removeProduct = useCallback(async (id: number): Promise<void> => {
+  const removeProduct = useCallback(async (id: string): Promise<void> => {
     setLoading(true);
     setError(null);
     try {

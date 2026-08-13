@@ -41,7 +41,7 @@ export default function CustomersPage() {
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
   // Load Users & Stats from backend
@@ -73,8 +73,7 @@ export default function CustomersPage() {
     const matchesSearch =
       user.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (user.phone && user.phone.includes(searchTerm)) ||
-      user.uuid.toLowerCase().includes(searchTerm.toLowerCase());
+      String(user.uuid || user.id || '').toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesRole = roleFilter === 'ALL' || user.role === roleFilter;
 
@@ -92,7 +91,7 @@ export default function CustomersPage() {
     void loadData();
   };
 
-  const handleEditSubmit = async (id: number, dto: UpdateUserDto) => {
+  const handleEditSubmit = async (id: string, dto: UpdateUserDto) => {
     await updateUser(id, dto);
     void loadData();
     if (selectedUser?.id === id) {
@@ -115,7 +114,7 @@ export default function CustomersPage() {
     }
   };
 
-  const handleOpenDelete = (id: number) => {
+  const handleOpenDelete = (id: string) => {
     setDeletingId(id);
     setIsDeleteOpen(true);
   };

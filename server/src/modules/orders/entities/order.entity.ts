@@ -20,14 +20,14 @@ export enum ItemShippingStatus {
 }
 
 export class OrderItem {
-  @ApiProperty({ example: 1 })
-  id: number;
+  @ApiProperty({ example: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11' })
+  id: string;
 
-  @ApiProperty({ example: 1 })
-  order_id: number;
+  @ApiProperty({ example: 'b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a22' })
+  order_id: string;
 
-  @ApiProperty({ example: 1, required: false })
-  product_id?: number;
+  @ApiProperty({ example: 'c0eebc99-9c0b-4ef8-bb6d-6bb9bd380a33', required: false })
+  product_id?: string;
 
   @ApiProperty({ example: 'Awesome Product' })
   product_name: string;
@@ -58,14 +58,14 @@ export class OrderItem {
 }
 
 export class Order {
-  @ApiProperty({ example: 1 })
-  id: number;
+  @ApiProperty({ example: 'b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a22' })
+  id: string;
 
   @ApiProperty({ example: 'ORD12345' })
   order_code: string;
 
-  @ApiProperty({ example: 1, required: false })
-  user_id?: number;
+  @ApiProperty({ example: 'd0eebc99-9c0b-4ef8-bb6d-6bb9bd380a44', required: false })
+  user_id?: string;
 
   @ApiProperty({ example: 'PENDING', enum: OrderStatus })
   status: OrderStatus;

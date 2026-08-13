@@ -9,9 +9,9 @@ interface CustomerDetailModalProps {
   isOpen: boolean;
   onClose: () => void;
   user: User | null;
-  findAddresses: (userId: number) => Promise<UserAddress[]>;
-  createAddress: (userId: number, dto: CreateUserAddressDto) => Promise<UserAddress>;
-  removeAddress: (userId: number, addressId: number) => Promise<void>;
+  findAddresses: (userId: string) => Promise<UserAddress[]>;
+  createAddress: (userId: string, dto: CreateUserAddressDto) => Promise<UserAddress>;
+  removeAddress: (userId: string, addressId: string) => Promise<void>;
   onOpenEdit: (user: User) => void;
 }
 
@@ -75,7 +75,7 @@ export default function CustomerDetailModal({
                 {user.full_name}
               </h2>
               <span className="font-mono text-[10px] text-[#F97316] uppercase font-bold">
-                UUID: {user.uuid}
+                UUID: {String(user.uuid || user.id || '')}
               </span>
             </div>
           </div>

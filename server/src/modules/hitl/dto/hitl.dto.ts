@@ -6,21 +6,22 @@ import {
   IsObject,
   IsNumber,
   IsNotEmpty,
+  IsUUID,
 } from 'class-validator';
 
 /** Dùng nội bộ để enqueue vào HITL khi pipeline trả flag_for_review */
 export class EnqueueReviewDto {
   @IsOptional()
-  @IsInt()
-  log_id?: number;
+  @IsUUID()
+  log_id?: string;
 
   @IsString()
   @IsNotEmpty()
   endpoint: string;
 
   @IsOptional()
-  @IsInt()
-  user_id?: number;
+  @IsUUID()
+  user_id?: string;
 
   @IsOptional()
   @IsString()

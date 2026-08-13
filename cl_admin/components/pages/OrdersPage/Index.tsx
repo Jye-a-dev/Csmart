@@ -88,7 +88,7 @@ export default function OrdersPage() {
     void loadOrders();
   };
 
-  const handleEditSubmit = async (id: number, payload: UpdateOrderDto) => {
+  const handleEditSubmit = async (id: string, payload: UpdateOrderDto) => {
     await updateOrder(id, payload);
     void loadOrders();
     // Update selectedOrder details state if active
@@ -100,7 +100,7 @@ export default function OrdersPage() {
     }
   };
 
-  const handleQuickStatusUpdate = async (id: number, status: OrderStatus) => {
+  const handleQuickStatusUpdate = async (id: string, status: OrderStatus) => {
     try {
       await updateOrder(id, { status });
       void loadOrders();
@@ -110,7 +110,7 @@ export default function OrdersPage() {
     }
   };
 
-  const handleDeleteOrder = async (id: number) => {
+  const handleDeleteOrder = async (id: string) => {
     if (confirm('Bạn có chắc chắn muốn xóa đơn hàng này không? Hành động này không thể hoàn tác.')) {
       try {
         await removeOrder(id);

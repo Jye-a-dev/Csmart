@@ -15,7 +15,7 @@ export class PaymentsService {
     return this.paymentsRepository.findAllPayments(limit, offset);
   }
 
-  async findOne(id: number): Promise<Payment> {
+  async findOne(id: string): Promise<Payment> {
     const payment = await this.paymentsRepository.findPaymentById(id);
     if (!payment) {
       throw new NotFoundException(`Payment with ID ${id} not found`);
@@ -23,7 +23,7 @@ export class PaymentsService {
     return payment;
   }
 
-  async update(id: number, dto: UpdatePaymentDto): Promise<Payment> {
+  async update(id: string, dto: UpdatePaymentDto): Promise<Payment> {
     await this.findOne(id);
     const updated = await this.paymentsRepository.updatePayment(id, dto);
     if (!updated) {
@@ -32,7 +32,7 @@ export class PaymentsService {
     return updated;
   }
 
-  async remove(id: number): Promise<void> {
+  async remove(id: string): Promise<void> {
     await this.findOne(id);
     await this.paymentsRepository.deletePayment(id);
   }

@@ -79,7 +79,7 @@ export function useUsers() {
     }
   }, []);
 
-  const findOneUser = useCallback(async (id: number): Promise<User> => {
+  const findOneUser = useCallback(async (id: string): Promise<User> => {
     setLoading(true);
     setError(null);
     try {
@@ -92,7 +92,7 @@ export function useUsers() {
     }
   }, []);
 
-  const updateUser = useCallback(async (id: number, dto: UpdateUserDto): Promise<User> => {
+  const updateUser = useCallback(async (id: string, dto: UpdateUserDto): Promise<User> => {
     setLoading(true);
     setError(null);
     try {
@@ -108,7 +108,7 @@ export function useUsers() {
     }
   }, []);
 
-  const removeUser = useCallback(async (id: number): Promise<void> => {
+  const removeUser = useCallback(async (id: string): Promise<void> => {
     setLoading(true);
     setError(null);
     try {
@@ -124,7 +124,7 @@ export function useUsers() {
   }, []);
 
   // User Address Methods
-  const createAddress = useCallback(async (userId: number, dto: CreateUserAddressDto): Promise<UserAddress> => {
+  const createAddress = useCallback(async (userId: string, dto: CreateUserAddressDto): Promise<UserAddress> => {
     setLoading(true);
     setError(null);
     try {
@@ -140,7 +140,7 @@ export function useUsers() {
     }
   }, []);
 
-  const findAddresses = useCallback(async (userId: number): Promise<UserAddress[]> => {
+  const findAddresses = useCallback(async (userId: string): Promise<UserAddress[]> => {
     setLoading(true);
     setError(null);
     try {
@@ -154,8 +154,8 @@ export function useUsers() {
   }, []);
 
   const updateAddress = useCallback(async (
-    userId: number,
-    addressId: number,
+    userId: string,
+    addressId: string,
     dto: UpdateUserAddressDto
   ): Promise<UserAddress> => {
     setLoading(true);
@@ -173,7 +173,7 @@ export function useUsers() {
     }
   }, []);
 
-  const removeAddress = useCallback(async (userId: number, addressId: number): Promise<void> => {
+  const removeAddress = useCallback(async (userId: string, addressId: string): Promise<void> => {
     setLoading(true);
     setError(null);
     try {

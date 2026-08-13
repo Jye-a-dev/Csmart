@@ -1,8 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
 
 export class Faq {
-  @ApiProperty({ example: 1 })
-  id: number;
+  @ApiProperty({ example: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11' })
+  id: string;
 
   @ApiProperty({ example: 'Shipping' })
   topic: string;

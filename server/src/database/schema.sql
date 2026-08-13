@@ -1,5 +1,5 @@
 -- ============================================================================
--- CSMART AI (IDEA_2) - DATABASE SCHEMA & DDL SETUP (UPDATED)
+-- CSMART AI (IDEA_2) - DATABASE SCHEMA & DDL SETUP (UPDATED ALL IDS TO UUID)
 -- Target Database: PostgreSQL 14+
 -- ============================================================================
 
@@ -23,7 +23,7 @@ CREATE TYPE order_status AS ENUM (
 CREATE TYPE payment_method AS ENUM ('COD', 'CREDIT_CARD', 'BANK_TRANSFER', 'MOMO', 'VNPAY');
 CREATE TYPE payment_status AS ENUM ('PENDING', 'COMPLETED', 'FAILED', 'REFUNDED');
 
--- 🆕 1. ENUM TRẠNG THÁI HÀNG TRONG KHO (PRODUCT AVAILABILITY)
+-- 1. ENUM TRẠNG THÁI HÀNG TRONG KHO (PRODUCT AVAILABILITY)
 CREATE TYPE product_status AS ENUM (
     'IN_STOCK',      -- Còn hàng
     'OUT_OF_STOCK', -- Hết hàng
@@ -31,7 +31,7 @@ CREATE TYPE product_status AS ENUM (
     'DISCONTINUED'  -- Ngừng kinh doanh
 );
 
--- 🆕 2. ENUM TÌNH TRẠNG VẬN CHUYỂN TỪNG MÓN HÀNG (ORDER ITEM SHIPPING STATUS)
+-- 2. ENUM TÌNH TRẠNG VẬN CHUYỂN TỪNG MÓN HÀNG (ORDER ITEM SHIPPING STATUS)
 CREATE TYPE item_shipping_status AS ENUM (
     'PENDING',      -- Chờ xử lý
     'PREPARING',    -- Đang đóng gói
@@ -46,8 +46,7 @@ CREATE TYPE item_shipping_status AS ENUM (
 -- 1. BẢNG NGƯỜI DÙNG & QUẢN LÝ TÀI KHOẢN (USERS & AUTH)
 -- ============================================================================
 CREATE TABLE users (
-    id SERIAL PRIMARY KEY,
-    uuid UUID DEFAULT uuid_generate_v4() UNIQUE NOT NULL,
+    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
     full_name VARCHAR(100) NOT NULL,
     email VARCHAR(150) UNIQUE NOT NULL,
     phone VARCHAR(20) UNIQUE,
@@ -61,8 +60,8 @@ CREATE TABLE users (
 );
 
 CREATE TABLE user_addresses (
-    id SERIAL PRIMARY KEY,
-    user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     recipient_name VARCHAR(100) NOT NULL,
     phone VARCHAR(20) NOT NULL,
     street_address TEXT NOT NULL,
@@ -88,7 +87,7 @@ CREATE TABLE categories (
 );
 
 CREATE TABLE products (
-    id SERIAL PRIMARY KEY,
+    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
     sku VARCHAR(50) UNIQUE NOT NULL,
     name VARCHAR(255) NOT NULL,
     slug VARCHAR(255) UNIQUE NOT NULL,
@@ -97,10 +96,10 @@ CREATE TABLE products (
     base_price NUMERIC(12, 2) NOT NULL CHECK (base_price >= 0),
     discount_price NUMERIC(12, 2) CHECK (discount_price >= 0),
     stock_quantity INT DEFAULT 0 NOT NULL CHECK (stock_quantity >= 0),
-    status product_status DEFAULT 'IN_STOCK' NOT NULL, -- 🆕 Trạng thái kinh doanh / tồn kho
+    status product_status DEFAULT 'IN_STOCK' NOT NULL,
     is_published BOOLEAN DEFAULT TRUE NOT NULL,
     tags VARCHAR(50)[],
-    attributes JSONB DEFAULT '{}'::jsonb, -- Dùng cho AI bóc tách (màu sắc, size, chất liệu,...)
+    attributes JSONB DEFAULT '{}'::jsonb,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
     updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
@@ -109,9 +108,9 @@ CREATE TABLE products (
 -- 3. BẢNG QUẢN LÝ ĐƠN HÀNG (ORDERS & ITEM TRACKING)
 -- ============================================================================
 CREATE TABLE orders (
-    id SERIAL PRIMARY KEY,
-    order_code VARCHAR(30) UNIQUE NOT NULL, -- Mã đơn hàng (vd: ORD54321)
-    user_id INT REFERENCES users(id) ON DELETE SET NULL,
+    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    order_code VARCHAR(30) UNIQUE NOT NULL,
+    user_id UUID REFERENCES users(id) ON DELETE SET NULL,
     status order_status DEFAULT 'PENDING' NOT NULL,
     total_amount NUMERIC(12, 2) NOT NULL CHECK (total_amount >= 0),
     shipping_fee NUMERIC(10, 2) DEFAULT 0 NOT NULL,
@@ -123,27 +122,24 @@ CREATE TABLE orders (
     updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 
--- Bảng chi tiết từng món hàng & theo dõi tình trạng giao hàng
 CREATE TABLE order_items (
-    id SERIAL PRIMARY KEY,
-    order_id INT NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
-    product_id INT REFERENCES products(id) ON DELETE SET NULL,
+    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    order_id UUID NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+    product_id UUID REFERENCES products(id) ON DELETE SET NULL,
     product_name VARCHAR(255) NOT NULL,
     unit_price NUMERIC(12, 2) NOT NULL CHECK (unit_price >= 0),
     quantity INT NOT NULL CHECK (quantity > 0),
     subtotal NUMERIC(12, 2) GENERATED ALWAYS AS (quantity * unit_price) STORED,
-    
-    -- 🆕 Thông tin theo dõi tình trạng món hàng đang giao
     shipping_status item_shipping_status DEFAULT 'PENDING' NOT NULL,
-    courier_name VARCHAR(100),       -- Tên đơn vị vận chuyển (vd: GHN, GHTK, ViettelPost)
-    tracking_number VARCHAR(100),    -- Mã vận đơn riêng của món hàng
-    estimated_delivery TIMESTAMPTZ, -- Ngày dự kiến giao tới nơi
-    delivered_at TIMESTAMPTZ        -- Thời điểm giao thành công
+    courier_name VARCHAR(100),
+    tracking_number VARCHAR(100),
+    estimated_delivery TIMESTAMPTZ,
+    delivered_at TIMESTAMPTZ
 );
 
 CREATE TABLE payments (
-    id SERIAL PRIMARY KEY,
-    order_id INT NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    order_id UUID NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
     payment_method payment_method NOT NULL,
     payment_status payment_status DEFAULT 'PENDING' NOT NULL,
     transaction_code VARCHAR(100),
@@ -156,7 +152,7 @@ CREATE TABLE payments (
 -- 4. BẢNG PHỤC VỤ AI & EVALUATOR (LOGS & FAQS)
 -- ============================================================================
 CREATE TABLE faqs (
-    id SERIAL PRIMARY KEY,
+    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
     topic VARCHAR(50) NOT NULL,
     question TEXT NOT NULL,
     answer TEXT NOT NULL,
@@ -165,11 +161,12 @@ CREATE TABLE faqs (
 );
 
 CREATE TABLE ai_request_logs (
-    id SERIAL PRIMARY KEY,
+    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
     endpoint VARCHAR(50) NOT NULL,
-    user_id INT REFERENCES users(id) ON DELETE SET NULL,
+    user_id UUID REFERENCES users(id) ON DELETE SET NULL,
     input_text TEXT,
     output_json JSONB NOT NULL,
+    corrected_output JSONB,
     confidence_score REAL,
     flag_for_review BOOLEAN DEFAULT FALSE NOT NULL,
     execution_time_ms INT,
@@ -191,25 +188,22 @@ CREATE INDEX idx_order_items_tracking ON order_items(tracking_number);
 -- ============================================================================
 -- 6. BẢNG HUMAN-IN-THE-LOOP (HITL) REVIEW QUEUE
 -- ============================================================================
-
--- Enum trạng thái review
 CREATE TYPE hitl_status AS ENUM (
-    'PENDING',   -- Chờ Admin/Support xem xét
-    'APPROVED',  -- Đã duyệt — kết quả AI được chấp nhận
-    'REJECTED',  -- Đã từ chối — kết quả AI bị loại bỏ
-    'LABELLED'   -- Đã gán nhãn — dùng để fine-tune lại model
+    'PENDING',
+    'APPROVED',
+    'REJECTED',
+    'LABELLED'
 );
 
--- Hàng chờ review thủ công cho các AI request có flag_for_review=true hoặc confidence thấp
 CREATE TABLE ai_review_queue (
-    id SERIAL PRIMARY KEY,
-    log_id INT REFERENCES ai_request_logs(id) ON DELETE CASCADE,
+    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    log_id UUID REFERENCES ai_request_logs(id) ON DELETE CASCADE,
     endpoint VARCHAR(50) NOT NULL,
-    user_id INT REFERENCES users(id) ON DELETE SET NULL,
+    user_id UUID REFERENCES users(id) ON DELETE SET NULL,
     input_text TEXT,
     output_json JSONB NOT NULL,
     confidence_score REAL,
-    reviewer_id INT REFERENCES users(id) ON DELETE SET NULL,
+    reviewer_id UUID REFERENCES users(id) ON DELETE SET NULL,
     status hitl_status DEFAULT 'PENDING' NOT NULL,
     reviewer_note TEXT,
     corrected_label TEXT,
@@ -221,5 +215,4 @@ CREATE INDEX idx_review_queue_status ON ai_review_queue(status);
 CREATE INDEX idx_review_queue_endpoint ON ai_review_queue(endpoint);
 CREATE INDEX idx_review_queue_user ON ai_review_queue(user_id);
 
--- Liên kết log với review queue entry (nếu bị flag)
-ALTER TABLE ai_request_logs ADD COLUMN IF NOT EXISTS review_id INT REFERENCES ai_review_queue(id) ON DELETE SET NULL;
+ALTER TABLE ai_request_logs ADD COLUMN IF NOT EXISTS review_id UUID REFERENCES ai_review_queue(id) ON DELETE SET NULL;

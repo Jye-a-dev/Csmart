@@ -32,7 +32,7 @@ export class PaymentsRepository extends BaseRepository {
     return this.query<Payment>(sql, [limit, offset]);
   }
 
-  async findPaymentById(id: number): Promise<Payment | null> {
+  async findPaymentById(id: string): Promise<Payment | null> {
     const sql = `
       SELECT id, order_id, payment_method, payment_status, transaction_code, amount, paid_at, created_at
       FROM payments
@@ -42,7 +42,7 @@ export class PaymentsRepository extends BaseRepository {
   }
 
   async updatePayment(
-    id: number,
+    id: string,
     dto: UpdatePaymentDto,
   ): Promise<Payment | null> {
     const updates: string[] = [];
@@ -80,9 +80,9 @@ export class PaymentsRepository extends BaseRepository {
     return this.queryOne<Payment>(sql, params);
   }
 
-  async deletePayment(id: number): Promise<boolean> {
+  async deletePayment(id: string): Promise<boolean> {
     const sql = `DELETE FROM payments WHERE id = $1 RETURNING id`;
-    const res = await this.queryOne<{ id: number }>(sql, [id]);
+    const res = await this.queryOne<{ id: string }>(sql, [id]);
     return !!res;
   }
 }

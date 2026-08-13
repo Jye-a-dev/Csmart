@@ -1,10 +1,10 @@
 import { ApiProperty } from '@nestjs/swagger';
 
 export class User {
-  @ApiProperty({ example: 1 })
-  id: number;
+  @ApiProperty({ example: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11' })
+  id: string;
 
-  @ApiProperty({ example: 'f3b8908d-ef57-4b71-b851-bc012dfcb67c' })
+  @ApiProperty({ example: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11' })
   uuid: string;
 
   @ApiProperty({ example: 'John Doe' })
@@ -36,11 +36,11 @@ export class User {
 }
 
 export class UserAddress {
-  @ApiProperty({ example: 1 })
-  id: number;
+  @ApiProperty({ example: 'b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a22' })
+  id: string;
 
-  @ApiProperty({ example: 1 })
-  user_id: number;
+  @ApiProperty({ example: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11' })
+  user_id: string;
 
   @ApiProperty({ example: 'John Doe' })
   recipient_name: string;

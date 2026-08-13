@@ -21,7 +21,7 @@ export default function CreateOrderModal({
   formatUserUuid
 }: CreateOrderModalProps) {
   const [newOrderCode, setNewOrderCode] = useState('');
-  const [newUserId, setNewUserId] = useState<number | undefined>(undefined);
+  const [newUserId, setNewUserId] = useState<string | undefined>(undefined);
   const [newAddress, setNewAddress] = useState('');
   const [newShippingFee, setNewShippingFee] = useState<number>(0);
   const [newDiscount, setNewDiscount] = useState<number>(0);
@@ -147,7 +147,7 @@ export default function CreateOrderModal({
               value={newUserId || ''}
               onChange={(e) => {
                 const val = e.target.value;
-                setNewUserId(val ? Number(val) : undefined);
+                setNewUserId(val || undefined);
               }}
               className="w-full px-3 py-2.5 border-2 border-[#09090B] font-mono text-xs font-bold focus:outline-none bg-white cursor-pointer shadow-[2px_2px_0px_0px_#09090B]"
             >

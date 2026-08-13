@@ -63,7 +63,7 @@ export class AiLogsController {
   @Get(':id')
   @ApiOperation({ summary: 'Get AI request log by ID' })
   @ApiResponse({ status: 200, type: AiRequestLog })
-  findOne(@Param('id', ParseIntPipe) id: number) {
+  findOne(@Param('id') id: string) {
     return this.aiLogsService.findOne(id);
   }
 
@@ -71,16 +71,23 @@ export class AiLogsController {
   @ApiOperation({ summary: 'Update AI request log' })
   @ApiResponse({ status: 200, type: AiRequestLog })
   update(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id') id: string,
     @Body() updateAiRequestLogDto: UpdateAiRequestLogDto,
   ) {
     return this.aiLogsService.update(id, updateAiRequestLogDto);
   }
 
+  @Delete()
+  @ApiOperation({ summary: 'Delete all AI request logs' })
+  @ApiResponse({ status: 200, description: 'All logs deleted' })
+  removeAll() {
+    return this.aiLogsService.removeAll();
+  }
+
   @Delete(':id')
   @ApiOperation({ summary: 'Delete AI request log' })
   @ApiResponse({ status: 200, description: 'Log deleted' })
-  remove(@Param('id', ParseIntPipe) id: number) {
+  remove(@Param('id') id: string) {
     return this.aiLogsService.remove(id);
   }
 }

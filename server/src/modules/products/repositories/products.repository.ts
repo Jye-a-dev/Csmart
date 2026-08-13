@@ -47,7 +47,7 @@ export class ProductsRepository extends BaseRepository {
     return this.query<Product>(sql, [limit, offset]);
   }
 
-  async findProductById(id: number): Promise<Product | null> {
+  async findProductById(id: string): Promise<Product | null> {
     const sql = `
       SELECT id, sku, name, slug, category_id, description, short_description, specifications, colors, base_price, 
              discount_price, stock_quantity, status, is_published, tags, attributes, images, created_at, updated_at
@@ -58,7 +58,7 @@ export class ProductsRepository extends BaseRepository {
   }
 
   async updateProduct(
-    id: number,
+    id: string,
     dto: UpdateProductDto,
   ): Promise<Product | null> {
     const updates: string[] = [];
@@ -112,9 +112,9 @@ export class ProductsRepository extends BaseRepository {
     return this.queryOne<Product>(sql, params);
   }
 
-  async deleteProduct(id: number): Promise<boolean> {
+  async deleteProduct(id: string): Promise<boolean> {
     const sql = `DELETE FROM products WHERE id = $1 RETURNING id`;
-    const res = await this.queryOne<{ id: number }>(sql, [id]);
+    const res = await this.queryOne<{ id: string }>(sql, [id]);
     return !!res;
   }
 }

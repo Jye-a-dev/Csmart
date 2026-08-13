@@ -3,17 +3,17 @@ import { ApiProperty } from '@nestjs/swagger';
 export type HitlStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'LABELLED';
 
 export class ReviewQueueItem {
-  @ApiProperty({ example: 1 })
-  id: number;
+  @ApiProperty({ example: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11' })
+  id: string;
 
-  @ApiProperty({ example: 42, required: false })
-  log_id?: number;
+  @ApiProperty({ example: 'b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a22', required: false })
+  log_id?: string;
 
   @ApiProperty({ example: 'classify-intent' })
   endpoint: string;
 
-  @ApiProperty({ example: 5, required: false })
-  user_id?: number;
+  @ApiProperty({ example: 'c0eebc99-9c0b-4ef8-bb6d-6bb9bd380a33', required: false })
+  user_id?: string;
 
   @ApiProperty({ example: 'Tìm áo thun trắng', required: false })
   input_text?: string;
@@ -24,8 +24,8 @@ export class ReviewQueueItem {
   @ApiProperty({ example: 0.62, required: false })
   confidence_score?: number;
 
-  @ApiProperty({ example: 10, required: false })
-  reviewer_id?: number;
+  @ApiProperty({ example: 'd0eebc99-9c0b-4ef8-bb6d-6bb9bd380a44', required: false })
+  reviewer_id?: string;
 
   @ApiProperty({ example: 'PENDING' })
   status: HitlStatus;

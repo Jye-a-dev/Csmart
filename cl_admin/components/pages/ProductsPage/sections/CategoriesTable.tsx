@@ -23,7 +23,7 @@ export default function CategoriesTable({
   onSelectCategory
 }: CategoriesTableProps) {
 
-  const getParentName = (parentId?: string) => {
+  const getParentName = (parentId?: string | null) => {
     if (!parentId) return 'Không có';
     const parent = categories.find(c => c.id === parentId);
     return parent ? parent.name : `#${parentId}`;

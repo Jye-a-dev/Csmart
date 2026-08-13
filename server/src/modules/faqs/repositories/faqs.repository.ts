@@ -30,7 +30,7 @@ export class FaqsRepository extends BaseRepository {
     return this.query<Faq>(sql, [limit, offset]);
   }
 
-  async findFaqById(id: number): Promise<Faq | null> {
+  async findFaqById(id: string): Promise<Faq | null> {
     const sql = `
       SELECT id, topic, question, answer, is_active, created_at
       FROM faqs
@@ -39,7 +39,7 @@ export class FaqsRepository extends BaseRepository {
     return this.queryOne<Faq>(sql, [id]);
   }
 
-  async updateFaq(id: number, dto: UpdateFaqDto): Promise<Faq | null> {
+  async updateFaq(id: string, dto: UpdateFaqDto): Promise<Faq | null> {
     const updates: string[] = [];
     const params: any[] = [];
     let paramIndex = 1;
@@ -75,9 +75,9 @@ export class FaqsRepository extends BaseRepository {
     return this.queryOne<Faq>(sql, params);
   }
 
-  async deleteFaq(id: number): Promise<boolean> {
+  async deleteFaq(id: string): Promise<boolean> {
     const sql = `DELETE FROM faqs WHERE id = $1 RETURNING id`;
-    const res = await this.queryOne<{ id: number }>(sql, [id]);
+    const res = await this.queryOne<{ id: string }>(sql, [id]);
     return !!res;
   }
 }

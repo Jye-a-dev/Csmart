@@ -14,7 +14,7 @@ export class UsersRepository extends BaseRepository {
     const sql = `
       INSERT INTO users (full_name, email, phone, password_hash, role, is_active, avatar_url)
       VALUES ($1, $2, $3, $4, $5, $6, $7)
-      RETURNING id, uuid, full_name, email, phone, role, is_active, avatar_url, last_login_at, created_at, updated_at
+      RETURNING id, id AS uuid, full_name, email, phone, role, is_active, avatar_url, last_login_at, created_at, updated_at
     `;
     const params = [
       dto.full_name,
@@ -30,17 +30,17 @@ export class UsersRepository extends BaseRepository {
 
   async findAllUsers(limit = 10, offset = 0): Promise<User[]> {
     const sql = `
-      SELECT id, uuid, full_name, email, phone, role, is_active, avatar_url, last_login_at, created_at, updated_at
+      SELECT id, id AS uuid, full_name, email, phone, role, is_active, avatar_url, last_login_at, created_at, updated_at
       FROM users
-      ORDER BY id DESC
+      ORDER BY created_at DESC
       LIMIT $1 OFFSET $2
     `;
     return this.query<User>(sql, [limit, offset]);
   }
 
-  async findUserById(id: number): Promise<User | null> {
+  async findUserById(id: string): Promise<User | null> {
     const sql = `
-      SELECT id, uuid, full_name, email, phone, role, is_active, avatar_url, last_login_at, created_at, updated_at
+      SELECT id, id AS uuid, full_name, email, phone, role, is_active, avatar_url, last_login_at, created_at, updated_at
       FROM users
       WHERE id = $1
     `;
@@ -51,7 +51,7 @@ export class UsersRepository extends BaseRepository {
     email: string,
   ): Promise<(User & { password_hash: string }) | null> {
     const sql = `
-      SELECT id, uuid, full_name, email, phone, password_hash, role, is_active, avatar_url, last_login_at, created_at, updated_at
+      SELECT id, id AS uuid, full_name, email, phone, password_hash, role, is_active, avatar_url, last_login_at, created_at, updated_at
       FROM users
       WHERE email = $1
     `;
@@ -62,15 +62,15 @@ export class UsersRepository extends BaseRepository {
 
   async findUserByUuid(uuid: string): Promise<User | null> {
     const sql = `
-      SELECT id, uuid, full_name, email, phone, role, is_active, avatar_url, last_login_at, created_at, updated_at
+      SELECT id, id AS uuid, full_name, email, phone, role, is_active, avatar_url, last_login_at, created_at, updated_at
       FROM users
-      WHERE uuid = $1
+      WHERE id = $1
     `;
     return this.queryOne<User>(sql, [uuid]);
   }
 
   async updateUser(
-    id: number,
+    id: string,
     dto: UpdateUserDto,
     passwordHash?: string,
   ): Promise<User | null> {
@@ -117,25 +117,25 @@ export class UsersRepository extends BaseRepository {
       UPDATE users
       SET ${updates.join(', ')}
       WHERE id = $${paramIndex}
-      RETURNING id, uuid, full_name, email, phone, role, is_active, avatar_url, last_login_at, created_at, updated_at
+      RETURNING id, id AS uuid, full_name, email, phone, role, is_active, avatar_url, last_login_at, created_at, updated_at
     `;
     return this.queryOne<User>(sql, params);
   }
 
-  async deleteUser(id: number): Promise<boolean> {
+  async deleteUser(id: string): Promise<boolean> {
     const sql = `DELETE FROM users WHERE id = $1 RETURNING id`;
-    const res = await this.queryOne<{ id: number }>(sql, [id]);
+    const res = await this.queryOne<{ id: string }>(sql, [id]);
     return !!res;
   }
 
-  async updateLastLogin(id: number): Promise<void> {
+  async updateLastLogin(id: string): Promise<void> {
     const sql = `UPDATE users SET last_login_at = CURRENT_TIMESTAMP WHERE id = $1`;
     await this.query(sql, [id]);
   }
 
   // ADDRESSES
   async createAddress(
-    userId: number,
+    userId: string,
     dto: CreateUserAddressDto,
   ): Promise<UserAddress> {
     if (dto.is_default) {
@@ -162,7 +162,7 @@ export class UsersRepository extends BaseRepository {
     return (await this.queryOne<UserAddress>(sql, params))!;
   }
 
-  async findAddressesByUserId(userId: number): Promise<UserAddress[]> {
+  async findAddressesByUserId(userId: string): Promise<UserAddress[]> {
     const sql = `
       SELECT id, user_id, recipient_name, phone, street_address, ward, district, city_province, is_default, created_at
       FROM user_addresses
@@ -172,7 +172,7 @@ export class UsersRepository extends BaseRepository {
     return this.query<UserAddress>(sql, [userId]);
   }
 
-  async findAddressById(id: number): Promise<UserAddress | null> {
+  async findAddressById(id: string): Promise<UserAddress | null> {
     const sql = `
       SELECT id, user_id, recipient_name, phone, street_address, ward, district, city_province, is_default, created_at
       FROM user_addresses
@@ -182,8 +182,8 @@ export class UsersRepository extends BaseRepository {
   }
 
   async updateAddress(
-    id: number,
-    userId: number,
+    id: string,
+    userId: string,
     dto: UpdateUserAddressDto,
   ): Promise<UserAddress | null> {
     if (dto.is_default) {
@@ -239,9 +239,9 @@ export class UsersRepository extends BaseRepository {
     return this.queryOne<UserAddress>(sql, params);
   }
 
-  async deleteAddress(id: number): Promise<boolean> {
+  async deleteAddress(id: string): Promise<boolean> {
     const sql = `DELETE FROM user_addresses WHERE id = $1 RETURNING id`;
-    const res = await this.queryOne<{ id: number }>(sql, [id]);
+    const res = await this.queryOne<{ id: string }>(sql, [id]);
     return !!res;
   }
 }

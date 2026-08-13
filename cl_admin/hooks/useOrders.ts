@@ -50,12 +50,12 @@ export function useOrders() {
     }
   }, []);
 
-  const countOrdersBy = useCallback(async (filters?: { user_id?: number; status?: OrderStatus }): Promise<number> => {
+  const countOrdersBy = useCallback(async (filters?: { user_id?: string; status?: OrderStatus }): Promise<number> => {
     setLoading(true);
     setError(null);
     try {
       const queryParams: Record<string, string> = {};
-      if (filters?.user_id !== undefined) queryParams.user_id = String(filters.user_id);
+      if (filters?.user_id !== undefined) queryParams.user_id = filters.user_id;
       if (filters?.status) queryParams.status = filters.status;
 
       return await apiClient<number>('/orders/count/by', {
@@ -69,7 +69,7 @@ export function useOrders() {
     }
   }, []);
 
-  const findOneOrder = useCallback(async (id: number): Promise<Order> => {
+  const findOneOrder = useCallback(async (id: string): Promise<Order> => {
     setLoading(true);
     setError(null);
     try {
@@ -82,7 +82,7 @@ export function useOrders() {
     }
   }, []);
 
-  const updateOrder = useCallback(async (id: number, dto: UpdateOrderDto): Promise<Order> => {
+  const updateOrder = useCallback(async (id: string, dto: UpdateOrderDto): Promise<Order> => {
     setLoading(true);
     setError(null);
     try {
@@ -98,7 +98,7 @@ export function useOrders() {
     }
   }, []);
 
-  const removeOrder = useCallback(async (id: number): Promise<void> => {
+  const removeOrder = useCallback(async (id: string): Promise<void> => {
     setLoading(true);
     setError(null);
     try {

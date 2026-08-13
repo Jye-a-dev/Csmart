@@ -65,7 +65,7 @@ export class UsersController {
   @Get(':id')
   @ApiOperation({ summary: 'Get user by ID' })
   @ApiResponse({ status: 200, type: User })
-  findOne(@Param('id', ParseIntPipe) id: number) {
+  findOne(@Param('id') id: string) {
     return this.usersService.findOne(id);
   }
 
@@ -73,7 +73,7 @@ export class UsersController {
   @ApiOperation({ summary: 'Update user' })
   @ApiResponse({ status: 200, type: User })
   update(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id') id: string,
     @Body() updateUserDto: UpdateUserDto,
   ) {
     return this.usersService.update(id, updateUserDto);
@@ -82,7 +82,7 @@ export class UsersController {
   @Delete(':id')
   @ApiOperation({ summary: 'Delete user' })
   @ApiResponse({ status: 200, description: 'User deleted' })
-  remove(@Param('id', ParseIntPipe) id: number) {
+  remove(@Param('id') id: string) {
     return this.usersService.remove(id);
   }
 
@@ -91,7 +91,7 @@ export class UsersController {
   @ApiOperation({ summary: 'Create user address' })
   @ApiResponse({ status: 201, type: UserAddress })
   createAddress(
-    @Param('userId', ParseIntPipe) userId: number,
+    @Param('userId') userId: string,
     @Body() dto: CreateUserAddressDto,
   ) {
     return this.usersService.createAddress(userId, dto);
@@ -100,7 +100,7 @@ export class UsersController {
   @Get(':userId/addresses')
   @ApiOperation({ summary: 'Get user addresses' })
   @ApiResponse({ status: 200, type: [UserAddress] })
-  findAddresses(@Param('userId', ParseIntPipe) userId: number) {
+  findAddresses(@Param('userId') userId: string) {
     return this.usersService.findAddresses(userId);
   }
 
@@ -108,8 +108,8 @@ export class UsersController {
   @ApiOperation({ summary: 'Update user address' })
   @ApiResponse({ status: 200, type: UserAddress })
   updateAddress(
-    @Param('userId', ParseIntPipe) userId: number,
-    @Param('addressId', ParseIntPipe) addressId: number,
+    @Param('userId') userId: string,
+    @Param('addressId') addressId: string,
     @Body() dto: UpdateUserAddressDto,
   ) {
     return this.usersService.updateAddress(userId, addressId, dto);
@@ -119,8 +119,8 @@ export class UsersController {
   @ApiOperation({ summary: 'Delete user address' })
   @ApiResponse({ status: 200, description: 'Address deleted' })
   removeAddress(
-    @Param('userId', ParseIntPipe) userId: number,
-    @Param('addressId', ParseIntPipe) addressId: number,
+    @Param('userId') userId: string,
+    @Param('addressId') addressId: string,
   ) {
     return this.usersService.removeAddress(userId, addressId);
   }

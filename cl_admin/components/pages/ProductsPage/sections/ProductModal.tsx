@@ -14,7 +14,7 @@ interface ProductModalProps {
   product: Product | null;
   categories: Category[];
   defaultCategoryId?: string;
-  onSubmit: (id?: number, payload?: CreateProductDto | UpdateProductDto) => Promise<void>;
+  onSubmit: (id?: string, payload?: CreateProductDto | UpdateProductDto) => Promise<void>;
 }
 
 export default function ProductModal({

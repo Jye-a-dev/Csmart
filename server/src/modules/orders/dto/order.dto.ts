@@ -7,15 +7,16 @@ import {
   IsEnum,
   IsArray,
   ValidateNested,
+  IsUUID,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { OrderStatus, ItemShippingStatus } from '../entities/order.entity';
 
 export class CreateOrderItemDto {
-  @ApiProperty({ example: 1, required: false })
+  @ApiProperty({ example: 'c0eebc99-9c0b-4ef8-bb6d-6bb9bd380a33', required: false })
   @IsOptional()
-  @IsInt()
-  product_id?: number;
+  @IsUUID()
+  product_id?: string;
 
   @ApiProperty({ example: 'Awesome Product' })
   @IsString()
@@ -54,10 +55,10 @@ export class CreateOrderDto {
   @IsString()
   order_code: string;
 
-  @ApiProperty({ example: 1, required: false })
+  @ApiProperty({ example: 'd0eebc99-9c0b-4ef8-bb6d-6bb9bd380a44', required: false })
   @IsOptional()
-  @IsInt()
-  user_id?: number;
+  @IsUUID()
+  user_id?: string;
 
   @ApiProperty({ example: 'PENDING', enum: OrderStatus, default: 'PENDING' })
   @IsOptional()

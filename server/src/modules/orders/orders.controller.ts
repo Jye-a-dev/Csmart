@@ -54,12 +54,12 @@ export class OrdersController {
 
   @Get('count/by')
   @ApiOperation({ summary: 'Count orders by filter' })
-  @ApiQuery({ name: 'user_id', required: false, type: Number })
+  @ApiQuery({ name: 'user_id', required: false, type: String })
   @ApiQuery({ name: 'status', required: false })
   @ApiResponse({ status: 200, type: Number })
   countBy(@Query('user_id') userId?: string, @Query('status') status?: string) {
     const filters: Record<string, any> = {};
-    if (userId) filters.user_id = parseInt(userId, 10);
+    if (userId) filters.user_id = userId;
     if (status) filters.status = status;
     return this.ordersService.countBy(filters);
   }
@@ -67,7 +67,7 @@ export class OrdersController {
   @Get(':id')
   @ApiOperation({ summary: 'Get order by ID' })
   @ApiResponse({ status: 200, type: Order })
-  findOne(@Param('id', ParseIntPipe) id: number) {
+  findOne(@Param('id') id: string) {
     return this.ordersService.findOne(id);
   }
 
@@ -75,7 +75,7 @@ export class OrdersController {
   @ApiOperation({ summary: 'Update order' })
   @ApiResponse({ status: 200, type: Order })
   update(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id') id: string,
     @Body() updateOrderDto: UpdateOrderDto,
   ) {
     return this.ordersService.update(id, updateOrderDto);
@@ -84,7 +84,7 @@ export class OrdersController {
   @Delete(':id')
   @ApiOperation({ summary: 'Delete order' })
   @ApiResponse({ status: 200, description: 'Order deleted' })
-  remove(@Param('id', ParseIntPipe) id: number) {
+  remove(@Param('id') id: string) {
     return this.ordersService.remove(id);
   }
 }

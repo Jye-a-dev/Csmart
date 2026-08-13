@@ -28,7 +28,7 @@ import {
 } from './dto/ai-proxy.dto';
 
 interface AuthRequest extends Request {
-  user?: { sub: number; email: string; role: string };
+  user?: { sub: string; email: string; role: string };
 }
 
 interface MulterFile {

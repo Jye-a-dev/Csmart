@@ -15,7 +15,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState<boolean>(true);
   const [orders, setOrders] = useState<Order[]>([]);
   const [recentLogs, setRecentLogs] = useState<AiRequestLog[]>([]);
-  const [actionLoadingId, setActionLoadingId] = useState<number | null>(null);
+  const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
 
   const [stats, setStats] = useState({
     todayRevenue: 0,
@@ -69,12 +69,11 @@ export default function DashboardPage() {
   }, [fetchDashboardData]);
 
   // 1. Duyệt yêu cầu HỦY ĐƠN HÀNG
-  const handleApproveCancel = async (logId: number, orderIdStr: string) => {
+  const handleApproveCancel = async (logId: string, orderIdStr: string) => {
     setActionLoadingId(logId);
     try {
-      const orderId = parseInt(orderIdStr, 10);
-      if (!isNaN(orderId)) {
-        await updateOrder(orderId, { status: OrderStatus.CANCELLED });
+      if (orderIdStr) {
+        await updateOrder(orderIdStr, { status: OrderStatus.CANCELLED });
       }
       await updateLog(logId, { flag_for_review: false });
       void fetchDashboardData();
@@ -86,12 +85,11 @@ export default function DashboardPage() {
   };
 
   // 2. Duyệt yêu cầu ĐỔI ĐỊA CHỈ NHẬN HÀNG
-  const handleApproveChangeAddress = async (logId: number, orderIdStr: string, newAddress: string) => {
+  const handleApproveChangeAddress = async (logId: string, orderIdStr: string, newAddress: string) => {
     setActionLoadingId(logId);
     try {
-      const orderId = parseInt(orderIdStr, 10);
-      if (!isNaN(orderId)) {
-        await updateOrder(orderId, { shipping_address: newAddress });
+      if (orderIdStr) {
+        await updateOrder(orderIdStr, { shipping_address: newAddress });
       }
       await updateLog(logId, { flag_for_review: false });
       void fetchDashboardData();
@@ -103,7 +101,7 @@ export default function DashboardPage() {
   };
 
   // 3. Từ chối yêu cầu kiểm duyệt AI
-  const handleRejectRequest = async (logId: number) => {
+  const handleRejectRequest = async (logId: string) => {
     setActionLoadingId(logId);
     try {
       await updateLog(logId, { flag_for_review: false });

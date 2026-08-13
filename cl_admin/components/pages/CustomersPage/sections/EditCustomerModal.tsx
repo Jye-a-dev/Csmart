@@ -8,7 +8,7 @@ interface EditCustomerModalProps {
   isOpen: boolean;
   onClose: () => void;
   user: User | null;
-  onUpdate: (id: number, dto: UpdateUserDto) => Promise<void>;
+  onUpdate: (id: string, dto: UpdateUserDto) => Promise<void>;
 }
 
 export default function EditCustomerModal({

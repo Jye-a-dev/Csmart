@@ -10,6 +10,7 @@ interface CategoryModalProps {
   onClose: () => void;
   category: Category | null;
   categories: Category[];
+  defaultParentId?: string;
   onSubmit: (id?: string, payload?: CreateCategoryDto | UpdateCategoryDto) => Promise<void>;
 }
 
@@ -18,6 +19,7 @@ export default function CategoryModal({
   onClose,
   category,
   categories,
+  defaultParentId,
   onSubmit
 }: CategoryModalProps) {
   const [name, setName] = useState('');
@@ -60,7 +62,7 @@ export default function CategoryModal({
         } else {
           setName('');
           setSlug('');
-          setParentId(undefined);
+          setParentId(defaultParentId || undefined);
           setDescription('');
           setImageUrl1(null);
           setImageUrl2(null);
@@ -68,7 +70,7 @@ export default function CategoryModal({
       }, 0);
       return () => clearTimeout(timer);
     }
-  }, [category, isOpen]);
+  }, [category, defaultParentId, isOpen]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -79,7 +81,8 @@ export default function CategoryModal({
 
     setSubmitting(true);
     try {
-      const cleanParentId = parentId && parentId !== 'null' && parentId !== 'undefined' && parentId.trim() !== '' ? parentId : undefined;
+      const strParentId = parentId != null ? String(parentId).trim() : '';
+      const cleanParentId = strParentId && strParentId !== 'null' && strParentId !== 'undefined' ? strParentId : undefined;
       const payload: CreateCategoryDto = {
         name,
         slug,
@@ -105,7 +108,9 @@ export default function CategoryModal({
 
   if (!isOpen) return null;
 
-  const availableParents = categories.filter((c) => !category || c.id !== category.id);
+  const availableParents = categories.filter((c) => !category || String(c.id) !== String(category.id));
+  const isParentLocked = !category && defaultParentId != null && String(defaultParentId).trim() !== '';
+  const lockedParentCategory = defaultParentId != null ? categories.find((c) => String(c.id) === String(defaultParentId)) : null;
 
   return (
     <div className="fixed inset-0 bg-[#09090B]/50 flex items-center justify-center p-4 z-50">
@@ -119,7 +124,11 @@ export default function CategoryModal({
         </button>
 
         <h2 className="text-xl font-extrabold uppercase border-b-2 border-[#09090B] pb-3 mb-6">
-          {category ? '📝 Sửa Danh Mục' : '➕ Thêm Danh Mục Mới'}
+          {category
+            ? '📝 Sửa Danh Mục'
+            : lockedParentCategory
+            ? `➕ Thêm Danh Mục Con thuộc "${lockedParentCategory.name}"`
+            : '➕ Thêm Danh Mục Mới'}
         </h2>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -148,19 +157,27 @@ export default function CategoryModal({
           </div>
 
           <div>
-            <label className="block text-xs font-mono font-bold uppercase mb-1">Danh Mục Cha (Tùy chọn)</label>
-            <select
-              value={parentId || ''}
-              onChange={(e) => setParentId(e.target.value || undefined)}
-              className="w-full px-3 py-2 border-2 border-[#09090B] font-mono text-xs font-bold focus:outline-none bg-white cursor-pointer"
-            >
-              <option value="">Không có (Danh mục gốc)</option>
-              {availableParents.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
+            <label className="block text-xs font-mono font-bold uppercase mb-1">Danh Mục Cha</label>
+            {isParentLocked && lockedParentCategory ? (
+              <div className="w-full px-3 py-2.5 border-2 border-[#09090B] bg-amber-50 font-mono text-xs font-black text-[#09090B] flex items-center justify-between shadow-[2px_2px_0px_0px_#09090B]">
+                <span className="flex items-center gap-2">
+                  📁 <span className="underline">{lockedParentCategory.name}</span>
+                </span>
+              </div>
+            ) : (
+              <select
+                value={parentId || ''}
+                onChange={(e) => setParentId(e.target.value || undefined)}
+                className="w-full px-3 py-2 border-2 border-[#09090B] font-mono text-xs font-bold focus:outline-none bg-white cursor-pointer"
+              >
+                <option value="">Không có (Danh mục gốc)</option>
+                {availableParents.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            )}
           </div>
 
           <div>

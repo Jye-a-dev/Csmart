@@ -5,10 +5,10 @@ import { MapPin, XCircle, Check, X } from 'lucide-react';
 
 interface HitlQueueProps {
   recentLogs: AiRequestLog[];
-  actionLoadingId: number | null;
-  onApproveCancel: (logId: number, orderIdStr: string) => Promise<void>;
-  onApproveChangeAddress: (logId: number, orderIdStr: string, newAddress: string) => Promise<void>;
-  onReject: (logId: number) => Promise<void>;
+  actionLoadingId: string | null;
+  onApproveCancel: (logId: string, orderIdStr: string) => Promise<void>;
+  onApproveChangeAddress: (logId: string, orderIdStr: string, newAddress: string) => Promise<void>;
+  onReject: (logId: string) => Promise<void>;
 }
 
 export default function HitlQueue({

@@ -18,9 +18,9 @@ export enum ItemShippingStatus {
 }
 
 export interface OrderItem {
-  id: number;
-  order_id: number;
-  product_id?: number;
+  id: string;
+  order_id: string;
+  product_id?: string;
   product_name: string;
   unit_price: number;
   quantity: number;
@@ -33,9 +33,9 @@ export interface OrderItem {
 }
 
 export interface Order {
-  id: number;
+  id: string;
   order_code: string;
-  user_id?: number;
+  user_id?: string;
   status: OrderStatus;
   total_amount: number;
   shipping_fee: number;
@@ -49,7 +49,7 @@ export interface Order {
 }
 
 export interface CreateOrderItemDto {
-  product_id?: number;
+  product_id?: string;
   product_name: string;
   unit_price: number;
   quantity: number;
@@ -60,7 +60,7 @@ export interface CreateOrderItemDto {
 
 export interface CreateOrderDto {
   order_code: string;
-  user_id?: number;
+  user_id?: string;
   status?: OrderStatus;
   total_amount: number;
   shipping_fee?: number;

@@ -43,7 +43,7 @@ export class HitlRepository extends BaseRepository {
     return this.query<ReviewQueueItem>(sql, params);
   }
 
-  async findById(id: number): Promise<ReviewQueueItem | null> {
+  async findById(id: string): Promise<ReviewQueueItem | null> {
     return this.queryOne<ReviewQueueItem>(
       `SELECT * FROM ai_review_queue WHERE id = $1`,
       [id],
@@ -64,8 +64,8 @@ export class HitlRepository extends BaseRepository {
   // ─── Update status ────────────────────────────────────────────────────────
 
   async approve(
-    id: number,
-    reviewerId: number,
+    id: string,
+    reviewerId: string,
     note?: string,
   ): Promise<ReviewQueueItem | null> {
     return this.queryOne<ReviewQueueItem>(
@@ -81,8 +81,8 @@ export class HitlRepository extends BaseRepository {
   }
 
   async reject(
-    id: number,
-    reviewerId: number,
+    id: string,
+    reviewerId: string,
     note?: string,
   ): Promise<ReviewQueueItem | null> {
     return this.queryOne<ReviewQueueItem>(
@@ -98,8 +98,8 @@ export class HitlRepository extends BaseRepository {
   }
 
   async label(
-    id: number,
-    reviewerId: number,
+    id: string,
+    reviewerId: string,
     correctedLabel: string,
     note?: string,
   ): Promise<ReviewQueueItem | null> {

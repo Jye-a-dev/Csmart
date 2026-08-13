@@ -1,11 +1,11 @@
 import { ApiProperty, PartialType } from '@nestjs/swagger';
-import { IsInt, IsEnum, IsString, IsOptional, IsNumber } from 'class-validator';
+import { IsInt, IsEnum, IsString, IsOptional, IsNumber, IsUUID } from 'class-validator';
 import { PaymentMethod, PaymentStatus } from '../entities/payment.entity';
 
 export class CreatePaymentDto {
-  @ApiProperty({ example: 1 })
-  @IsInt()
-  order_id: number;
+  @ApiProperty({ example: 'b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a22' })
+  @IsUUID()
+  order_id: string;
 
   @ApiProperty({ example: 'CREDIT_CARD', enum: PaymentMethod })
   @IsEnum(PaymentMethod)

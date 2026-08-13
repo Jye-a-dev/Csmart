@@ -32,7 +32,7 @@ export class AiProxyService {
     endpoint: string,
     fetchFn: () => Promise<TResult>,
     inputText: string,
-    userId?: number,
+    userId?: string,
     fallback?: TResult,
   ): Promise<TResult> {
     const startTime = Date.now();
@@ -93,7 +93,7 @@ export class AiProxyService {
 
   // ─── Intent Classification ───────────────────────────────────────────────
 
-  async classifyIntent(dto: IntentRequestDto, userId?: number) {
+  async classifyIntent(dto: IntentRequestDto, userId?: string) {
     const fallback = {
       success: false,
       status: 'error',
@@ -124,7 +124,7 @@ export class AiProxyService {
 
   // ─── NER / Slot Filling ───────────────────────────────────────────────────
 
-  async extractNer(dto: NerRequestDto, userId?: number) {
+  async extractNer(dto: NerRequestDto, userId?: string) {
     const fallback = {
       status: 'error',
       intent: 'GENERAL_CHAT',
@@ -153,7 +153,7 @@ export class AiProxyService {
 
   // ─── Hybrid Search ────────────────────────────────────────────────────────
 
-  async hybridSearch(dto: SearchRequestDto, userId?: number) {
+  async hybridSearch(dto: SearchRequestDto, userId?: string) {
     const fallback = {
       success: false,
       status: 'error',
@@ -181,7 +181,7 @@ export class AiProxyService {
 
   // ─── Text-to-SQL ──────────────────────────────────────────────────────────
 
-  async textToSql(dto: SqlRequestDto, userId?: number) {
+  async textToSql(dto: SqlRequestDto, userId?: string) {
     const fallback = {
       status: 'error',
       question: dto.question,

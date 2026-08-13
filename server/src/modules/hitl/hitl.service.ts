@@ -34,7 +34,7 @@ export class HitlService {
     return this.hitlRepository.countByStatus(status);
   }
 
-  async findOne(id: number): Promise<ReviewQueueItem> {
+  async findOne(id: string): Promise<ReviewQueueItem> {
     const item = await this.hitlRepository.findById(id);
     if (!item) throw new NotFoundException(`Review item #${id} not found`);
     return item;
@@ -42,8 +42,8 @@ export class HitlService {
 
   /** Admin/Support duyệt → APPROVED */
   async approve(
-    id: number,
-    reviewerId: number,
+    id: string,
+    reviewerId: string,
     dto: ApproveReviewDto,
   ): Promise<ReviewQueueItem> {
     await this.findOne(id);
@@ -56,8 +56,8 @@ export class HitlService {
 
   /** Admin/Support từ chối → REJECTED */
   async reject(
-    id: number,
-    reviewerId: number,
+    id: string,
+    reviewerId: string,
     dto: RejectReviewDto,
   ): Promise<ReviewQueueItem> {
     await this.findOne(id);
@@ -70,8 +70,8 @@ export class HitlService {
 
   /** Admin gán nhãn đúng → LABELLED */
   async label(
-    id: number,
-    reviewerId: number,
+    id: string,
+    reviewerId: string,
     dto: LabelReviewDto,
   ): Promise<ReviewQueueItem> {
     const item = await this.findOne(id);

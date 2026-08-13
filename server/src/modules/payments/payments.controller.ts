@@ -47,7 +47,7 @@ export class PaymentsController {
 
   @Get('count/by')
   @ApiOperation({ summary: 'Count payments by filter' })
-  @ApiQuery({ name: 'order_id', required: false, type: Number })
+  @ApiQuery({ name: 'order_id', required: false, type: String })
   @ApiQuery({ name: 'payment_status', required: false })
   @ApiQuery({ name: 'payment_method', required: false })
   @ApiResponse({ status: 200, type: Number })
@@ -57,7 +57,7 @@ export class PaymentsController {
     @Query('payment_method') method?: string,
   ) {
     const filters: Record<string, any> = {};
-    if (orderId) filters.order_id = parseInt(orderId, 10);
+    if (orderId) filters.order_id = orderId;
     if (status) filters.payment_status = status;
     if (method) filters.payment_method = method;
     return this.paymentsService.countBy(filters);
@@ -66,7 +66,7 @@ export class PaymentsController {
   @Get(':id')
   @ApiOperation({ summary: 'Get payment by ID' })
   @ApiResponse({ status: 200, type: Payment })
-  findOne(@Param('id', ParseIntPipe) id: number) {
+  findOne(@Param('id') id: string) {
     return this.paymentsService.findOne(id);
   }
 
@@ -74,7 +74,7 @@ export class PaymentsController {
   @ApiOperation({ summary: 'Update payment' })
   @ApiResponse({ status: 200, type: Payment })
   update(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id') id: string,
     @Body() updatePaymentDto: UpdatePaymentDto,
   ) {
     return this.paymentsService.update(id, updatePaymentDto);
@@ -83,7 +83,7 @@ export class PaymentsController {
   @Delete(':id')
   @ApiOperation({ summary: 'Delete payment' })
   @ApiResponse({ status: 200, description: 'Payment deleted' })
-  remove(@Param('id', ParseIntPipe) id: number) {
+  remove(@Param('id') id: string) {
     return this.paymentsService.remove(id);
   }
 }

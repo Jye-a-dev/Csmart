@@ -87,7 +87,7 @@ export class OrdersRepository extends BaseRepository {
     return orders;
   }
 
-  async findOrderById(id: number): Promise<Order | null> {
+  async findOrderById(id: string): Promise<Order | null> {
     const sql = `
       SELECT id, order_code, user_id, status, total_amount, shipping_fee, 
              discount_amount, shipping_address, note, cancel_reason, created_at, updated_at
@@ -101,7 +101,7 @@ export class OrdersRepository extends BaseRepository {
     return order;
   }
 
-  async findOrderItemsByOrderId(orderId: number): Promise<OrderItem[]> {
+  async findOrderItemsByOrderId(orderId: string): Promise<OrderItem[]> {
     const sql = `
       SELECT id, order_id, product_id, product_name, unit_price, quantity, subtotal,
              shipping_status, courier_name, tracking_number, estimated_delivery, delivered_at
@@ -112,7 +112,7 @@ export class OrdersRepository extends BaseRepository {
     return this.query<OrderItem>(sql, [orderId]);
   }
 
-  async updateOrder(id: number, dto: UpdateOrderDto): Promise<Order | null> {
+  async updateOrder(id: string, dto: UpdateOrderDto): Promise<Order | null> {
     const updates: string[] = [];
     const params: any[] = [];
     let paramIndex = 1;
@@ -157,9 +157,9 @@ export class OrdersRepository extends BaseRepository {
     return order;
   }
 
-  async deleteOrder(id: number): Promise<boolean> {
+  async deleteOrder(id: string): Promise<boolean> {
     const sql = `DELETE FROM orders WHERE id = $1 RETURNING id`;
-    const res = await this.queryOne<{ id: number }>(sql, [id]);
+    const res = await this.queryOne<{ id: string }>(sql, [id]);
     return !!res;
   }
 

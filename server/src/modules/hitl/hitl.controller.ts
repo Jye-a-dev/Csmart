@@ -30,7 +30,7 @@ import {
 import type { HitlStatus } from './entities/review-queue.entity';
 
 interface AuthRequest extends Request {
-  user?: { sub: number; email: string; role: string };
+  user?: { sub: string; email: string; role: string };
 }
 
 @ApiTags('HITL Review Queue')
@@ -85,7 +85,7 @@ export class HitlController {
   @Get('queue/:id')
   @Roles('SUPPORT', 'ADMIN')
   @ApiOperation({ summary: 'Xem chi tiết một review item' })
-  findOne(@Param('id', ParseIntPipe) id: number) {
+  findOne(@Param('id') id: string) {
     return this.hitlService.findOne(id);
   }
 
@@ -96,7 +96,7 @@ export class HitlController {
   @ApiOperation({ summary: 'Duyệt kết quả AI — APPROVED' })
   @ApiResponse({ status: 200, description: 'Item marked as APPROVED' })
   approve(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id') id: string,
     @Body() dto: ApproveReviewDto,
     @Request() req: AuthRequest,
   ) {
@@ -110,7 +110,7 @@ export class HitlController {
   @ApiOperation({ summary: 'Từ chối kết quả AI — REJECTED' })
   @ApiResponse({ status: 200, description: 'Item marked as REJECTED' })
   reject(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id') id: string,
     @Body() dto: RejectReviewDto,
     @Request() req: AuthRequest,
   ) {
@@ -129,7 +129,7 @@ export class HitlController {
     description: 'Item marked as LABELLED with corrected_label',
   })
   label(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id') id: string,
     @Body() dto: LabelReviewDto,
     @Request() req: AuthRequest,
   ) {

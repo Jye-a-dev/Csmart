@@ -224,6 +224,7 @@ export default function ProductsPage() {
         onClose={() => setIsCategoryOpen(false)}
         category={selectedCategory}
         categories={categories}
+        defaultParentId={activeParentId ?? undefined}
         onSubmit={handleCategorySubmit}
       />
 

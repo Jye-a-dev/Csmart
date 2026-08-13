@@ -8,14 +8,24 @@ import {
 
 @Injectable()
 export class AiLogsRepository extends BaseRepository {
+  async onModuleInit() {
+    try {
+      await this.pool.query(
+        `ALTER TABLE ai_request_logs ADD COLUMN IF NOT EXISTS corrected_output JSONB;`,
+      );
+    } catch {
+      // Ignore if table does not exist yet or column exists
+    }
+  }
+
   async createLog(dto: CreateAiRequestLogDto): Promise<AiRequestLog> {
     const sql = `
       INSERT INTO ai_request_logs (
-        endpoint, user_id, input_text, output_json, 
+        endpoint, user_id, input_text, output_json, corrected_output,
         confidence_score, flag_for_review, execution_time_ms, review_id
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-      RETURNING id, endpoint, user_id, input_text, output_json, 
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      RETURNING id, endpoint, user_id, input_text, output_json, corrected_output,
                 confidence_score, flag_for_review, execution_time_ms, review_id, created_at
     `;
     const params = [
@@ -23,6 +33,7 @@ export class AiLogsRepository extends BaseRepository {
       dto.user_id || null,
       dto.input_text || null,
       JSON.stringify(dto.output_json),
+      dto.corrected_output ? JSON.stringify(dto.corrected_output) : null,
       dto.confidence_score !== undefined ? dto.confidence_score : null,
       dto.flag_for_review !== undefined ? dto.flag_for_review : false,
       dto.execution_time_ms !== undefined ? dto.execution_time_ms : null,
@@ -33,18 +44,18 @@ export class AiLogsRepository extends BaseRepository {
 
   async findAllLogs(limit = 10, offset = 0): Promise<AiRequestLog[]> {
     const sql = `
-      SELECT id, endpoint, user_id, input_text, output_json, 
+      SELECT id, endpoint, user_id, input_text, output_json, corrected_output,
              confidence_score, flag_for_review, execution_time_ms, review_id, created_at
       FROM ai_request_logs
-      ORDER BY id DESC
+      ORDER BY created_at DESC
       LIMIT $1 OFFSET $2
     `;
     return this.query<AiRequestLog>(sql, [limit, offset]);
   }
 
-  async findLogById(id: number): Promise<AiRequestLog | null> {
+  async findLogById(id: string): Promise<AiRequestLog | null> {
     const sql = `
-      SELECT id, endpoint, user_id, input_text, output_json, 
+      SELECT id, endpoint, user_id, input_text, output_json, corrected_output,
              confidence_score, flag_for_review, execution_time_ms, review_id, created_at
       FROM ai_request_logs
       WHERE id = $1
@@ -53,7 +64,7 @@ export class AiLogsRepository extends BaseRepository {
   }
 
   async updateLog(
-    id: number,
+    id: string,
     dto: UpdateAiRequestLogDto,
   ): Promise<AiRequestLog | null> {
     const updates: string[] = [];
@@ -65,6 +76,7 @@ export class AiLogsRepository extends BaseRepository {
       user_id: 'user_id',
       input_text: 'input_text',
       output_json: 'output_json',
+      corrected_output: 'corrected_output',
       confidence_score: 'confidence_score',
       flag_for_review: 'flag_for_review',
       execution_time_ms: 'execution_time_ms',
@@ -74,8 +86,8 @@ export class AiLogsRepository extends BaseRepository {
     for (const key of Object.keys(fieldsMapping)) {
       if (dtoRecord[key] !== undefined) {
         updates.push(`${fieldsMapping[key]} = $${paramIndex++}`);
-        if (key === 'output_json') {
-          params.push(JSON.stringify(dtoRecord[key]));
+        if (key === 'output_json' || key === 'corrected_output') {
+          params.push(dtoRecord[key] ? JSON.stringify(dtoRecord[key]) : null);
         } else {
           params.push(dtoRecord[key]);
         }
@@ -91,20 +103,26 @@ export class AiLogsRepository extends BaseRepository {
       UPDATE ai_request_logs
       SET ${updates.join(', ')}
       WHERE id = $${paramIndex}
-      RETURNING id, endpoint, user_id, input_text, output_json, 
+      RETURNING id, endpoint, user_id, input_text, output_json, corrected_output,
                 confidence_score, flag_for_review, execution_time_ms, created_at
     `;
     return this.queryOne<AiRequestLog>(sql, params);
   }
 
-  async deleteLog(id: number): Promise<boolean> {
+  async deleteLog(id: string): Promise<boolean> {
     const sql = `DELETE FROM ai_request_logs WHERE id = $1 RETURNING id`;
-    const res = await this.queryOne<{ id: number }>(sql, [id]);
+    const res = await this.queryOne<{ id: string }>(sql, [id]);
     return !!res;
   }
 
+  async deleteAllLogs(): Promise<number> {
+    const sql = `DELETE FROM ai_request_logs RETURNING id`;
+    const res = await this.query<{ id: string }>(sql);
+    return res.length;
+  }
+
   /** Liên kết log với HITL review entry sau khi enqueue */
-  async updateReviewId(logId: number, reviewId: number): Promise<void> {
+  async updateReviewId(logId: string, reviewId: string): Promise<void> {
     await this.pool.query(
       `UPDATE ai_request_logs SET review_id = $1 WHERE id = $2`,
       [reviewId, logId],

@@ -63,7 +63,7 @@ export class FaqsController {
   @Get(':id')
   @ApiOperation({ summary: 'Get FAQ by ID' })
   @ApiResponse({ status: 200, type: Faq })
-  findOne(@Param('id', ParseIntPipe) id: number) {
+  findOne(@Param('id') id: string) {
     return this.faqsService.findOne(id);
   }
 
@@ -71,7 +71,7 @@ export class FaqsController {
   @ApiOperation({ summary: 'Update FAQ' })
   @ApiResponse({ status: 200, type: Faq })
   update(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id') id: string,
     @Body() updateFaqDto: UpdateFaqDto,
   ) {
     return this.faqsService.update(id, updateFaqDto);
@@ -80,7 +80,7 @@ export class FaqsController {
   @Delete(':id')
   @ApiOperation({ summary: 'Delete FAQ' })
   @ApiResponse({ status: 200, description: 'FAQ deleted' })
-  remove(@Param('id', ParseIntPipe) id: number) {
+  remove(@Param('id') id: string) {
     return this.faqsService.remove(id);
   }
 }

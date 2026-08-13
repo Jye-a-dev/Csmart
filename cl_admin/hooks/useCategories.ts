@@ -50,12 +50,12 @@ export function useCategories() {
     }
   }, []);
 
-  const countCategoriesBy = useCallback(async (filters?: { parent_id?: number }): Promise<number> => {
+  const countCategoriesBy = useCallback(async (filters?: { parent_id?: string }): Promise<number> => {
     setLoading(true);
     setError(null);
     try {
       const queryParams: Record<string, string> = {};
-      if (filters?.parent_id !== undefined) queryParams.parent_id = String(filters.parent_id);
+      if (filters?.parent_id !== undefined) queryParams.parent_id = filters.parent_id;
 
       return await apiClient<number>('/categories/count/by', {
         params: queryParams,

@@ -8,8 +8,8 @@ export enum ProductStatus {
 }
 
 export class Product {
-  @ApiProperty({ example: 1 })
-  id: number;
+  @ApiProperty({ example: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11' })
+  id: string;
 
   @ApiProperty({ example: 'PROD12345' })
   sku: string;
