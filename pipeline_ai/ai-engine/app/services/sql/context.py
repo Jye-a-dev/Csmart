@@ -8,3 +8,5 @@ class SQLPipelineContext(BaseModel):
     flag_for_review: bool = True
     status: str = "success"
     error_message: Optional[str] = None
+    few_shot_examples: Optional[str] = None
+

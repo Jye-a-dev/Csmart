@@ -48,7 +48,7 @@ async def text_to_sql(payload: TextToSQLRequest):
     start_time = time.time()
     
     # Chạy qua component-based pipeline
-    result = sql_pipeline.run(question)
+    result = await sql_pipeline.run_async(question)
     
     # Kiểm tra nếu mô hình lỗi hoặc chưa khởi tạo
     if result.status == "error":

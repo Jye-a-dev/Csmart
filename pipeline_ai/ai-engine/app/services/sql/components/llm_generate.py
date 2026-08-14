@@ -7,7 +7,8 @@ class LLMGenerateComponent(SQLPipelineComponent):
         if context.generated_sql and context.confidence_score >= 0.70:
             return context
 
-        system_prompt = """
+        few_shot = context.few_shot_examples or ""
+        system_prompt = f"""
         Bạn là chuyên gia PostgreSQL của hệ thống CsmartAI.
         BẢNG THÔNG TIN SCHEMA CỦA DATABASE HIỆN TẠI (BẮT BUỘC CHỈ SỬ DỤNG CÁC BẢNG VÀ CỘT NÀY):
         - categories (id UUID, name, slug, description, parent_id, image_url_1, image_url_2, created_at)
@@ -24,9 +25,9 @@ class LLMGenerateComponent(SQLPipelineComponent):
         2. Bảng products: Liên kết với categories bằng `products.category_id = categories.id`.
         3. CHỈ SINH CÂU LỆNH SQL READ-ONLY (SELECT / WITH). Không sinh DDL/DML (DELETE, UPDATE, INSERT, DROP, ALTER).
         4. Với câu hỏi "Cho tôi số lượng danh mục và tên của nó": `SELECT count(*) as total_categories, string_agg(name, ', ') as category_names FROM categories;` hoặc `SELECT id, name FROM categories;`
-
+        {few_shot}
         Trả về định dạng JSON duy nhất:
-        {"generated_sql": "...", "confidence_score": 0.95, "flag_for_review": false}
+        {{"generated_sql": "...", "confidence_score": 0.95, "flag_for_review": false}}
         """
 
         result = ai_engine_core._call_llm(system_prompt, context.question)
