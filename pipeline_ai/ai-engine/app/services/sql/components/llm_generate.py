@@ -25,6 +25,7 @@ class LLMGenerateComponent(SQLPipelineComponent):
         2. Bảng products: Liên kết với categories bằng `products.category_id = categories.id`.
         3. CHỈ SINH CÂU LỆNH SQL READ-ONLY (SELECT / WITH). Không sinh DDL/DML (DELETE, UPDATE, INSERT, DROP, ALTER).
         4. Với câu hỏi "Cho tôi số lượng danh mục và tên của nó": `SELECT count(*) as total_categories, string_agg(name, ', ') as category_names FROM categories;` hoặc `SELECT id, name FROM categories;`
+        5. Với câu hỏi Có/Không (Yes/No questions - ví dụ: 'Có sản phẩm nào giá > 100k không?', 'Có khách hàng nào tên A không?'): Ưu tiên sinh SQL dạng `SELECT EXISTS(...) AS answer` hoặc `SELECT COUNT(*) AS count ...` hoặc `SELECT 1 FROM ... WHERE ... LIMIT 1` để xác định câu trả lời Yes/No chính xác.
         {few_shot}
         Trả về định dạng JSON duy nhất:
         {{"generated_sql": "...", "confidence_score": 0.95, "flag_for_review": false}}

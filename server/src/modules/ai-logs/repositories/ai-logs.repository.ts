@@ -128,4 +128,22 @@ export class AiLogsRepository extends BaseRepository {
       [reviewId, logId],
     );
   }
+
+  /** Tìm bản ghi log có corrected_output cho endpoint và input_text trùng khớp */
+  async findCorrectedLog(
+    endpoint: string,
+    inputText: string,
+  ): Promise<AiRequestLog | null> {
+    const sql = `
+      SELECT id, endpoint, user_id, input_text, output_json, corrected_output,
+             confidence_score, flag_for_review, execution_time_ms, review_id, created_at
+      FROM ai_request_logs
+      WHERE endpoint = $1
+        AND TRIM(LOWER(input_text)) = TRIM(LOWER($2))
+        AND corrected_output IS NOT NULL
+      ORDER BY created_at DESC
+      LIMIT 1
+    `;
+    return this.queryOne<AiRequestLog>(sql, [endpoint, inputText]);
+  }
 }

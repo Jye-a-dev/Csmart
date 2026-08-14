@@ -52,4 +52,11 @@ export class AiLogsService {
   async updateReviewId(logId: string, reviewId: string): Promise<void> {
     return this.aiLogsRepository.updateReviewId(logId, reviewId);
   }
+
+  async findCorrectedLog(
+    endpoint: string,
+    inputText: string,
+  ): Promise<AiRequestLog | null> {
+    return this.aiLogsRepository.findCorrectedLog(endpoint, inputText);
+  }
 }

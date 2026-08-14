@@ -37,6 +37,33 @@ export class AiProxyService {
   ): Promise<TResult> {
     const startTime = Date.now();
 
+    // Check if there is an existing corrected log (learned fix) for this endpoint and input
+    if (inputText && inputText.trim()) {
+      const correctedLog = await this.aiLogsService.findCorrectedLog(
+        endpoint,
+        inputText,
+      );
+      if (correctedLog && correctedLog.corrected_output) {
+        const learnedResult = correctedLog.corrected_output as TResult;
+
+        // Log the execution using the learned correction
+        await this.aiLogsService.create({
+          endpoint,
+          user_id: userId,
+          input_text: inputText,
+          output_json: learnedResult,
+          confidence_score: 1.0,
+          flag_for_review: false,
+          execution_time_ms: Date.now() - startTime,
+        });
+
+        this.logger.log(
+          `[AI Learned Cache] Return corrected output for ${endpoint}: "${inputText}"`,
+        );
+        return learnedResult;
+      }
+    }
+
     // Pre-log: ghi trước khi gọi pipeline (output_json tạm rỗng)
     const preLog = await this.aiLogsService.create({
       endpoint,
@@ -225,9 +252,23 @@ export class AiProxyService {
       const startTime = Date.now();
       try {
         const queryRes = await this.pool.query(sql);
+        const rows = this.sanitizeSqlRows(
+          queryRes.rows as Record<string, unknown>[],
+        );
+        const yesNoAnswer = this.evaluateYesNoAnswer(dto.question, rows);
+
         return {
           ...res,
-          result: this.sanitizeSqlRows(queryRes.rows as Record<string, unknown>[]),
+          result: rows,
+          yes_no_answer: yesNoAnswer,
+          message:
+            yesNoAnswer !== undefined
+              ? yesNoAnswer
+                ? 'Có'
+                : 'Không có'
+              : rows.length === 0
+                ? 'Không có dữ liệu'
+                : undefined,
           execution_time_ms: Date.now() - startTime,
         };
       } catch (err: unknown) {
@@ -244,9 +285,71 @@ export class AiProxyService {
     return res;
   }
 
+  /** Đánh giá câu trả lời Yes/No dựa trên câu hỏi và kết quả truy vấn SQL */
+  private evaluateYesNoAnswer(
+    question: string,
+    rows: Record<string, unknown>[],
+  ): boolean | undefined {
+    if (!question) return undefined;
+    const lowerQ = question.toLowerCase().trim();
+
+    // Kiểm tra câu hỏi dạng Yes/No bằng tiếng Việt hoặc tiếng Anh
+    const isYesNoQuestion =
+      /^(có|phải|đúng|tồn tại)\b/i.test(lowerQ) ||
+      /\b(không|không\?|phải không\?|đúng không\?|tồn tại không\?|chưa\?)$/i.test(
+        lowerQ,
+      ) ||
+      /\b(có|exists|exist|is there|are there|does|has|can)\b/i.test(lowerQ);
+
+    if (!isYesNoQuestion) {
+      return undefined;
+    }
+
+    if (!rows || rows.length === 0) {
+      return false;
+    }
+
+    // Kiểm tra nếu SQL trả về các cột boolean/exists/count cụ thể
+    const firstRow = rows[0];
+    if (firstRow) {
+      for (const [key, val] of Object.entries(firstRow)) {
+        if (typeof val === 'boolean') {
+          return val;
+        }
+        const lowerKey = key.toLowerCase();
+        if (lowerKey.includes('count') || lowerKey.includes('total')) {
+          const num = Number(val);
+          return !isNaN(num) && num > 0;
+        }
+        if (lowerKey.includes('exists') || lowerKey.includes('answer')) {
+          if (typeof val === 'boolean') return val;
+          if (typeof val === 'string')
+            return (
+              val.toLowerCase() === 'true' ||
+              val === '1' ||
+              val.toLowerCase() === 't'
+            );
+          if (typeof val === 'number') return val > 0;
+        }
+      }
+    }
+
+    // Mặc định: Nếu truy vấn có kết quả trả về => Có (True), không có => Không (False)
+    return rows.length > 0;
+  }
+
   /** Redact sensitive security attributes (password_hash, tokens, secrets) from SQL results */
-  private sanitizeSqlRows(rows: Record<string, unknown>[]): Record<string, unknown>[] {
-    const sensitiveKeys = ['password', 'password_hash', 'secret', 'token', 'access_token', 'refresh_token'];
+  private sanitizeSqlRows(
+    rows: Record<string, unknown>[],
+  ): Record<string, unknown>[] {
+    const sensitiveKeys = [
+      'password',
+      'password_hash',
+      'secret',
+      'token',
+      'access_token',
+      'refresh_token',
+    ];
     return rows.map((row) => {
       if (!row || typeof row !== 'object') return row;
       const cleanRow: Record<string, unknown> = {};

@@ -56,6 +56,7 @@ class OneForAllAIEngine:
         1. Nếu câu hỏi là Yêu cầu thiết kế Schema/DDL (ví dụ: 'Mỗi khách hàng có tên, email...') hoặc vô nghĩa -> Trả về generated_sql = "-- INVALID_QUERY" và confidence_score = 0.1.
         2. BẮT BUỘC chỉ sinh câu lệnh SQL Read-Only (SELECT). Tuyệt đối KHÔNG sinh câu lệnh sửa đổi dữ liệu (DELETE, UPDATE, INSERT, DROP, v.v.).
         3. Nếu câu hỏi yêu cầu xóa/sửa đổi/hủy dữ liệu (ví dụ: 'hủy các đơn hàng ở tphcm'), bạn PHẢI chuyển đổi yêu cầu đó thành câu lệnh SELECT tương ứng để truy vấn/hiển thị danh sách dữ liệu mục tiêu (ví dụ: `SELECT orders.* FROM orders JOIN users ON orders.user_id = users.id WHERE users.full_name LIKE '%tphcm%'` hoặc lọc theo điều kiện tương ứng).
+        4. Với câu hỏi Có/Không (Yes/No - ví dụ: 'Có sản phẩm nào giá > 100k không?', 'Có khách hàng nào tên A không?'): Ưu tiên sinh SQL dạng `SELECT EXISTS(...) AS answer` hoặc `SELECT COUNT(*) AS count ...` hoặc `SELECT 1 FROM ... WHERE ... LIMIT 1` để xác định câu trả lời Yes/No chính xác.
 
         Trả về định dạng JSON duy nhất:
         {"generated_sql": "...", "confidence_score": 0.9, "flag_for_review": false}

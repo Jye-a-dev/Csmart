@@ -5,6 +5,8 @@ import { Clock, Copy, AlertTriangle } from 'lucide-react';
 export interface SqlResult {
   generated_sql: string;
   result?: unknown[];
+  yes_no_answer?: boolean;
+  message?: string;
   guardrail_warnings?: string[];
   error?: string;
   execution_time_ms?: number;
@@ -39,6 +41,21 @@ export function SqlConsoleResult({ result, copied, onCopySql }: SqlConsoleResult
         </pre>
       </div>
 
+      {/* Yes/No Answer Banner */}
+      {result.yes_no_answer !== undefined && (
+        <div className={`border-b-2 border-[#09090B] p-4 flex items-center justify-between ${result.yes_no_answer ? 'bg-emerald-50' : 'bg-rose-50'}`}>
+          <div className="flex items-center gap-3">
+            <span className="font-mono text-xs font-black uppercase text-[#09090B]">Kết quả trả lời (Yes/No):</span>
+            <span className={`px-3 py-1 font-mono text-xs font-black uppercase border-2 border-[#09090B] shadow-[2px_2px_0px_0px_#09090B] ${result.yes_no_answer ? 'bg-emerald-400 text-[#09090B]' : 'bg-rose-400 text-white'}`}>
+              {result.yes_no_answer ? '✓ CÓ (YES)' : '✗ KHÔNG / KHÔNG CÓ (NO)'}
+            </span>
+          </div>
+          <span className="font-mono text-xs font-bold text-zinc-500">
+            {result.yes_no_answer ? 'Dữ liệu khớp điều kiện' : 'Không có dữ liệu thỏa điều kiện'}
+          </span>
+        </div>
+      )}
+
       {/* Guardrail Warnings */}
       {result.guardrail_warnings && result.guardrail_warnings.length > 0 && (
         <div className="border-b-2 border-[#09090B] p-4 bg-amber-50">
@@ -68,7 +85,7 @@ export function SqlConsoleResult({ result, copied, onCopySql }: SqlConsoleResult
       )}
 
       {/* Query Result */}
-      {result.result && result.result.length > 0 && (
+      {result.result && result.result.length > 0 ? (
         <div>
           <div className="bg-zinc-100 border-b-2 border-[#09090B] px-4 py-2 font-mono text-xs font-black text-zinc-600 uppercase">
             Kết quả — {result.result.length} rows
@@ -94,7 +111,11 @@ export function SqlConsoleResult({ result, copied, onCopySql }: SqlConsoleResult
             </table>
           </div>
         </div>
-      )}
+      ) : result.result && Array.isArray(result.result) && result.result.length === 0 && !result.error ? (
+        <div className="bg-zinc-50 p-6 text-center font-mono text-xs font-bold text-zinc-500 italic border-t-2 border-[#09090B]">
+          Không có dữ liệu
+        </div>
+      ) : null}
     </div>
   );
 }
