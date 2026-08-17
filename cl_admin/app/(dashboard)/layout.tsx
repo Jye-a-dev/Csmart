@@ -25,6 +25,7 @@ import {
   CreditCard,
   FolderTree,
   HelpCircle,
+  ScanText,
 } from 'lucide-react';
 type DashboardLayoutProps = {
   children: ReactNode;
@@ -69,6 +70,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     {
       label: 'AI & VẬN HÀNH',
       items: [
+        { name: 'OCR Scanner', href: '/ocr', icon: ScanText },
         { name: 'HITL Queue', href: '/hitl', icon: Bot },
         { name: 'AI Logs', href: '/ai-logs', icon: ScrollText },
         { name: 'AI Evaluator', href: '/ai-evaluator', icon: FlaskConical },

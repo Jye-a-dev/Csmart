@@ -1,9 +1,11 @@
-import { Injectable, Logger, Inject } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
 import { Pool } from 'pg';
+import { BaseService } from '../../common/services/base.service';
 import { PG_CONNECTION } from '../../database/pg.provider';
 import { AiClientService } from '../../common/services/ai-client.service';
 import { AiLogsService } from '../ai-logs/ai-logs.service';
 import { HitlService } from '../hitl/hitl.service';
+import { SqlGuardrailStrategy } from './strategies/sql-guardrail.strategy';
 import {
   IntentRequestDto,
   NerRequestDto,
@@ -15,15 +17,16 @@ import {
 const CONFIDENCE_THRESHOLD = 0.75;
 
 @Injectable()
-export class AiProxyService {
-  private readonly logger = new Logger(AiProxyService.name);
-
+export class AiProxyService extends BaseService {
   constructor(
     private readonly aiClient: AiClientService,
     private readonly aiLogsService: AiLogsService,
     private readonly hitlService: HitlService,
+    private readonly sqlGuardrail: SqlGuardrailStrategy,
     @Inject(PG_CONNECTION) private readonly pool: Pool,
-  ) {}
+  ) {
+    super(AiProxyService.name);
+  }
 
   /**
    * Gọi FastAPI và ghi log trước/sau. Nếu flag_for_review=true hoặc confidence thấp → đẩy vào HITL queue.
@@ -57,7 +60,7 @@ export class AiProxyService {
           execution_time_ms: Date.now() - startTime,
         });
 
-        this.logger.log(
+        this.logInfo(
           `[AI Learned Cache] Return corrected output for ${endpoint}: "${inputText}"`,
         );
         return learnedResult;
@@ -77,7 +80,7 @@ export class AiProxyService {
     try {
       result = await fetchFn();
     } catch (err) {
-      this.logger.error(`Pipeline error on ${endpoint}: ${String(err)}`);
+      this.logError(`Pipeline error on ${endpoint}: ${String(err)}`);
       result = fallback as TResult;
     }
 
@@ -110,7 +113,7 @@ export class AiProxyService {
       // Cập nhật review_id vào log
       await this.aiLogsService.updateReviewId(preLog.id, reviewEntry.id);
 
-      this.logger.warn(
+      this.logWarn(
         `[HITL] ${endpoint} enqueued for review (confidence=${confidenceScore}, flag=${flagForReview})`,
       );
     }
@@ -238,24 +241,27 @@ export class AiProxyService {
 
     // Execute the generated SQL query against PostgreSQL database if present
     const sql = res.generated_sql?.trim();
-    if (sql && !sql.startsWith('--')) {
-      // Guardrail: Only allow read-only SELECT or WITH statements
-      const cleanSql = sql.toLowerCase();
-      if (!cleanSql.startsWith('select') && !cleanSql.startsWith('with')) {
+    if (sql) {
+      // Validate SQL with strategy guardrail
+      const validation = this.sqlGuardrail.validateReadOnlySql(sql);
+      if (!validation.isValid) {
         return {
           ...res,
           result: [],
-          error: 'Chỉ cho phép thực thi truy vấn READ-ONLY (SELECT)',
+          error: validation.error,
         };
       }
 
       const startTime = Date.now();
       try {
         const queryRes = await this.pool.query(sql);
-        const rows = this.sanitizeSqlRows(
+        const rows = this.sqlGuardrail.sanitizeRows(
           queryRes.rows as Record<string, unknown>[],
         );
-        const yesNoAnswer = this.evaluateYesNoAnswer(dto.question, rows);
+        const yesNoAnswer = this.sqlGuardrail.evaluateYesNoAnswer(
+          dto.question,
+          rows,
+        );
 
         return {
           ...res,
@@ -283,84 +289,5 @@ export class AiProxyService {
     }
 
     return res;
-  }
-
-  /** Đánh giá câu trả lời Yes/No dựa trên câu hỏi và kết quả truy vấn SQL */
-  private evaluateYesNoAnswer(
-    question: string,
-    rows: Record<string, unknown>[],
-  ): boolean | undefined {
-    if (!question) return undefined;
-    const lowerQ = question.toLowerCase().trim();
-
-    // Kiểm tra câu hỏi dạng Yes/No bằng tiếng Việt hoặc tiếng Anh
-    const isYesNoQuestion =
-      /^(có|phải|đúng|tồn tại)\b/i.test(lowerQ) ||
-      /\b(không|không\?|phải không\?|đúng không\?|tồn tại không\?|chưa\?)$/i.test(
-        lowerQ,
-      ) ||
-      /\b(có|exists|exist|is there|are there|does|has|can)\b/i.test(lowerQ);
-
-    if (!isYesNoQuestion) {
-      return undefined;
-    }
-
-    if (!rows || rows.length === 0) {
-      return false;
-    }
-
-    // Kiểm tra nếu SQL trả về các cột boolean/exists/count cụ thể
-    const firstRow = rows[0];
-    if (firstRow) {
-      for (const [key, val] of Object.entries(firstRow)) {
-        if (typeof val === 'boolean') {
-          return val;
-        }
-        const lowerKey = key.toLowerCase();
-        if (lowerKey.includes('count') || lowerKey.includes('total')) {
-          const num = Number(val);
-          return !isNaN(num) && num > 0;
-        }
-        if (lowerKey.includes('exists') || lowerKey.includes('answer')) {
-          if (typeof val === 'boolean') return val;
-          if (typeof val === 'string')
-            return (
-              val.toLowerCase() === 'true' ||
-              val === '1' ||
-              val.toLowerCase() === 't'
-            );
-          if (typeof val === 'number') return val > 0;
-        }
-      }
-    }
-
-    // Mặc định: Nếu truy vấn có kết quả trả về => Có (True), không có => Không (False)
-    return rows.length > 0;
-  }
-
-  /** Redact sensitive security attributes (password_hash, tokens, secrets) from SQL results */
-  private sanitizeSqlRows(
-    rows: Record<string, unknown>[],
-  ): Record<string, unknown>[] {
-    const sensitiveKeys = [
-      'password',
-      'password_hash',
-      'secret',
-      'token',
-      'access_token',
-      'refresh_token',
-    ];
-    return rows.map((row) => {
-      if (!row || typeof row !== 'object') return row;
-      const cleanRow: Record<string, unknown> = {};
-      for (const [key, value] of Object.entries(row)) {
-        if (sensitiveKeys.some((s) => key.toLowerCase().includes(s))) {
-          cleanRow[key] = '[REDACTED]';
-        } else {
-          cleanRow[key] = value;
-        }
-      }
-      return cleanRow;
-    });
   }
 }

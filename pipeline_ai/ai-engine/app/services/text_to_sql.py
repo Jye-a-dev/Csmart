@@ -1,20 +1,37 @@
 import os
 import json
 import re
-import logging
+from dataclasses import dataclass
 from app.config import settings
+from app.services.base_service import BaseAIService
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+@dataclass
+class TextToSQLResult:
+    """DTO chứa kết quả dịch Text-to-SQL cùng confidence score."""
+    query: str
+    confidence_score: float
+    matched: bool
 
-class ViText2SQLService:
+class ViText2SQLService(BaseAIService):
     _instance = None
-    dataset = []
+    dataset: list[dict] = []
 
     def __new__(cls):
         if cls._instance is None:
             cls._instance = super(ViText2SQLService, cls).__new__(cls)
         return cls._instance
+
+    def __init__(self):
+        if not hasattr(self, "_initialized"):
+            super().__init__("ViText2SQLService")
+            self._initialized = True
+
+    def health_check(self) -> dict:
+        return {
+            "service": self.service_name,
+            "status": "healthy" if len(self.dataset) > 0 else "uninitialized",
+            "dataset_count": len(self.dataset)
+        }
 
     def _clean_text(self, text: str) -> str:
         text = text.lower().strip()
@@ -25,7 +42,7 @@ class ViText2SQLService:
         if self.dataset:
             return
         
-        logger.info("Loading ViText2SQL dataset...")
+        self.log_info("Loading ViText2SQL dataset...")
         data_dir = settings.VITEXT2SQL_DATA_DIR
         dev_path = os.path.join(data_dir, "dev.json")
         train_path = os.path.join(data_dir, "train.json")
@@ -44,11 +61,11 @@ class ViText2SQLService:
                             "tokens": set(cleaned.split()),
                             "query": item["query"]
                         })
-                logger.info(f"Loaded dev.json from ViText2SQL ({len(dev_data)} items)")
+                self.log_info(f"Loaded dev.json from ViText2SQL ({len(dev_data)} items)")
             except Exception as e:
-                logger.error(f"Error loading dev.json: {e}")
+                self.log_error("Error loading dev.json", e)
         else:
-            logger.warning(f"dev.json not found at {dev_path}")
+            self.logger.warning(f"dev.json not found at {dev_path}")
 
         # Load train.json
         if os.path.exists(train_path):
@@ -62,14 +79,18 @@ class ViText2SQLService:
                             "tokens": set(cleaned.split()),
                             "query": item["query"]
                         })
-                logger.info(f"Loaded train.json from ViText2SQL ({len(train_data)} items)")
+                self.log_info(f"Loaded train.json from ViText2SQL ({len(train_data)} items)")
             except Exception as e:
-                logger.error(f"Error loading train.json: {e}")
+                self.log_error("Error loading train.json", e)
         else:
-            logger.warning(f"train.json not found at {train_path}")
+            self.logger.warning(f"train.json not found at {train_path}")
 
         self.dataset = loaded_items
-        logger.info(f"ViText2SQL dataset initialization complete. Total items: {len(self.dataset)}")
+        self.log_info(f"ViText2SQL dataset initialization complete. Total items: {len(self.dataset)}")
+
+    def translate_to_dto(self, question: str) -> TextToSQLResult:
+        query, score = self.translate_with_score(question)
+        return TextToSQLResult(query=query, confidence_score=score, matched=score >= 0.15)
 
     def translate(self, question: str) -> str:
         query, _ = self.translate_with_score(question)
@@ -77,7 +98,7 @@ class ViText2SQLService:
 
     def translate_with_score(self, question: str) -> tuple[str, float]:
         if not self.dataset:
-            logger.warning("ViText2SQL dataset is empty. Returning default query.")
+            self.logger.warning("ViText2SQL dataset is empty. Returning default query.")
             return "SELECT * FROM products LIMIT 10;", 0.0
 
         cleaned_query = self._clean_text(question)
@@ -119,3 +140,4 @@ class ViText2SQLService:
             return "SELECT * FROM products LIMIT 10;", 0.0
 
 vitext2sql_service = ViText2SQLService()
+

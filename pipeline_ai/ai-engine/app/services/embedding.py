@@ -1,9 +1,7 @@
 from sentence_transformers import SentenceTransformer
-import logging
+from app.services.base_service import BaseAIService
 
-logger = logging.getLogger(__name__)
-
-class EmbeddingService:
+class EmbeddingService(BaseAIService):
     _instance = None
     model = None
 
@@ -12,16 +10,28 @@ class EmbeddingService:
             cls._instance = super(EmbeddingService, cls).__new__(cls)
         return cls._instance
 
+    def __init__(self):
+        if not hasattr(self, "_initialized"):
+            super().__init__("EmbeddingService")
+            self._initialized = True
+
+    def health_check(self) -> dict:
+        return {
+            "service": self.service_name,
+            "status": "loaded" if self.model is not None else "not_loaded",
+            "model_name": "all-MiniLM-L6-v2"
+        }
+
     def load_model(self):
         if self.model is not None:
             return
-        logger.info("🚀 Loading sentence-transformers/all-MiniLM-L6-v2 model...")
+        self.log_info("Loading sentence-transformers/all-MiniLM-L6-v2 model...")
         try:
             # Load the lightweight MiniLM model (384 dimensions)
             self.model = SentenceTransformer("all-MiniLM-L6-v2")
-            logger.info("✅ sentence-transformers model loaded successfully.")
+            self.log_info("sentence-transformers model loaded successfully.")
         except Exception as e:
-            logger.error(f"❌ Failed to load sentence-transformers: {e}")
+            self.log_error("Failed to load sentence-transformers", e)
             self.model = None
 
     def get_embedding(self, text: str) -> list[float]:
@@ -34,7 +44,8 @@ class EmbeddingService:
             embedding = self.model.encode(text)
             return embedding.tolist()
         except Exception as e:
-            logger.error(f"Error encoding embedding: {e}")
+            self.log_error("Error encoding embedding", e)
             return [0.0] * 384
 
 embedding_service = EmbeddingService()
+

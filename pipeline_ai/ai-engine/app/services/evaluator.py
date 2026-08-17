@@ -1,14 +1,19 @@
-import json
-import logging
-from app.services.database import db_service
+from app.services.base_service import BaseAIService
 
-logger = logging.getLogger(__name__)
-
-class SelfEvaluationEngine:
+class SelfEvaluationEngine(BaseAIService):
     def __init__(self, confidence_threshold=0.7):
+        super().__init__("SelfEvaluationEngine")
         self.threshold = confidence_threshold
 
+    def health_check(self) -> dict:
+        return {
+            "service": self.service_name,
+            "status": "healthy",
+            "threshold": self.threshold
+        }
+
     def evaluate_and_adjust(self, logs: list):
+        self.log_info(f"Evaluating {len(logs)} log records...")
         ood_samples = []
         correct_count = 0
 
@@ -51,3 +56,4 @@ class SelfEvaluationEngine:
 async def log_request(endpoint: str, input_data: dict, output_data: dict, execution_time_ms: int = None):
     """Centralized logging is handled by NestJS AiProxyService to prevent duplicate log records."""
     return
+
