@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { memo } from 'react';
 import { AlertTriangle, Trash2, X } from 'lucide-react';
 import { OcrRecordItem } from './OcrRecordsTable';
 
@@ -11,7 +11,7 @@ interface OcrDeleteModalProps {
   onConfirmDelete: (id: string) => void;
 }
 
-export const OcrDeleteModal: React.FC<OcrDeleteModalProps> = ({
+const OcrDeleteModalComponent: React.FC<OcrDeleteModalProps> = ({
   isOpen,
   record,
   onClose,
@@ -20,8 +20,8 @@ export const OcrDeleteModal: React.FC<OcrDeleteModalProps> = ({
   if (!isOpen || !record) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
-      <div className="bg-white border-4 border-[#09090B] shadow-[8px_8px_0px_0px_#09090B] w-full max-w-md overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 transition-opacity duration-150">
+      <div className="bg-white border-4 border-[#09090B] shadow-[8px_8px_0px_0px_#09090B] w-full max-w-md overflow-hidden transform transition-all duration-150 scale-100">
         {/* Header */}
         <div className="bg-red-600 text-white px-6 py-4 flex items-center justify-between border-b-2 border-[#09090B]">
           <div className="flex items-center gap-2">
@@ -86,3 +86,5 @@ export const OcrDeleteModal: React.FC<OcrDeleteModalProps> = ({
     </div>
   );
 };
+
+export const OcrDeleteModal = memo(OcrDeleteModalComponent);

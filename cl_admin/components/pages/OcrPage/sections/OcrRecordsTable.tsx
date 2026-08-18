@@ -1,10 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Search,
-  Filter,
-  Download,
   Eye,
   Edit3,
   Trash2,
@@ -30,14 +28,16 @@ export interface OcrRecordItem extends OcrExtractedData {
 
 interface OcrRecordsTableProps {
   records: OcrRecordItem[];
+  loading?: boolean;
   onViewRecord: (record: OcrRecordItem) => void;
   onEditRecord: (record: OcrRecordItem) => void;
   onDeleteRecord: (record: OcrRecordItem) => void;
   onExportCsv: () => void;
 }
 
-export const OcrRecordsTable: React.FC<OcrRecordsTableProps> = ({
+export const OcrRecordsTable: React.FC<OcrRecordsTableProps> = React.memo(({
   records,
+  loading = false,
   onViewRecord,
   onEditRecord,
   onDeleteRecord,
@@ -49,20 +49,22 @@ export const OcrRecordsTable: React.FC<OcrRecordsTableProps> = ({
   const [currentPage, setCurrentPage] = useState<number>(1);
   const pageSize = 5;
 
-  // Filter logic
-  const filteredRecords = records.filter((item) => {
-    const matchesSearch =
-      searchTerm === '' ||
-      item.order_code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.customer_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.phone_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (item.tracking_number && item.tracking_number.toLowerCase().includes(searchTerm.toLowerCase()));
+  // Filter logic (Memoized for zero re-render lag)
+  const filteredRecords = useMemo(() => {
+    return records.filter((item) => {
+      const matchesSearch =
+        searchTerm === '' ||
+        item.order_code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.customer_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (item.phone_number && item.phone_number.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (item.tracking_number && item.tracking_number.toLowerCase().includes(searchTerm.toLowerCase()));
 
-    const matchesDocType = docTypeFilter === 'ALL' || item.document_type === docTypeFilter;
-    const matchesStatus = statusFilter === 'ALL' || item.status === statusFilter;
+      const matchesDocType = docTypeFilter === 'ALL' || item.document_type === docTypeFilter;
+      const matchesStatus = statusFilter === 'ALL' || item.status === statusFilter;
 
-    return matchesSearch && matchesDocType && matchesStatus;
-  });
+      return matchesSearch && matchesDocType && matchesStatus;
+    });
+  }, [records, searchTerm, docTypeFilter, statusFilter]);
 
   // Pagination logic
   const totalPages = Math.max(1, Math.ceil(filteredRecords.length / pageSize));
@@ -187,7 +189,38 @@ export const OcrRecordsTable: React.FC<OcrRecordsTableProps> = ({
             </tr>
           </thead>
           <tbody className="divide-y border-t border-[#09090B]">
-            {paginatedRecords.length > 0 ? (
+            {loading ? (
+              [1, 2, 3, 4, 5].map((idx) => (
+                <tr key={`skeleton-${idx}`} className="animate-pulse">
+                  <td className="p-2 border-r border-[#09090B] text-center">
+                    <div className="h-10 w-10 bg-zinc-200 border border-[#09090B] mx-auto"></div>
+                  </td>
+                  <td className="p-3 border-r border-[#09090B]">
+                    <div className="h-4 bg-zinc-200 rounded w-24 mb-1"></div>
+                    <div className="h-3 bg-zinc-100 rounded w-16"></div>
+                  </td>
+                  <td className="p-3 border-r border-[#09090B]">
+                    <div className="h-5 bg-zinc-200 rounded w-20"></div>
+                  </td>
+                  <td className="p-3 border-r border-[#09090B]">
+                    <div className="h-4 bg-zinc-200 rounded w-28 mb-1"></div>
+                    <div className="h-3 bg-zinc-100 rounded w-20"></div>
+                  </td>
+                  <td className="p-3 border-r border-[#09090B]">
+                    <div className="h-4 bg-zinc-200 rounded w-20"></div>
+                  </td>
+                  <td className="p-3 border-r border-[#09090B] text-center">
+                    <div className="h-5 bg-zinc-200 rounded w-14 mx-auto"></div>
+                  </td>
+                  <td className="p-3 border-r border-[#09090B]">
+                    <div className="h-3 bg-zinc-200 rounded w-24"></div>
+                  </td>
+                  <td className="p-3 text-center">
+                    <div className="h-6 bg-zinc-200 rounded w-20 mx-auto"></div>
+                  </td>
+                </tr>
+              ))
+            ) : paginatedRecords.length > 0 ? (
               paginatedRecords.map((item) => (
                 <tr key={item.id} className="hover:bg-zinc-50 transition-colors">
                   {/* Thumbnail */}
@@ -322,4 +355,6 @@ export const OcrRecordsTable: React.FC<OcrRecordsTableProps> = ({
       </div>
     </div>
   );
-};
+});
+
+OcrRecordsTable.displayName = 'OcrRecordsTable';

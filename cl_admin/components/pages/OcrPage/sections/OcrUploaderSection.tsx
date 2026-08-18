@@ -32,24 +32,24 @@ interface OcrUploaderSectionProps {
 const SAMPLE_IMAGES: SampleImage[] = [
   {
     id: 'sample-inv-1',
-    name: 'Hóa đơn mua sắm SmartCart #INV-889',
+    name: 'Hóa đơn Csmart Fashion #INV-889',
     type: 'INVOICE',
-    url: 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=600&auto=format&fit=crop&q=80',
-    description: 'Hóa đơn thanh toán cửa hàng gồm Tên KH, SĐT, Sản phẩm & Tổng tiền',
+    url: 'https://images.unsplash.com/photo-1489987707025-afc232f7ea0f?w=600&auto=format&fit=crop&q=80',
+    description: 'Hóa đơn cửa hàng thời trang: Áo sơ mi Oxford & Quần Jean Slimfit',
   },
   {
     id: 'sample-ship-1',
-    name: 'Nhãn vận đơn Giao Hàng Nhanh #GHN-99823',
+    name: 'Mã vận đơn GHN #GHN-99823411',
     type: 'SHIPPING_LABEL',
-    url: 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=600&auto=format&fit=crop&q=80',
-    description: 'Phiếu giao hàng bưu gửi có Mã vận đơn, Người nhận & Địa chỉ',
+    url: 'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?w=600&auto=format&fit=crop&q=80',
+    description: 'Bưu gửi Giao Hàng Nhanh đơn hàng Set Áo Blazer & Chân Váy',
   },
   {
     id: 'sample-prod-1',
-    name: 'Nhãn thông số thiết bị công nghệ',
+    name: 'Nhãn mác sản phẩm Áo Polo Techwear',
     type: 'PRODUCT_LABEL',
-    url: 'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=600&auto=format&fit=crop&q=80',
-    description: 'Nhãn thông số kỹ thuật, Thương hiệu & Serial Number',
+    url: 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=600&auto=format&fit=crop&q=80',
+    description: 'Mác áo thời trang: Thương hiệu Csmart, Chất liệu & Mã Serial',
   },
 ];
 

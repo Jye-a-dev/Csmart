@@ -6,7 +6,6 @@ import {
   CheckCircle2,
   AlertTriangle,
   Save,
-  Download,
   Copy,
   Check,
   Package,
@@ -15,7 +14,6 @@ import {
   MapPin,
   DollarSign,
   FileText,
-  Clock,
 } from 'lucide-react';
 import { OcrDocType } from './OcrUploaderSection';
 
@@ -36,6 +34,7 @@ export interface OcrExtractedData {
   total_amount: number;
   confidence_score: number;
   execution_time_ms: number;
+  image_url?: string;
   extracted_items: ExtractedItem[];
   raw_text_chunks: string[];
 }
@@ -101,62 +100,80 @@ export const OcrProcessingResult: React.FC<OcrProcessingResultProps> = ({
         </div>
       </div>
 
-      {/* Grid Display of Extracted Metadata */}
+      {/* Grid Display of Extracted Metadata - Custom Layouts for 3 Distinct Doc Types */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-        {/* Field 1: Order / Tracking Code */}
+        {/* Field 1: Code */}
         <div className="bg-[#FAFAFA] border-2 border-[#09090B] p-3 shadow-[2px_2px_0px_0px_#09090B]">
           <div className="flex items-center gap-2 text-zinc-500 font-mono text-[10px] font-bold uppercase mb-1">
             <FileText size={14} className="text-[#F97316]" />
-            {result.document_type === 'SHIPPING_LABEL' ? 'MÃ VẬN ĐƠN' : 'MÃ HÓA ĐƠN'}
+            {result.document_type === 'INVOICE'
+              ? 'MÃ HÓA ĐƠN BÁN HÀNG'
+              : result.document_type === 'SHIPPING_LABEL'
+              ? 'MÃ VẬN ĐƠN (TRACKING)'
+              : 'MÃ SẢN PHẨM / SKU'}
           </div>
           <div className="font-mono font-black text-sm text-[#09090B]">
             {result.order_code || result.tracking_number || 'N/A'}
           </div>
           {result.courier_name && (
             <span className="inline-block mt-1 font-mono text-[10px] bg-blue-100 text-blue-800 px-1.5 py-0.5 border border-blue-300 font-bold">
-              ĐƠN VỊ: {result.courier_name}
+              {result.courier_name}
             </span>
           )}
         </div>
 
-        {/* Field 2: Customer Name */}
+        {/* Field 2: Name / Customer */}
         <div className="bg-[#FAFAFA] border-2 border-[#09090B] p-3 shadow-[2px_2px_0px_0px_#09090B]">
           <div className="flex items-center gap-2 text-zinc-500 font-mono text-[10px] font-bold uppercase mb-1">
             <User size={14} className="text-blue-600" />
-            TÊN NGƯỜI NHẬN / KHÁCH HÀNG
+            {result.document_type === 'INVOICE'
+              ? 'KHÁCH HÀNG MUA HÀNG'
+              : result.document_type === 'SHIPPING_LABEL'
+              ? 'NGƯỜI NHẬN BƯU GỬI'
+              : 'TÊN SẢN PHẨM / THƯƠNG HIỆU'}
           </div>
           <div className="font-mono font-black text-sm text-[#09090B]">
             {result.customer_name || 'Không xác định'}
           </div>
         </div>
 
-        {/* Field 3: Phone Number */}
+        {/* Field 3: Phone / Serial */}
         <div className="bg-[#FAFAFA] border-2 border-[#09090B] p-3 shadow-[2px_2px_0px_0px_#09090B]">
           <div className="flex items-center gap-2 text-zinc-500 font-mono text-[10px] font-bold uppercase mb-1">
             <Phone size={14} className="text-emerald-600" />
-            SỐ ĐIỆN THOẠI KHÁCH HÀNG
+            {result.document_type === 'PRODUCT_LABEL' ? 'SỐ SERIAL (SN)' : 'SỐ ĐIỆN THOẠI'}
           </div>
           <div className="font-mono font-black text-sm text-[#09090B]">
-            {result.phone_number || 'N/A'}
+            {result.document_type === 'PRODUCT_LABEL'
+              ? result.tracking_number || 'SN-2026-CSMART'
+              : result.phone_number || 'N/A'}
           </div>
         </div>
 
-        {/* Field 4: Address */}
+        {/* Field 4: Address / Location */}
         <div className="bg-[#FAFAFA] border-2 border-[#09090B] p-3 shadow-[2px_2px_0px_0px_#09090B] md:col-span-2">
           <div className="flex items-center gap-2 text-zinc-500 font-mono text-[10px] font-bold uppercase mb-1">
             <MapPin size={14} className="text-purple-600" />
-            ĐỊA CHỈ GIAO HÀNG
+            {result.document_type === 'INVOICE'
+              ? 'ĐỊA CHỈ XUẤT HÓA ĐƠN'
+              : result.document_type === 'SHIPPING_LABEL'
+              ? 'ĐỊA CHỈ GIAO BƯU GỬI'
+              : 'NƠI SẢN XUẤT / KHO TỔNG'}
           </div>
           <div className="font-mono font-bold text-xs text-[#09090B] line-clamp-2">
             {result.address || 'N/A'}
           </div>
         </div>
 
-        {/* Field 5: Total Amount */}
+        {/* Field 5: Amount / Price */}
         <div className="bg-[#FAFAFA] border-2 border-[#09090B] p-3 shadow-[2px_2px_0px_0px_#09090B]">
           <div className="flex items-center gap-2 text-zinc-500 font-mono text-[10px] font-bold uppercase mb-1">
             <DollarSign size={14} className="text-amber-600" />
-            TỔNG TIỀN THANH TOÁN
+            {result.document_type === 'SHIPPING_LABEL'
+              ? 'TIỀN THU HỘ (COD)'
+              : result.document_type === 'PRODUCT_LABEL'
+              ? 'ĐƠN GIÁ NIÊM YẾT'
+              : 'TỔNG TIỀN HÓA ĐƠN'}
           </div>
           <div className="font-mono font-black text-lg text-[#F97316]">
             {result.total_amount.toLocaleString('vi-VN')} đ

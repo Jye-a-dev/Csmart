@@ -19,6 +19,7 @@ import { AiTasksModule } from './modules/ai-tasks/ai-tasks.module';
 import { CopilotModule } from './modules/copilot/copilot.module';
 import { AiProxyModule } from './modules/ai-proxy/ai-proxy.module';
 import { HitlModule } from './modules/hitl/hitl.module';
+import { OcrRecordsModule } from './modules/ocr-records/ocr-records.module';
 
 @Module({
   imports: [
@@ -49,6 +50,7 @@ import { HitlModule } from './modules/hitl/hitl.module';
     AiLogsModule,
     AiProxyModule,
     HitlModule,
+    OcrRecordsModule,
   ],
 
   controllers: [AppController],

@@ -10,7 +10,6 @@ import {
   Edit3,
   Search,
   Download,
-  FileSpreadsheet,
   Zap,
 } from 'lucide-react';
 
@@ -19,14 +18,14 @@ interface OcrUserGuideModalProps {
   onClose: () => void;
 }
 
-export const OcrUserGuideModal: React.FC<OcrUserGuideModalProps> = ({
+export const OcrUserGuideModal: React.FC<OcrUserGuideModalProps> = React.memo(({
   isOpen,
   onClose,
 }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 transition-opacity">
       <div className="bg-white border-4 border-[#09090B] shadow-[8px_8px_0px_0px_#09090B] w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
         {/* Modal Header */}
         <div className="bg-[#09090B] text-white px-6 py-4 flex items-center justify-between">
@@ -217,4 +216,6 @@ export const OcrUserGuideModal: React.FC<OcrUserGuideModalProps> = ({
       </div>
     </div>
   );
-};
+});
+
+OcrUserGuideModal.displayName = 'OcrUserGuideModal';

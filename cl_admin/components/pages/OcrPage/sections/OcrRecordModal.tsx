@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, memo } from 'react';
 import {
   X,
   Save,
@@ -36,7 +36,7 @@ const DEFAULT_RECORD_FORM: Partial<OcrRecordItem> = {
   extracted_items: [],
 };
 
-export const OcrRecordModal: React.FC<OcrRecordModalProps> = ({
+const OcrRecordModalComponent: React.FC<OcrRecordModalProps> = ({
   isOpen,
   mode,
   record,
@@ -44,9 +44,9 @@ export const OcrRecordModal: React.FC<OcrRecordModalProps> = ({
   onSave,
 }) => {
   const [prevRecord, setPrevRecord] = useState<OcrRecordItem | null>(null);
-  const [formData, setFormData] = useState<Partial<OcrRecordItem>>(DEFAULT_RECORD_FORM);
+  const [formData, setFormData] = useState<Partial<OcrRecordItem>>(() => record ?? DEFAULT_RECORD_FORM);
 
-  // Synchronize state during render when record prop changes (pure & idempotent)
+  // Synchronize state during render when record prop changes
   if (record !== prevRecord) {
     setPrevRecord(record);
     setFormData(record ?? DEFAULT_RECORD_FORM);
@@ -87,8 +87,8 @@ export const OcrRecordModal: React.FC<OcrRecordModalProps> = ({
   const isViewOnly = mode === 'VIEW';
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
-      <div className="bg-white border-4 border-[#09090B] shadow-[8px_8px_0px_0px_#09090B] w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 transition-opacity duration-150">
+      <div className="bg-white border-4 border-[#09090B] shadow-[8px_8px_0px_0px_#09090B] w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden transform transition-all duration-150 scale-100">
         {/* Modal Header */}
         <div className="bg-[#09090B] text-white px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -102,7 +102,7 @@ export const OcrRecordModal: React.FC<OcrRecordModalProps> = ({
                 {mode === 'CREATE' && 'TẠO MỚI BẢN GHI OCR'}
               </h2>
               <p className="font-mono text-xs text-zinc-400">
-                Mã chứng từ: {formData.order_code}
+                Mã chứng từ: {formData.order_code || 'N/A'}
               </p>
             </div>
           </div>
@@ -343,3 +343,4 @@ export const OcrRecordModal: React.FC<OcrRecordModalProps> = ({
   );
 };
 
+export const OcrRecordModal = memo(OcrRecordModalComponent);
