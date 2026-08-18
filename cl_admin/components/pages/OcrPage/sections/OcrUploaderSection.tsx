@@ -11,54 +11,21 @@ import {
   FileText,
   Truck,
   Tag,
-  Check,
 } from 'lucide-react';
 
 export type OcrDocType = 'INVOICE' | 'SHIPPING_LABEL' | 'PRODUCT_LABEL';
-
-export interface SampleImage {
-  id: string;
-  name: string;
-  type: OcrDocType;
-  url: string;
-  description: string;
-}
 
 interface OcrUploaderSectionProps {
   onProcessOcr: (fileOrUrl: string, docType: OcrDocType) => void;
   isProcessing: boolean;
 }
 
-const SAMPLE_IMAGES: SampleImage[] = [
-  {
-    id: 'sample-inv-1',
-    name: 'Hóa đơn Csmart Fashion #INV-889',
-    type: 'INVOICE',
-    url: 'https://images.unsplash.com/photo-1489987707025-afc232f7ea0f?w=600&auto=format&fit=crop&q=80',
-    description: 'Hóa đơn cửa hàng thời trang: Áo sơ mi Oxford & Quần Jean Slimfit',
-  },
-  {
-    id: 'sample-ship-1',
-    name: 'Mã vận đơn GHN #GHN-99823411',
-    type: 'SHIPPING_LABEL',
-    url: 'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?w=600&auto=format&fit=crop&q=80',
-    description: 'Bưu gửi Giao Hàng Nhanh đơn hàng Set Áo Blazer & Chân Váy',
-  },
-  {
-    id: 'sample-prod-1',
-    name: 'Nhãn mác sản phẩm Áo Polo Techwear',
-    type: 'PRODUCT_LABEL',
-    url: 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=600&auto=format&fit=crop&q=80',
-    description: 'Mác áo thời trang: Thương hiệu Csmart, Chất liệu & Mã Serial',
-  },
-];
-
 export const OcrUploaderSection: React.FC<OcrUploaderSectionProps> = ({
   onProcessOcr,
   isProcessing,
 }) => {
   const [docType, setDocType] = useState<OcrDocType>('INVOICE');
-  const [selectedImageUrl, setSelectedImageUrl] = useState<string>(SAMPLE_IMAGES[0].url);
+  const [selectedImageUrl, setSelectedImageUrl] = useState<string>('');
   const [rotation, setRotation] = useState<number>(0);
   const [zoom, setZoom] = useState<number>(1);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -76,13 +43,6 @@ export const OcrUploaderSection: React.FC<OcrUploaderSectionProps> = ({
       };
       reader.readAsDataURL(file);
     }
-  };
-
-  const handleSelectSample = (sample: SampleImage) => {
-    setSelectedImageUrl(sample.url);
-    setDocType(sample.type);
-    setRotation(0);
-    setZoom(1);
   };
 
   const handleRotate = () => {
@@ -111,10 +71,10 @@ export const OcrUploaderSection: React.FC<OcrUploaderSectionProps> = ({
           </div>
           <div>
             <h2 className="font-mono font-black text-base uppercase text-[#09090B]">
-              BƯỚC 1: TẢI ẢNH CHỨNG TỪ HOẶC CHỌN MẪU DÙNG THỬ
+              BƯỚC 1: TẢI ẢNH CHỨNG TỪ
             </h2>
             <p className="font-mono text-xs text-zinc-500">
-              Chọn ảnh hóa đơn / mã vận đơn cần bóc tách thông tin tự động bằng AI OCR Engine
+              Tải ảnh hóa đơn / mã vận đơn cần bóc tách thông tin tự động bằng AI OCR Engine
             </p>
           </div>
         </div>
@@ -170,7 +130,7 @@ export const OcrUploaderSection: React.FC<OcrUploaderSectionProps> = ({
       {/* Main Upload Dropzone & Preview Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Image Preview Box */}
-        <div className="lg:col-span-7 flex flex-col">
+        <div className="lg:col-span-8 flex flex-col">
           <div className="relative flex-1 min-h-80 bg-zinc-900 border-2 border-[#09090B] flex items-center justify-center overflow-hidden p-4">
             {selectedImageUrl ? (
               <div className="relative max-w-full max-h-90 flex items-center justify-center overflow-hidden">
@@ -187,7 +147,8 @@ export const OcrUploaderSection: React.FC<OcrUploaderSectionProps> = ({
             ) : (
               <div className="text-center text-zinc-400 font-mono text-xs p-8">
                 <ImageIcon size={48} className="mx-auto mb-3 text-zinc-600" />
-                <p>Chưa có hình ảnh nào được chọn</p>
+                <p className="font-bold">Chưa có hình ảnh nào được chọn</p>
+                <p className="text-[11px] text-zinc-500 mt-1">Nhấn nút bên dưới để chọn file ảnh từ máy tính</p>
               </div>
             )}
 
@@ -218,9 +179,14 @@ export const OcrUploaderSection: React.FC<OcrUploaderSectionProps> = ({
               </div>
             )}
           </div>
+        </div>
 
-          {/* File Picker trigger */}
-          <div className="mt-3 flex items-center gap-3">
+        {/* Action Column */}
+        <div className="lg:col-span-4 flex flex-col justify-between space-y-4">
+          <div className="bg-[#FAFAFA] border-2 border-[#09090B] p-4">
+            <h3 className="font-mono font-bold text-xs uppercase mb-2 text-[#09090B]">
+              TẢI ẢNH MỚI:
+            </h3>
             <input
               type="file"
               ref={fileInputRef}
@@ -231,60 +197,11 @@ export const OcrUploaderSection: React.FC<OcrUploaderSectionProps> = ({
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="btn-brutal flex-1 flex items-center justify-center gap-2 bg-[#FAFAFA] text-[#09090B] font-mono font-bold text-xs py-2.5 px-4 border-2 border-[#09090B] shadow-[2px_2px_0px_0px_#09090B] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all cursor-pointer"
+              className="btn-brutal w-full flex items-center justify-center gap-2 bg-[#FAFAFA] text-[#09090B] font-mono font-bold text-xs py-3 px-4 border-2 border-[#09090B] shadow-[2px_2px_0px_0px_#09090B] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all cursor-pointer"
             >
-              <Upload size={15} />
+              <Upload size={16} />
               Chọn ảnh từ máy tính (JPG, PNG)
             </button>
-          </div>
-        </div>
-
-        {/* Sample Selection Column & Action */}
-        <div className="lg:col-span-5 flex flex-col justify-between space-y-4">
-          <div>
-            <label className="block font-mono text-xs font-bold text-[#09090B] uppercase mb-2">
-              HOẶC CHỌN MẪU CÓ SẴN (DÙNG THỬ BÓC TÁCH):
-            </label>
-            <div className="space-y-2">
-              {SAMPLE_IMAGES.map((sample) => {
-                const isSelected = selectedImageUrl === sample.url;
-                return (
-                  <div
-                    key={sample.id}
-                    onClick={() => handleSelectSample(sample)}
-                    className={`p-3 border-2 transition-all cursor-pointer flex items-start gap-3 ${
-                      isSelected
-                        ? 'bg-amber-50 border-[#09090B] shadow-[3px_3px_0px_0px_#09090B]'
-                        : 'bg-white border-zinc-300 hover:border-[#09090B]'
-                    }`}
-                  >
-                    <div className="h-12 w-12 border border-[#09090B] overflow-hidden shrink-0 bg-zinc-100">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={sample.url}
-                        alt={sample.name}
-                        className="h-full w-full object-cover"
-                      />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between">
-                        <span className="font-mono font-bold text-xs text-[#09090B] truncate">
-                          {sample.name}
-                        </span>
-                        {isSelected && (
-                          <span className="bg-[#F97316] text-white p-0.5 border border-[#09090B]">
-                            <Check size={12} />
-                          </span>
-                        )}
-                      </div>
-                      <p className="font-mono text-[10px] text-zinc-500 mt-0.5 line-clamp-1">
-                        {sample.description}
-                      </p>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
           </div>
 
           {/* Start OCR Process Button */}
@@ -294,8 +211,8 @@ export const OcrUploaderSection: React.FC<OcrUploaderSectionProps> = ({
               onClick={handleStartOcr}
               disabled={isProcessing || !selectedImageUrl}
               className={`w-full btn-brutal flex items-center justify-center gap-2 font-mono font-black text-sm py-4 px-6 uppercase border-2 border-[#09090B] transition-all ${
-                isProcessing
-                  ? 'bg-zinc-300 text-zinc-600 cursor-not-allowed'
+                isProcessing || !selectedImageUrl
+                  ? 'bg-zinc-300 text-zinc-600 cursor-not-allowed border-zinc-400 shadow-none'
                   : 'bg-[#F97316] text-white shadow-[4px_4px_0px_0px_#09090B] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 cursor-pointer hover:bg-orange-600'
               }`}
             >

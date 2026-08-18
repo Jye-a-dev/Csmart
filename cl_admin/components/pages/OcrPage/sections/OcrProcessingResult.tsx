@@ -21,6 +21,10 @@ export interface ExtractedItem {
   name: string;
   quantity: number;
   unit_price: number;
+  sku?: string;
+  stock_quantity?: number;
+  status?: string;
+  specifications?: string;
 }
 
 export interface OcrExtractedData {

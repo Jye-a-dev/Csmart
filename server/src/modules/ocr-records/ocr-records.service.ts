@@ -42,15 +42,21 @@ export class OcrRecordsService {
         ...dto,
         order_code: dto.order_code || `ORD-${Date.now()}`,
         customer_name: dto.customer_name || 'Khách hàng',
-      } as CreateOcrRecordDto);
+      });
     }
     const updated = await this.ocrRecordsRepository.updateRecord(id, dto);
     return updated || existing;
   }
 
   async remove(id: string): Promise<{ success: boolean; message: string }> {
-    await this.ocrRecordsRepository.deleteRecord(id);
-    return { success: true, message: `OCR record ${id} processed` };
+    const deleted = await this.ocrRecordsRepository.deleteRecord(id);
+    if (!deleted) {
+      throw new NotFoundException(`OCR Record #${id} not found for deletion`);
+    }
+    return {
+      success: true,
+      message: `OCR record ${id} hard deleted permanently`,
+    };
   }
 
   async countAll(): Promise<number> {

@@ -59,28 +59,44 @@ const OcrRecordModalComponent: React.FC<OcrRecordModalProps> = ({
     onSave(formData);
   };
 
+  const calculateTotalAmount = (items: ExtractedItem[]): number => {
+    return items.reduce((sum, item) => sum + (Number(item.quantity) || 0) * (Number(item.unit_price) || 0), 0);
+  };
+
   const handleAddItem = () => {
-    setFormData((prev) => ({
-      ...prev,
-      extracted_items: [
+    setFormData((prev) => {
+      const updatedItems = [
         ...(prev.extracted_items || []),
         { name: 'Sản phẩm mới', quantity: 1, unit_price: 100000 },
-      ],
-    }));
+      ];
+      return {
+        ...prev,
+        extracted_items: updatedItems,
+        total_amount: calculateTotalAmount(updatedItems),
+      };
+    });
   };
 
   const handleRemoveItem = (idx: number) => {
-    setFormData((prev) => ({
-      ...prev,
-      extracted_items: (prev.extracted_items || []).filter((_, i) => i !== idx),
-    }));
+    setFormData((prev) => {
+      const updatedItems = (prev.extracted_items || []).filter((_, i) => i !== idx);
+      return {
+        ...prev,
+        extracted_items: updatedItems,
+        total_amount: calculateTotalAmount(updatedItems),
+      };
+    });
   };
 
   const handleItemChange = (idx: number, field: keyof ExtractedItem, value: string | number) => {
     setFormData((prev) => {
-      const updated = [...(prev.extracted_items || [])];
-      updated[idx] = { ...updated[idx], [field]: value };
-      return { ...prev, extracted_items: updated };
+      const updatedItems = [...(prev.extracted_items || [])];
+      updatedItems[idx] = { ...updatedItems[idx], [field]: value };
+      return {
+        ...prev,
+        extracted_items: updatedItems,
+        total_amount: calculateTotalAmount(updatedItems),
+      };
     });
   };
 
@@ -203,7 +219,7 @@ const OcrRecordModalComponent: React.FC<OcrRecordModalProps> = ({
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-3 gap-3">
                 {/* Total Amount */}
                 <div>
                   <label className="block font-bold uppercase mb-1">TỔNG TIỀN (VNĐ):</label>
@@ -214,6 +230,24 @@ const OcrRecordModalComponent: React.FC<OcrRecordModalProps> = ({
                     onChange={(e) => setFormData({ ...formData, total_amount: parseFloat(e.target.value) || 0 })}
                     className="w-full p-2 border-2 border-[#09090B] font-bold text-[#F97316] bg-white focus:outline-none disabled:bg-zinc-100"
                   />
+                </div>
+
+                {/* Confidence Score */}
+                <div>
+                  <label className="block font-bold uppercase mb-1">ĐỘ TỰ TIN (0–1):</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    max="1"
+                    disabled={isViewOnly}
+                    value={formData.confidence_score ?? 0.95}
+                    onChange={(e) => setFormData({ ...formData, confidence_score: Math.min(1, Math.max(0, parseFloat(e.target.value) || 0)) })}
+                    className="w-full p-2 border-2 border-[#09090B] font-bold text-emerald-700 bg-white focus:outline-none disabled:bg-zinc-100"
+                  />
+                  {!isViewOnly && (
+                    <p className="text-[10px] text-zinc-400 mt-0.5 font-mono">≥ 0.8 = ĐÃ XÁC MINH</p>
+                  )}
                 </div>
 
                 {/* Status */}

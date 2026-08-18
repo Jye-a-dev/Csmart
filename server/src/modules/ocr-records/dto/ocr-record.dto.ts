@@ -1,5 +1,6 @@
 import { ApiProperty, PartialType } from '@nestjs/swagger';
 import { IsString, IsOptional, IsNumber, IsArray } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export class CreateOcrRecordDto {
   @ApiProperty({ example: 'INVOICE' })
@@ -38,16 +39,19 @@ export class CreateOcrRecordDto {
   address?: string;
 
   @ApiProperty({ example: 1450000 })
+  @Type(() => Number)
   @IsNumber()
   @IsOptional()
   total_amount?: number;
 
   @ApiProperty({ required: false, example: 0.95 })
+  @Type(() => Number)
   @IsNumber()
   @IsOptional()
   confidence_score?: number;
 
   @ApiProperty({ required: false, example: 320 })
+  @Type(() => Number)
   @IsNumber()
   @IsOptional()
   execution_time_ms?: number;

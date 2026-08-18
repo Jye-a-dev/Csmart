@@ -22,6 +22,7 @@ export interface OcrRecordItem extends OcrExtractedData {
   id: string;
   image_url: string;
   created_at: string;
+  updated_at?: string;
   status: 'VERIFIED' | 'NEEDS_REVIEW';
   notes?: string;
 }

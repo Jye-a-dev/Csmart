@@ -25,10 +25,25 @@ export function useOcrRecords() {
   const createRecord = useCallback(async (dto: Partial<OcrRecordItem>): Promise<OcrRecordItem> => {
     setLoading(true);
     setError(null);
+    const cleanDto = { ...dto };
+    delete cleanDto.id;
+    delete cleanDto.created_at;
+    delete cleanDto.updated_at;
+
+    if (cleanDto.total_amount !== undefined) {
+      cleanDto.total_amount = Number(cleanDto.total_amount) || 0;
+    }
+    if (cleanDto.confidence_score !== undefined) {
+      cleanDto.confidence_score = Number(cleanDto.confidence_score) || 0.95;
+    }
+    if (cleanDto.execution_time_ms !== undefined) {
+      cleanDto.execution_time_ms = Number(cleanDto.execution_time_ms) || 300;
+    }
+
     try {
       return await apiClient<OcrRecordItem>('/ocr-records', {
         method: 'POST',
-        body: dto,
+        body: cleanDto,
       });
     } catch (err) {
       setError(err as Error);
@@ -41,10 +56,25 @@ export function useOcrRecords() {
   const updateRecord = useCallback(async (id: string, dto: Partial<OcrRecordItem>): Promise<OcrRecordItem> => {
     setLoading(true);
     setError(null);
+    const cleanDto = { ...dto };
+    delete cleanDto.id;
+    delete cleanDto.created_at;
+    delete cleanDto.updated_at;
+
+    if (cleanDto.total_amount !== undefined) {
+      cleanDto.total_amount = Number(cleanDto.total_amount) || 0;
+    }
+    if (cleanDto.confidence_score !== undefined) {
+      cleanDto.confidence_score = Number(cleanDto.confidence_score) || 0.95;
+    }
+    if (cleanDto.execution_time_ms !== undefined) {
+      cleanDto.execution_time_ms = Number(cleanDto.execution_time_ms) || 300;
+    }
+
     try {
       return await apiClient<OcrRecordItem>(`/ocr-records/${id}`, {
         method: 'PATCH',
-        body: dto,
+        body: cleanDto,
       });
     } catch (err) {
       setError(err as Error);
