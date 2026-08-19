@@ -11,13 +11,29 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
 import { PaymentsService } from './payments.service';
-import { CreatePaymentDto, UpdatePaymentDto } from './dto/payment.dto';
+import {
+  CreatePaymentDto,
+  ProcessPaymentDto,
+  UpdatePaymentDto,
+} from './dto/payment.dto';
 import { Payment } from './entities/payment.entity';
 
 @ApiTags('Payments')
 @Controller('payments')
 export class PaymentsController {
   constructor(private readonly paymentsService: PaymentsService) {}
+
+  @Post('checkout')
+  @ApiOperation({
+    summary: 'Thanh toán đơn hàng (MoMo, Ngân hàng VietQR, COD)',
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Khởi tạo giao dịch thanh toán thành công',
+  })
+  processCheckout(@Body() processPaymentDto: ProcessPaymentDto) {
+    return this.paymentsService.processCheckout(processPaymentDto);
+  }
 
   @Post()
   @ApiOperation({ summary: 'Create payment record' })
@@ -73,10 +89,7 @@ export class PaymentsController {
   @Patch(':id')
   @ApiOperation({ summary: 'Update payment' })
   @ApiResponse({ status: 200, type: Payment })
-  update(
-    @Param('id') id: string,
-    @Body() updatePaymentDto: UpdatePaymentDto,
-  ) {
+  update(@Param('id') id: string, @Body() updatePaymentDto: UpdatePaymentDto) {
     return this.paymentsService.update(id, updatePaymentDto);
   }
 

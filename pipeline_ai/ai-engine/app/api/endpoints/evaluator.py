@@ -12,6 +12,7 @@ class EvaluationResponse(BaseModel):
     message: str | None = Field(None, description="Thông điệp kết quả đánh giá (chỉ có khi không có log).")
     current_accuracy: float = Field(..., description="Độ chính xác hiện tại của hệ thống tính từ log.")
     ood_count: int = Field(..., description="Số lượng cuộc gọi Out-of-Distribution (OOD) / ngoài phạm vi.")
+    total_samples: int = Field(0, description="Tổng số log records được đánh giá.")
     recommended_adjustment: dict = Field(..., description="Các điều chỉnh, tối ưu hóa cấu hình hệ thống được đề xuất.")
 
 @router.post(
@@ -38,6 +39,7 @@ async def evaluate_logs():
                 "message": "Không có log dữ liệu để đánh giá.",
                 "current_accuracy": 1.0,
                 "ood_count": 0,
+                "total_samples": 0,
                 "recommended_adjustment": {}
             }
             

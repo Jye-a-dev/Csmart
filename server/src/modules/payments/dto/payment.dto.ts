@@ -30,4 +30,24 @@ export class CreatePaymentDto {
   paid_at?: Date;
 }
 
+export class ProcessPaymentDto {
+  @ApiProperty({ example: 'b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a22' })
+  @IsUUID()
+  order_id: string;
+
+  @ApiProperty({ example: 150000.0 })
+  @IsNumber()
+  amount: number;
+
+  @ApiProperty({ example: 'MOMO', enum: PaymentMethod })
+  @IsEnum(PaymentMethod)
+  payment_method: PaymentMethod;
+
+  @ApiProperty({ example: 'http://localhost:5000/orders/success', required: false })
+  @IsOptional()
+  @IsString()
+  return_url?: string;
+}
+
 export class UpdatePaymentDto extends PartialType(CreatePaymentDto) {}
+

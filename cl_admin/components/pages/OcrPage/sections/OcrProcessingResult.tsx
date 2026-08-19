@@ -10,7 +10,6 @@ import {
   Check,
   Package,
   User,
-  Phone,
   MapPin,
   DollarSign,
   FileText,
@@ -22,6 +21,9 @@ export interface ExtractedItem {
   quantity: number;
   unit_price: number;
   sku?: string;
+  origin?: string;
+  type?: string;
+  color?: string;
   stock_quantity?: number;
   status?: string;
   specifications?: string;
@@ -41,6 +43,10 @@ export interface OcrExtractedData {
   image_url?: string;
   extracted_items: ExtractedItem[];
   raw_text_chunks: string[];
+  product_name?: string;
+  origin?: string;
+  type?: string;
+  color?: string;
 }
 
 interface OcrProcessingResultProps {
@@ -134,38 +140,49 @@ export const OcrProcessingResult: React.FC<OcrProcessingResultProps> = ({
               ? 'KHÁCH HÀNG MUA HÀNG'
               : result.document_type === 'SHIPPING_LABEL'
               ? 'NGƯỜI NHẬN BƯU GỬI'
-              : 'TÊN SẢN PHẨM / THƯƠNG HIỆU'}
-          </div>
-          <div className="font-mono font-black text-sm text-[#09090B]">
-            {result.customer_name || 'Không xác định'}
-          </div>
-        </div>
-
-        {/* Field 3: Phone / Serial */}
-        <div className="bg-[#FAFAFA] border-2 border-[#09090B] p-3 shadow-[2px_2px_0px_0px_#09090B]">
-          <div className="flex items-center gap-2 text-zinc-500 font-mono text-[10px] font-bold uppercase mb-1">
-            <Phone size={14} className="text-emerald-600" />
-            {result.document_type === 'PRODUCT_LABEL' ? 'SỐ SERIAL (SN)' : 'SỐ ĐIỆN THOẠI'}
+              : 'TÊN SẢN PHẨM'}
           </div>
           <div className="font-mono font-black text-sm text-[#09090B]">
             {result.document_type === 'PRODUCT_LABEL'
-              ? result.tracking_number || 'SN-2026-CSMART'
-              : result.phone_number || 'N/A'}
+              ? (result.product_name || result.customer_name || 'Không xác định')
+              : (result.customer_name || 'Không xác định')}
           </div>
         </div>
 
-        {/* Field 4: Address / Location */}
+        {/* Field 3: Origin / Phone */}
+        <div className="bg-[#FAFAFA] border-2 border-[#09090B] p-3 shadow-[2px_2px_0px_0px_#09090B]">
+          <div className="flex items-center gap-2 text-zinc-500 font-mono text-[10px] font-bold uppercase mb-1">
+            <MapPin size={14} className="text-emerald-600" />
+            {result.document_type === 'PRODUCT_LABEL' ? 'NGUỒN GỐC / XUẤT XỨ' : 'SỐ ĐIỆN THOẠI'}
+          </div>
+          <div className="font-mono font-black text-sm text-[#09090B]">
+            {result.document_type === 'PRODUCT_LABEL'
+              ? (result.origin || 'Việt Nam')
+              : (result.phone_number || 'N/A')}
+          </div>
+        </div>
+
+        {/* Field 4: Type & Color / Address */}
         <div className="bg-[#FAFAFA] border-2 border-[#09090B] p-3 shadow-[2px_2px_0px_0px_#09090B] md:col-span-2">
           <div className="flex items-center gap-2 text-zinc-500 font-mono text-[10px] font-bold uppercase mb-1">
-            <MapPin size={14} className="text-purple-600" />
-            {result.document_type === 'INVOICE'
-              ? 'ĐỊA CHỈ XUẤT HÓA ĐƠN'
-              : result.document_type === 'SHIPPING_LABEL'
-              ? 'ĐỊA CHỈ GIAO BƯU GỬI'
-              : 'NƠI SẢN XUẤT / KHO TỔNG'}
+            <Package size={14} className="text-purple-600" />
+            {result.document_type === 'PRODUCT_LABEL'
+              ? 'LOẠI SẢN PHẨM & MÀU SẮC'
+              : 'ĐỊA CHỈ GIAO HÀNG'}
           </div>
-          <div className="font-mono font-bold text-xs text-[#09090B] line-clamp-2">
-            {result.address || 'N/A'}
+          <div className="font-mono font-bold text-xs text-[#09090B]">
+            {result.document_type === 'PRODUCT_LABEL' ? (
+              <div className="flex items-center gap-2">
+                <span className="bg-purple-100 text-purple-900 px-2 py-0.5 border border-purple-300 font-bold uppercase">
+                  Loại: {result.type || 'Áo'}
+                </span>
+                <span className="bg-amber-100 text-amber-900 px-2 py-0.5 border border-amber-300 font-bold uppercase">
+                  Màu: {result.color || 'Đen'}
+                </span>
+              </div>
+            ) : (
+              result.address || 'N/A'
+            )}
           </div>
         </div>
 
@@ -185,6 +202,7 @@ export const OcrProcessingResult: React.FC<OcrProcessingResultProps> = ({
         </div>
       </div>
 
+
       {/* Extracted Items Table */}
       {result.extracted_items && result.extracted_items.length > 0 && (
         <div className="mb-6">
@@ -196,34 +214,49 @@ export const OcrProcessingResult: React.FC<OcrProcessingResultProps> = ({
             <table className="w-full text-left border-collapse font-mono text-xs">
               <thead>
                 <tr className="bg-[#09090B] text-white font-bold uppercase">
-                  <th className="p-2.5 border-r border-zinc-700">TÊN SẢN PHẨM</th>
+                  <th className="p-2.5 border-r border-zinc-700">TÊN SẢN PHẨM / CHI TIẾT DỮ LIỆU</th>
                   <th className="p-2.5 border-r border-zinc-700 w-24 text-center">SL</th>
                   <th className="p-2.5 border-r border-zinc-700 w-36 text-right">ĐƠN GIÁ</th>
                   <th className="p-2.5 w-36 text-right">THÀNH TIỀN</th>
                 </tr>
               </thead>
               <tbody className="divide-y border-t border-[#09090B]">
-                {result.extracted_items.map((item, idx) => (
-                  <tr key={idx} className="hover:bg-zinc-50">
-                    <td className="p-2.5 font-bold text-[#09090B] border-r border-[#09090B]">
-                      {item.name}
-                    </td>
-                    <td className="p-2.5 font-bold text-center border-r border-[#09090B]">
-                      {item.quantity}
-                    </td>
-                    <td className="p-2.5 text-right border-r border-[#09090B]">
-                      {item.unit_price.toLocaleString('vi-VN')} đ
-                    </td>
-                    <td className="p-2.5 text-right font-black text-[#F97316]">
-                      {(item.quantity * item.unit_price).toLocaleString('vi-VN')} đ
-                    </td>
-                  </tr>
-                ))}
+                {result.extracted_items.map((item, idx) => {
+                  const hasManyFields = Object.keys(item).length > 4;
+                  return (
+                    <tr key={idx} className="hover:bg-zinc-50">
+                      <td className="p-2.5 font-bold text-[#09090B] border-r border-[#09090B]">
+                        <div>{item.name}</div>
+                        {hasManyFields ? (
+                          <pre className="mt-1.5 p-2 bg-zinc-900 text-emerald-400 font-mono text-[10px] border border-zinc-700 overflow-x-auto max-w-xl">
+                            {JSON.stringify(item, null, 2)}
+                          </pre>
+                        ) : (
+                          (item.origin || item.color || item.type) && (
+                            <div className="text-[10px] text-zinc-500 font-normal mt-0.5">
+                              {[item.origin, item.type, item.color].filter(Boolean).join(' • ')}
+                            </div>
+                          )
+                        )}
+                      </td>
+                      <td className="p-2.5 font-bold text-center border-r border-[#09090B]">
+                        {item.quantity}
+                      </td>
+                      <td className="p-2.5 text-right border-r border-[#09090B]">
+                        {item.unit_price.toLocaleString('vi-VN')} đ
+                      </td>
+                      <td className="p-2.5 text-right font-black text-[#F97316]">
+                        {(item.quantity * item.unit_price).toLocaleString('vi-VN')} đ
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
         </div>
       )}
+
 
       {/* Raw Chunks Snippet */}
       <div className="mb-6 bg-zinc-900 text-zinc-200 p-3 border-2 border-[#09090B] font-mono text-[11px]">

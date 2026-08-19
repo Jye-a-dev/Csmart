@@ -41,22 +41,63 @@ export function useOcrProcessor(showToast: (msg: string, type?: 'ok' | 'err') =>
           const formData = new FormData();
           formData.append('file', blob, 'ocr_document.jpg');
 
-          const res = await fetch('http://localhost:5000/api/v1/extract-ocr', {
-            method: 'POST',
-            body: formData,
-          });
+          let res: Response | null = null;
+          const apiUrls = [
+            'http://localhost:8000/api/v1/extract-ocr',
+            'http://localhost:5000/api/v1/extract-ocr',
+            'http://localhost:3000/api/ai/ocr',
+          ];
 
-          if (res.ok) {
+          for (const url of apiUrls) {
+            try {
+              const fetchAttempt = await fetch(url, {
+                method: 'POST',
+                body: formData,
+              });
+              if (fetchAttempt.ok) {
+                res = fetchAttempt;
+                break;
+              }
+            } catch {
+              // Thử cổng tiếp theo
+            }
+          }
+
+          if (res && res.ok) {
             const resData = await res.json();
             if (resData.success) {
               const rawWords: string[] = resData.extracted_words || [];
               const rawText: string = resData.raw_text || resData.data?.raw_text || '';
-              const detectedName: string | undefined = resData.data?.name;
-              const detectedPrice: number | undefined = resData.data?.price;
+              const detectedName: string = resData.data?.name || 'Sản phẩm nhãn mác';
+              const detectedOrigin: string = resData.data?.origin || 'Việt Nam';
+              const detectedType: string = resData.data?.type || 'áo';
+              const detectedColor: string = resData.data?.color || 'Đen';
+              const detectedPrice: number = Number(resData.data?.price || 350000);
               const similarProds: SimilarProduct[] = resData.similar_products || [];
 
+              const extractedDocType = resData.data?.document_type || docType;
+              const extractedOrderCode = resData.data?.order_code || (
+                extractedDocType === 'INVOICE'
+                  ? `INV-${Math.floor(10000 + Math.random() * 90000)}`
+                  : extractedDocType === 'SHIPPING_LABEL'
+                  ? `ORD-${Math.floor(10000 + Math.random() * 90000)}`
+                  : `SKU-${Math.floor(10000 + Math.random() * 90000)}`
+              );
+              const extractedCustomer = resData.data?.customer_name || (
+                extractedDocType === 'INVOICE' ? 'Nguyễn Văn An' : extractedDocType === 'SHIPPING_LABEL' ? 'Trần Thị Bình' : detectedName
+              );
+              const extractedPhone = resData.data?.phone_number || (
+                extractedDocType === 'INVOICE' ? '0988 123 456' : extractedDocType === 'SHIPPING_LABEL' ? '0912 345 678' : 'N/A'
+              );
+              const extractedAddress = resData.data?.address || (
+                extractedDocType === 'INVOICE'
+                  ? 'Số 12 Đường Lê Lợi, Phường Bến Nghé, Quận 1, TP. HCM'
+                  : extractedDocType === 'SHIPPING_LABEL'
+                  ? 'Bưu gửi Landmark 81, Phường 22, Quận Bình Thạnh, TP. HCM'
+                  : `Xuất xứ: ${detectedOrigin}`
+              );
+
               if (docType === 'INVOICE') {
-                const invCode = `INV-${Math.floor(10000 + Math.random() * 90000)}`;
                 const itemsList =
                   similarProds.length > 0
                     ? similarProds.map((sp) => ({
@@ -66,15 +107,12 @@ export function useOcrProcessor(showToast: (msg: string, type?: 'ok' | 'err') =>
                       }))
                     : [
                         {
-                          name:
-                            detectedName && !detectedName.startsWith('Capitalize')
-                              ? detectedName
-                              : 'Sản phẩm mua sắm hóa đơn',
+                          name: detectedName,
                           quantity: 1,
-                          unit_price: Number(detectedPrice || 350000),
+                          unit_price: detectedPrice,
                         },
                       ];
-                const totalAmt = itemsList.reduce(
+                const totalAmt = Number(resData.data?.price) || itemsList.reduce(
                   (sum: number, it: { unit_price: number; quantity: number }) =>
                     sum + it.unit_price * it.quantity,
                   0,
@@ -82,10 +120,10 @@ export function useOcrProcessor(showToast: (msg: string, type?: 'ok' | 'err') =>
 
                 extractedResult = {
                   document_type: 'INVOICE',
-                  order_code: invCode,
-                  customer_name: 'Nguyễn Văn An',
-                  phone_number: '0988 123 456',
-                  address: 'Số 12 Đường Lê Lợi, Phường Bến Nghé, Quận 1, TP. HCM',
+                  order_code: extractedOrderCode,
+                  customer_name: extractedCustomer,
+                  phone_number: extractedPhone,
+                  address: extractedAddress,
                   total_amount: totalAmt,
                   confidence_score: resData.confidence_score || 0.95,
                   execution_time_ms: Date.now() - startTime,
@@ -96,8 +134,8 @@ export function useOcrProcessor(showToast: (msg: string, type?: 'ok' | 'err') =>
                       ? rawWords
                       : [
                           'HÓA ĐƠN THU TIỀN XUẤT BÁN',
-                          `Mã hóa đơn: ${invCode}`,
-                          'KH: Nguyễn Văn An - 0988 123 456',
+                          `Mã hóa đơn: ${extractedOrderCode}`,
+                          `KH: ${extractedCustomer} - ${extractedPhone}`,
                           ...itemsList.map(
                             (it) => `1. ${it.name} - ${it.unit_price.toLocaleString('vi-VN')}đ`,
                           ),
@@ -110,22 +148,19 @@ export function useOcrProcessor(showToast: (msg: string, type?: 'ok' | 'err') =>
 
                 extractedResult = {
                   document_type: 'SHIPPING_LABEL',
-                  order_code: `ORD-${Math.floor(10000 + Math.random() * 90000)}`,
+                  order_code: extractedOrderCode,
                   tracking_number: trkNum,
                   courier_name: 'Giao Hàng Nhanh (GHN)',
-                  customer_name: 'Trần Thị Bình',
-                  phone_number: '0912 345 678',
-                  address: 'Bưu gửi Landmark 81, Phường 22, Quận Bình Thạnh, TP. HCM',
+                  customer_name: extractedCustomer,
+                  phone_number: extractedPhone,
+                  address: extractedAddress,
                   total_amount: codAmt,
                   confidence_score: resData.confidence_score || 0.92,
                   execution_time_ms: Date.now() - startTime,
                   image_url: imageUrl,
                   extracted_items: [
                     {
-                      name:
-                        detectedName && !detectedName.startsWith('Capitalize')
-                          ? detectedName
-                          : 'Bưu gửi gói hàng bóc tách mã vận đơn',
+                      name: detectedName,
                       quantity: 1,
                       unit_price: codAmt,
                     },
@@ -136,38 +171,43 @@ export function useOcrProcessor(showToast: (msg: string, type?: 'ok' | 'err') =>
                       : [
                           'GIAO HÀNG NHANH (GHN) - BƯU GỬI VẬN CHUYỂN',
                           `Mã vận đơn (Tracking): ${trkNum}`,
-                          'Người nhận: Trần Thị Bình - 0912 345 678',
-                          'Đ/c giao hàng: Landmark 81, B.Thạnh',
+                          `Người nhận: ${extractedCustomer} - ${extractedPhone}`,
+                          `Đ/c giao hàng: ${extractedAddress}`,
                           `Thu hộ COD: ${codAmt.toLocaleString('vi-VN')} VNĐ`,
                         ],
                 };
               } else {
-                const skuCode = `SKU-${Math.floor(10000 + Math.random() * 90000)}`;
+                const skuCode = extractedOrderCode;
                 const snNum = `SN-2026-${Math.floor(1000 + Math.random() * 9000)}`;
-                const prodPrice = Number(detectedPrice || 680000);
-                const prodName = detectedName && !detectedName.startsWith('Capitalize') ? detectedName : 'Sản phẩm mác thông số kỹ thuật';
 
                 extractedResult = {
                   document_type: 'PRODUCT_LABEL',
                   order_code: skuCode,
                   tracking_number: snNum,
                   courier_name: 'CsmartAI Manufacturer',
-                  customer_name: prodName,
-                  phone_number: '0903 888 999',
-                  address: 'Nhà máy sản xuất CsmartAI HCM',
-                  total_amount: prodPrice,
+                  customer_name: detectedName,
+                  product_name: detectedName,
+                  origin: detectedOrigin,
+                  type: detectedType,
+                  color: detectedColor,
+                  phone_number: 'N/A',
+                  address: extractedAddress,
+                  total_amount: detectedPrice,
                   confidence_score: resData.confidence_score || 0.96,
                   execution_time_ms: Date.now() - startTime,
                   image_url: imageUrl,
                   extracted_items: [
                     {
-                      name: prodName,
+                      name: detectedName,
+                      origin: detectedOrigin,
+                      type: detectedType,
+                      color: detectedColor,
                       quantity: 1,
-                      unit_price: prodPrice,
+                      unit_price: detectedPrice,
                       sku: skuCode,
                       stock_quantity: 50,
                       status: 'IN_STOCK',
-                      specifications: 'Bảo hành 12 tháng, Điện áp 220V',
+                      specifications: `Nguồn gốc: ${detectedOrigin}, Loại: ${detectedType}, Màu: ${detectedColor}`,
                     },
                   ],
                   raw_text_chunks:
@@ -175,13 +215,15 @@ export function useOcrProcessor(showToast: (msg: string, type?: 'ok' | 'err') =>
                       ? rawWords
                       : [
                           `NHÃN MÁC SẢN PHẨM - SKU: ${skuCode}`,
-                          `Model/Serial: ${snNum}`,
-                          `Tên sản phẩm: ${prodName}`,
-                          `Đơn giá niêm yết: ${prodPrice.toLocaleString('vi-VN')} VNĐ`,
-                          'Bảo hành chính hãng 12 tháng',
+                          `Tên sản phẩm: ${detectedName}`,
+                          `Nguồn gốc / Xuất xứ: ${detectedOrigin}`,
+                          `Loại sản phẩm: ${detectedType}`,
+                          `Màu sắc: ${detectedColor}`,
+                          `Đơn giá niêm yết: ${detectedPrice.toLocaleString('vi-VN')} VNĐ`,
                         ],
                 };
               }
+
             }
           }
         } catch (aiErr) {
@@ -250,34 +292,43 @@ export function useOcrProcessor(showToast: (msg: string, type?: 'ok' | 'err') =>
               order_code: skuCode,
               tracking_number: snNum,
               courier_name: 'CsmartAI Manufacturer',
-              customer_name: 'Sản phẩm mác thông số kỹ thuật',
-              phone_number: '0903 888 999',
-              address: 'Nhà máy sản xuất CsmartAI HCM',
-              total_amount: 680000,
+              customer_name: 'Áo Thun Cotton Trắng',
+              product_name: 'Áo Thun Cotton Trắng',
+              origin: 'Việt Nam',
+              type: 'áo',
+              color: 'Trắng',
+              phone_number: 'N/A',
+              address: 'Xuất xứ: Việt Nam',
+              total_amount: 350000,
               confidence_score: 0.96,
               execution_time_ms: Date.now() - startTime,
               image_url: imageUrl,
               extracted_items: [
                 {
-                  name: 'Sản phẩm mác thông số kỹ thuật',
+                  name: 'Áo Thun Cotton Trắng',
+                  origin: 'Việt Nam',
+                  type: 'áo',
+                  color: 'Trắng',
                   quantity: 1,
-                  unit_price: 680000,
+                  unit_price: 350000,
                   sku: skuCode,
                   stock_quantity: 50,
                   status: 'IN_STOCK',
-                  specifications: 'Bảo hành 12 tháng, Điện áp 220V',
+                  specifications: 'Nguồn gốc: Việt Nam, Loại: Áo, Màu: Trắng',
                 },
               ],
               raw_text_chunks: [
                 `NHÃN THÔNG SỐ SẢN PHẨM - SKU: ${skuCode}`,
-                `Model / Serial: ${snNum}`,
-                'Thương hiệu chính hãng Csmart',
-                'Đơn giá niêm yết: 680.000 VNĐ',
-                'Bảo hành chính hãng 12 tháng',
+                'Tên sản phẩm: Áo Thun Cotton Trắng',
+                'Nguồn gốc: Việt Nam',
+                'Loại sản phẩm: Áo',
+                'Màu sắc: Trắng',
+                'Đơn giá niêm yết: 350.000 VNĐ',
               ],
             };
           }
         }
+
 
         setCurrentExtraction(extractedResult);
         showToast('Bóc tách văn bản AI thành công!');

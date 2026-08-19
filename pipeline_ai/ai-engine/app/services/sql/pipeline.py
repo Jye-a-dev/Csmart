@@ -9,10 +9,12 @@ from app.services.sql.components.validator import ValidatorComponent
 class SQLPipeline:
     def __init__(self, components: List[SQLPipelineComponent] = None):
         if components is None:
+            # Thứ tự 4 bước chuẩn: Dataset Match → Few-Shot RAG → LLM Generate → Validator
             self.components = [
-                FewShotRAGComponent(),
-                LLMGenerateComponent(),
-                ValidatorComponent()
+                DatasetMatchComponent(),   # 1. Khớp mẫu có sẵn trong dataset (short-circuit nếu match)
+                FewShotRAGComponent(),     # 2. Lấy ví dụ tương đồng từ ai_review_queue (Few-shot context)
+                LLMGenerateComponent(),    # 3. LLM sinh câu truy vấn SQL dựa trên schema + few-shot
+                ValidatorComponent(),      # 4. Kiểm tra an toàn: chặn DDL/DML, flag_for_review nếu thấp
             ]
         else:
             self.components = components
@@ -37,4 +39,5 @@ class SQLPipeline:
         return context
 
 sql_pipeline = SQLPipeline()
+
 

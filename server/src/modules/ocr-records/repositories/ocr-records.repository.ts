@@ -16,21 +16,48 @@ export class OcrRecordsRepository extends BaseRepository {
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13::jsonb, $14::jsonb)
       RETURNING *
     `;
+    const items = (dto.extracted_items || []) as Record<string, unknown>[];
+    if (
+      dto.document_type === 'PRODUCT_LABEL' &&
+      items.length > 0 &&
+      items[0] &&
+      typeof items[0] === 'object'
+    ) {
+      const firstItem = items[0];
+      items[0] = {
+        ...firstItem,
+        origin:
+          (typeof firstItem.origin === 'string'
+            ? firstItem.origin
+            : undefined) ||
+          dto.origin ||
+          'Việt Nam',
+        type:
+          (typeof firstItem.type === 'string' ? firstItem.type : undefined) ||
+          dto.type ||
+          'áo',
+        color:
+          (typeof firstItem.color === 'string' ? firstItem.color : undefined) ||
+          dto.color ||
+          'Đen',
+      };
+    }
+
     const params = [
       dto.document_type || 'INVOICE',
       dto.order_code,
       dto.tracking_number || null,
       dto.courier_name || null,
-      dto.customer_name || 'Khách hàng',
+      dto.customer_name || dto.product_name || 'Khách hàng',
       dto.phone_number || null,
-      dto.address || null,
+      dto.address || (dto.origin ? `Xuất xứ: ${dto.origin}` : null),
       dto.total_amount || 0,
       dto.confidence_score !== undefined ? dto.confidence_score : 0.95,
       dto.execution_time_ms !== undefined ? dto.execution_time_ms : 300,
       dto.image_url ||
         'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=600&auto=format&fit=crop&q=80',
       dto.status || 'VERIFIED',
-      JSON.stringify(dto.extracted_items || []),
+      JSON.stringify(items),
       JSON.stringify(dto.raw_text_chunks || []),
     ];
 

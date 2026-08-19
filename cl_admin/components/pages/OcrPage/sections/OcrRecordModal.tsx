@@ -152,9 +152,11 @@ const OcrRecordModalComponent: React.FC<OcrRecordModalProps> = ({
             {/* Right Data Form Fields */}
             <div className="md:col-span-7 space-y-4">
               <div className="grid grid-cols-2 gap-3">
-                {/* Order Code */}
+                {/* Order Code / SKU */}
                 <div>
-                  <label className="block font-bold uppercase mb-1">MÃ ĐƠN HÀNG:</label>
+                  <label className="block font-bold uppercase mb-1">
+                    {formData.document_type === 'PRODUCT_LABEL' ? 'MÃ SẢN PHẨM / SKU:' : 'MÃ ĐƠN HÀNG:'}
+                  </label>
                   <input
                     type="text"
                     disabled={isViewOnly}
@@ -182,9 +184,11 @@ const OcrRecordModalComponent: React.FC<OcrRecordModalProps> = ({
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                {/* Customer Name */}
+                {/* Customer Name / Product Name */}
                 <div>
-                  <label className="block font-bold uppercase mb-1">KHÁCH HÀNG / NGƯỜI NHẬN:</label>
+                  <label className="block font-bold uppercase mb-1">
+                    {formData.document_type === 'PRODUCT_LABEL' ? 'TÊN SẢN PHẨM:' : 'KHÁCH HÀNG / NGƯỜI NHẬN:'}
+                  </label>
                   <input
                     type="text"
                     disabled={isViewOnly}
@@ -194,35 +198,87 @@ const OcrRecordModalComponent: React.FC<OcrRecordModalProps> = ({
                   />
                 </div>
 
-                {/* Phone Number */}
+                {/* Phone Number / Origin */}
                 <div>
-                  <label className="block font-bold uppercase mb-1">SỐ ĐIỆN THOẠI:</label>
+                  <label className="block font-bold uppercase mb-1">
+                    {formData.document_type === 'PRODUCT_LABEL' ? 'NGUỒN GỐC / XUẤT XỨ:' : 'SỐ ĐIỆN THOẠI:'}
+                  </label>
                   <input
                     type="text"
                     disabled={isViewOnly}
-                    value={formData.phone_number || ''}
-                    onChange={(e) => setFormData({ ...formData, phone_number: e.target.value })}
+                    value={
+                      formData.document_type === 'PRODUCT_LABEL'
+                        ? (formData.extracted_items?.[0]?.origin || formData.phone_number || 'Việt Nam')
+                        : (formData.phone_number || '')
+                    }
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (formData.document_type === 'PRODUCT_LABEL') {
+                        const items = [...(formData.extracted_items || [])];
+                        if (items[0]) items[0] = { ...items[0], origin: val };
+                        setFormData({ ...formData, phone_number: val, extracted_items: items });
+                      } else {
+                        setFormData({ ...formData, phone_number: val });
+                      }
+                    }}
                     className="w-full p-2 border-2 border-[#09090B] font-bold bg-white focus:outline-none disabled:bg-zinc-100"
                   />
                 </div>
               </div>
 
-              {/* Address */}
-              <div>
-                <label className="block font-bold uppercase mb-1">ĐỊA CHỈ GIAO HÀNG:</label>
-                <textarea
-                  rows={2}
-                  disabled={isViewOnly}
-                  value={formData.address || ''}
-                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                  className="w-full p-2 border-2 border-[#09090B] font-bold bg-white focus:outline-none disabled:bg-zinc-100"
-                />
-              </div>
+              {/* Address / Type & Color Fields */}
+              {formData.document_type === 'PRODUCT_LABEL' ? (
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block font-bold uppercase mb-1">LOẠI SẢN PHẨM:</label>
+                    <input
+                      type="text"
+                      disabled={isViewOnly}
+                      value={formData.extracted_items?.[0]?.type || 'Áo'}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        const items = [...(formData.extracted_items || [])];
+                        if (items[0]) items[0] = { ...items[0], type: val };
+                        setFormData({ ...formData, extracted_items: items });
+                      }}
+                      className="w-full p-2 border-2 border-[#09090B] font-bold bg-white focus:outline-none disabled:bg-zinc-100"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-bold uppercase mb-1">MÀU SẮC:</label>
+                    <input
+                      type="text"
+                      disabled={isViewOnly}
+                      value={formData.extracted_items?.[0]?.color || 'Đen'}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        const items = [...(formData.extracted_items || [])];
+                        if (items[0]) items[0] = { ...items[0], color: val };
+                        setFormData({ ...formData, extracted_items: items });
+                      }}
+                      className="w-full p-2 border-2 border-[#09090B] font-bold bg-white focus:outline-none disabled:bg-zinc-100"
+                    />
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <label className="block font-bold uppercase mb-1">ĐỊA CHỈ GIAO HÀNG:</label>
+                  <textarea
+                    rows={2}
+                    disabled={isViewOnly}
+                    value={formData.address || ''}
+                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                    className="w-full p-2 border-2 border-[#09090B] font-bold bg-white focus:outline-none disabled:bg-zinc-100"
+                  />
+                </div>
+              )}
 
               <div className="grid grid-cols-3 gap-3">
-                {/* Total Amount */}
+                {/* Total Amount / Price */}
                 <div>
-                  <label className="block font-bold uppercase mb-1">TỔNG TIỀN (VNĐ):</label>
+                  <label className="block font-bold uppercase mb-1">
+                    {formData.document_type === 'PRODUCT_LABEL' ? 'ĐƠN GIÁ NIÊM YẾT:' : 'TỔNG TIỀN (VNĐ):'}
+                  </label>
                   <input
                     type="number"
                     disabled={isViewOnly}
@@ -266,6 +322,7 @@ const OcrRecordModalComponent: React.FC<OcrRecordModalProps> = ({
               </div>
             </div>
           </div>
+
 
           {/* Extracted Items Section */}
           <div className="border-t-2 border-[#09090B] pt-4">

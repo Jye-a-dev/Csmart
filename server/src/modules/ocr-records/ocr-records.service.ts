@@ -38,11 +38,7 @@ export class OcrRecordsService {
   async update(id: string, dto: UpdateOcrRecordDto): Promise<OcrRecord> {
     const existing = await this.ocrRecordsRepository.findRecordById(id);
     if (!existing) {
-      return this.ocrRecordsRepository.createRecord({
-        ...dto,
-        order_code: dto.order_code || `ORD-${Date.now()}`,
-        customer_name: dto.customer_name || 'Khách hàng',
-      });
+      throw new NotFoundException(`OCR Record #${id} not found`);
     }
     const updated = await this.ocrRecordsRepository.updateRecord(id, dto);
     return updated || existing;

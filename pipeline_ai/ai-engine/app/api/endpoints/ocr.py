@@ -11,8 +11,10 @@ router = APIRouter()
 
 class OCRProductData(BaseModel):
     name: str = Field(..., description="Tên sản phẩm được trích xuất (nếu có).")
+    origin: str = Field(..., description="Nguồn gốc / Xuất xứ sản phẩm.")
+    type: str = Field(..., description="Loại sản phẩm.")
+    color: str = Field(..., description="Màu sắc sản phẩm.")
     price: int = Field(..., description="Giá sản phẩm được trích xuất (nếu có).")
-    color: str = Field(..., description="Màu sắc sản phẩm được trích xuất (nếu có).")
     raw_text: str = Field(..., description="Văn bản thô tương ứng.")
 
 class OCRResponse(BaseModel):
@@ -31,7 +33,7 @@ class OCRResponse(BaseModel):
     summary="Trích xuất văn bản từ hình ảnh (OCR) & Tìm sản phẩm tương tự",
     description="""
 Nhận diện ký tự quang học (OCR) từ tệp hình ảnh đầu vào.
-Trích xuất các thực thể (như loại áo/quần, màu sắc) từ văn bản nhận diện và sử dụng Hybrid Search đối sánh tìm các sản phẩm tương tự trong database.
+Trích xuất các thực thể (như tên sản phẩm, nguồn gốc, loại sản phẩm, màu sắc) từ nhãn sản phẩm và sử dụng Hybrid Search đối sánh tìm các sản phẩm tương tự trong database.
 """
 )
 async def extract_ocr(file: UploadFile = File(...)):
@@ -54,6 +56,8 @@ async def extract_ocr(file: UploadFile = File(...)):
 
         color_tag = result.detected_color
         type_tag = result.detected_type
+        origin_tag = result.detected_origin
+        product_name = result.detected_name or f"{type_tag.capitalize()} {color_tag}"
         similar_products = result.similar_products
 
         response = {
@@ -64,9 +68,16 @@ async def extract_ocr(file: UploadFile = File(...)):
             "confidence_score": result.confidence_score,
             "flag_for_review": result.flag_for_review,
             "data": {
-                "name": f"{type_tag.capitalize()} {color_tag}",
-                "price": int(similar_products[0]["base_price"]) if similar_products else 350000,
+                "document_type": result.document_type,
+                "order_code": result.detected_order_code,
+                "customer_name": result.detected_customer_name or product_name,
+                "phone_number": result.detected_phone_number,
+                "address": result.detected_address,
+                "name": product_name,
+                "origin": origin_tag,
+                "type": type_tag,
                 "color": color_tag,
+                "price": int(result.detected_total_amount or (similar_products[0]["base_price"] if similar_products else 350000)),
                 "raw_text": result.raw_text
             },
             "similar_products": similar_products
@@ -75,5 +86,7 @@ async def extract_ocr(file: UploadFile = File(...)):
         execution_time_ms = int((time.time() - start_time) * 1000)
         await log_request("extract-ocr", {"filename": file.filename}, response, execution_time_ms)
         return response
+
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Lỗi khi xử lý OCR: {str(e)}")

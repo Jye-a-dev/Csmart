@@ -75,6 +75,26 @@ export class CreateOcrRecordDto {
   @IsArray()
   @IsOptional()
   raw_text_chunks?: string[];
+
+  @ApiProperty({ required: false })
+  @IsString()
+  @IsOptional()
+  product_name?: string;
+
+  @ApiProperty({ required: false })
+  @IsString()
+  @IsOptional()
+  origin?: string;
+
+  @ApiProperty({ required: false })
+  @IsString()
+  @IsOptional()
+  type?: string;
+
+  @ApiProperty({ required: false })
+  @IsString()
+  @IsOptional()
+  color?: string;
 }
 
 export class UpdateOcrRecordDto extends PartialType(CreateOcrRecordDto) {}
