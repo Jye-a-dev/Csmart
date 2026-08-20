@@ -103,5 +103,26 @@ class OneForAllAIEngine:
         except Exception as e:
             yield f"\n[Lỗi AI]: {str(e)}"
 
+    # 4. API PARSE OCR ENTITIES WITH LLM
+    def parse_ocr_entities(self, raw_ocr_text: str) -> dict:
+        if not raw_ocr_text or not raw_ocr_text.strip():
+            return {}
+            
+        system_prompt = """
+        Bạn là chuyên gia bóc tách dữ liệu sản phẩm thương mại điện tử Việt Nam.
+        Nhiệm vụ: Trích xuất các thực thể từ chuỗi văn bản OCR thô từ nhãn/ảnh sản phẩm.
+        Định dạng trả về duy nhất là JSON object:
+        {
+          "brand": "Thương hiệu (ví dụ: Cortisza, Puma, Nike, Unbranded...)",
+          "product_name": "Tên sản phẩm đầy đủ (ví dụ: Áo Thể Thao Cortisza 25TH DECEMBER)",
+          "category": "Loại sản phẩm (Áo, Quần, Sneakers, Phụ kiện)",
+          "size": "Size (ví dụ: L, Freesize, UK 8, EUR 42)",
+          "color": "Màu sắc (ví dụ: Đỏ, Xanh, Đen, Trắng)",
+          "price": 450000,
+          "sku_barcode": "Mã vạch / SKU"
+        }
+        """
+        return self._call_llm(system_prompt, raw_ocr_text)
+
 # Khởi tạo Instance Singleton
 ai_engine_core = OneForAllAIEngine()

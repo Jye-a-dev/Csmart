@@ -2,7 +2,18 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   output: "standalone",
-  /* config options here */
+  async rewrites() {
+    return [
+      {
+        source: "/api/v1/:path*",
+        destination: "http://127.0.0.1:8000/api/v1/:path*",
+      },
+      {
+        source: "/api/ai/:path*",
+        destination: "http://127.0.0.1:8000/api/v1/:path*",
+      },
+    ];
+  },
 };
 
 export default nextConfig;

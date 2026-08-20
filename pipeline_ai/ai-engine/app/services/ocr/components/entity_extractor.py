@@ -4,7 +4,7 @@ from app.services.ocr.context import OCRPipelineContext
 
 class OCREntityExtractorComponent(OCRPipelineComponent):
     async def process(self, context: OCRPipelineContext) -> OCRPipelineContext:
-        raw_text = context.raw_text
+        raw_text = context.raw_text or ""
         text_lower = raw_text.lower()
         
         # 1. Document Type Detection
@@ -18,24 +18,24 @@ class OCREntityExtractorComponent(OCRPipelineComponent):
         # 2. Colors (Màu sắc)
         colors = ['đen', 'trắng', 'xanh', 'đỏ', 'vàng', 'hồng', 'xám', 'nâu', 'tím', 'cam']
         detected_colors = [c for c in colors if c in text_lower]
-        context.detected_color = detected_colors[0].capitalize() if detected_colors else "Đen"
+        context.detected_color = detected_colors[0].capitalize() if detected_colors else None
         
         # 3. Types (Loại sản phẩm)
         types = ['áo', 'quần', 'váy', 'đầm', 'mũ', 'nón', 'giày', 'dép', 'túi', 'balo', 'khoác', 'thun', 'sơ mi', 'jean']
         detected_types = [t for t in types if t in text_lower]
-        context.detected_type = detected_types[0] if detected_types else "áo"
+        context.detected_type = detected_types[0] if detected_types else None
 
         # 4. Origin (Nguồn gốc / Xuất xứ)
         origins = ['việt nam', 'trung quốc', 'hàn quốc', 'nhật bản', 'mỹ', 'đức', 'thái lan', 'quảng châu', 'taiwan', 'china', 'vietnam']
         detected_origins = [o for o in origins if o in text_lower or f"made in {o}" in text_lower]
-        context.detected_origin = detected_origins[0].title() if detected_origins else "Việt Nam"
+        context.detected_origin = detected_origins[0].title() if detected_origins else None
 
         # 5. Product Name (Tên sản phẩm)
         name_match = re.search(r'(?:tên sp|tên sản phẩm|sản phẩm|tên|name)\s*:\s*([^\n,]+)', raw_text, re.IGNORECASE)
         if name_match:
             context.detected_name = name_match.group(1).strip()
         else:
-            context.detected_name = f"{context.detected_type.capitalize()} {context.detected_color}"
+            context.detected_name = None
 
         # 6. Order / Tracking Code
         code_match = re.search(r'\b(ORD-\d+|INV-\d+|GHN-\d+|SKU-\d+|#\d+)\b', raw_text, re.IGNORECASE)
@@ -67,5 +67,3 @@ class OCREntityExtractorComponent(OCRPipelineComponent):
                 pass
 
         return context
-
-

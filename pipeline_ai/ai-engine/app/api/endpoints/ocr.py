@@ -1,5 +1,6 @@
 from fastapi import APIRouter, UploadFile, File, HTTPException
 from pydantic import BaseModel, Field
+from typing import Dict, Any, Optional, List
 from app.services.ocr.pipeline import ocr_pipeline
 from app.services.evaluator import log_request
 from PIL import Image
@@ -9,31 +10,37 @@ import time
 
 router = APIRouter()
 
-class OCRProductData(BaseModel):
-    name: str = Field(..., description="Tên sản phẩm được trích xuất (nếu có).")
-    origin: str = Field(..., description="Nguồn gốc / Xuất xứ sản phẩm.")
-    type: str = Field(..., description="Loại sản phẩm.")
-    color: str = Field(..., description="Màu sắc sản phẩm.")
-    price: int = Field(..., description="Giá sản phẩm được trích xuất (nếu có).")
-    raw_text: str = Field(..., description="Văn bản thô tương ứng.")
+class UniversalOCREntities(BaseModel):
+    name: Optional[str] = Field(None, description="Tên sản phẩm bóc tách.")
+    category: Optional[str] = Field(None, description="Danh mục sản phẩm (Electronics, Fashion, Footwear, Cosmetics, Appliances, Grocery, Invoice...).")
+    brand: Optional[str] = Field(None, description="Thương hiệu sản phẩm.")
+    sku_barcode: Optional[str] = Field(None, description="Mã vạch / SKU / Model code.")
+    unit_price: Optional[float] = Field(None, description="Đơn giá sản phẩm (VND, USD...).")
+    origin: Optional[str] = Field(None, description="Xuất xứ / Nguồn gốc.")
+    size_dimension: Optional[str] = Field(None, description="Kích cỡ / Dung tích / Trọng lượng / Thông số kích thước.")
+    color: Optional[str] = Field(None, description="Màu sắc sản phẩm.")
+    specifications: Dict[str, Any] = Field(default_factory=dict, description="Bảng thông số kỹ thuật / thành phần động (Dynamic Specs Window).")
 
 class OCRResponse(BaseModel):
-    success: bool = Field(..., description="Trạng thái thực hiện yêu cầu.")
-    status: str = Field(..., description="Trạng thái xử lý (success / error).")
-    extracted_words: list[str] = Field(..., description="Danh sách các từ hoặc cụm từ được nhận diện từ ảnh.")
+    success: bool = Field(True, description="Trạng thái thực hiện yêu cầu.")
+    status: str = Field("success", description="Trạng thái xử lý (success / error).")
     raw_text: str = Field(..., description="Toàn bộ văn bản thô ghép nối từ các từ đã nhận diện.")
+    extracted_words: List[str] = Field(..., description="Danh sách các từ hoặc cụm từ được nhận diện từ ảnh.")
     confidence_score: float = Field(..., description="Độ tin cậy nhận dạng (từ 0.0 đến 1.0).")
     flag_for_review: bool = Field(..., description="Cờ đánh dấu cần kiểm duyệt thủ công nếu độ tin cậy thấp.")
-    data: OCRProductData = Field(..., description="Dữ liệu sản phẩm mẫu sau trích xuất thông tin.")
-    similar_products: list = Field(default=[], description="Danh sách các sản phẩm tương tự được đối sánh từ ảnh.")
+    is_fallback: bool = Field(False, description="Cờ báo hiệu kết quả OCR có đang dùng fallback mode hay không.")
+    entities: UniversalOCREntities = Field(..., description="Cấu trúc thực thể đa ngành hàng phổ quát.")
+    data: Dict[str, Any] = Field(default_factory=dict, description="Tương thích ngược dữ liệu tiêu thụ.")
+    similar_products: List[Dict[str, Any]] = Field(default_factory=list, description="Danh sách sản phẩm tương tự.")
 
 @router.post(
     "/extract-ocr",
     response_model=OCRResponse,
-    summary="Trích xuất văn bản từ hình ảnh (OCR) & Tìm sản phẩm tương tự",
+    summary="Trích xuất văn bản từ hình ảnh (Universal Multi-Category OCR)",
     description="""
-Nhận diện ký tự quang học (OCR) từ tệp hình ảnh đầu vào.
-Trích xuất các thực thể (như tên sản phẩm, nguồn gốc, loại sản phẩm, màu sắc) từ nhãn sản phẩm và sử dụng Hybrid Search đối sánh tìm các sản phẩm tương tự trong database.
+Nhận diện ký tự quang học (EasyOCR) đa ngành hàng phổ quát.
+Trích xuất các thực thể thương mại (Electronics, Fashion, Footwear, Cosmetics, Appliances, Invoice...) và bảng thông số kỹ thuật động (Dynamic Specification Window Parser).
+Không sử dụng bất kỳ dữ liệu mặc định hardcode nào.
 """
 )
 async def extract_ocr(file: UploadFile = File(...)):
@@ -43,50 +50,57 @@ async def extract_ocr(file: UploadFile = File(...)):
     try:
         start_time = time.time()
 
-        # Đọc file ảnh từ memory
+        # Đọc tệp hình ảnh từ bộ nhớ
         contents = await file.read()
         image = Image.open(io.BytesIO(contents)).convert("RGB")
         image_np = np.array(image)
 
-        # Chạy qua component-based pipeline
-        result = await ocr_pipeline.run(image_np)
+        # Chạy qua component-based Universal OCR pipeline
+        result = await ocr_pipeline.run(image_np=image_np, image_bytes=contents)
 
         if result.status == "error":
             raise HTTPException(status_code=500, detail=result.error_message or "Lỗi khi xử lý OCR.")
 
-        color_tag = result.detected_color
-        type_tag = result.detected_type
-        origin_tag = result.detected_origin
-        product_name = result.detected_name or f"{type_tag.capitalize()} {color_tag}"
+        entities_dict = result.entities or {
+            "name": None,
+            "category": None,
+            "brand": None,
+            "sku_barcode": None,
+            "unit_price": None,
+            "origin": None,
+            "size_dimension": None,
+            "color": None,
+            "specifications": {}
+        }
+
         similar_products = result.similar_products
+
+        # Micro backward-compatible data object for legacy consumers
+        data_object = {
+            "name": entities_dict.get("name") or "Không phát hiện chữ trên ảnh",
+            "origin": entities_dict.get("origin") or "",
+            "type": entities_dict.get("category") or "Chưa xác định",
+            "color": entities_dict.get("color") or "",
+            "price": entities_dict.get("unit_price") or 0,
+            "raw_text": result.raw_text
+        }
 
         response = {
             "success": True,
             "status": "success",
-            "extracted_words": result.extracted_words,
             "raw_text": result.raw_text,
+            "extracted_words": result.extracted_words,
             "confidence_score": result.confidence_score,
             "flag_for_review": result.flag_for_review,
-            "data": {
-                "document_type": result.document_type,
-                "order_code": result.detected_order_code,
-                "customer_name": result.detected_customer_name or product_name,
-                "phone_number": result.detected_phone_number,
-                "address": result.detected_address,
-                "name": product_name,
-                "origin": origin_tag,
-                "type": type_tag,
-                "color": color_tag,
-                "price": int(result.detected_total_amount or (similar_products[0]["base_price"] if similar_products else 350000)),
-                "raw_text": result.raw_text
-            },
-            "similar_products": similar_products
+            "is_fallback": result.is_fallback,
+            "entities": entities_dict,
+            "data": data_object,
+            "similar_products": similar_products if len(result.extracted_words) > 0 else []
         }
 
         execution_time_ms = int((time.time() - start_time) * 1000)
         await log_request("extract-ocr", {"filename": file.filename}, response, execution_time_ms)
         return response
-
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Lỗi khi xử lý OCR: {str(e)}")

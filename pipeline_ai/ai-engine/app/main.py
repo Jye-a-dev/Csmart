@@ -32,12 +32,23 @@ async def lifespan(app: FastAPI):
     # Ngắt kết nối cơ sở dữ liệu PostgreSQL
     await db_service.disconnect()
 
+from fastapi.middleware.cors import CORSMiddleware
+
 app = FastAPI(
     title=settings.PROJECT_NAME,
     version=settings.VERSION,
     docs_url="/docs",
     openapi_url="/openapi.json",
     lifespan=lifespan
+)
+
+# Cấu hình CORS Middleware cho phép mọi Origin truy cập
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=False,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # Đăng ký Router với tiền tố /api/v1
