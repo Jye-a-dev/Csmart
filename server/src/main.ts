@@ -60,6 +60,24 @@ function startPipelineAI() {
   return pipeline;
 }
 
+async function pollPipelineReadiness(url: string, maxRetries = 20, delayMs = 500): Promise<boolean> {
+  const prefix = '\x1b[35m[Pipeline Readiness]\x1b[0m';
+  for (let i = 1; i <= maxRetries; i++) {
+    try {
+      const res = await fetch(`${url}/health`);
+      if (res.ok) {
+        console.log(`${prefix} AI Engine is healthy and ready (attempt ${i}).`);
+        return true;
+      }
+    } catch {
+      // Still booting up
+    }
+    await new Promise((resolve) => setTimeout(resolve, delayMs));
+  }
+  console.warn(`${prefix} AI Engine health check timed out after ${maxRetries * delayMs}ms. Fallback mode enabled.`);
+  return false;
+}
+
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
@@ -86,11 +104,14 @@ async function bootstrap() {
   // Setup Swagger API docs
   setupSwagger(app);
 
-  const serverPort = process.env.PORT ?? 3000;
-  await app.listen(serverPort);
-
   // Start pipeline_ai alongside the server
   startPipelineAI();
+
+  const pipelineUrl = process.env.AI_ENGINE_URL || 'http://localhost:8000';
+  void pollPipelineReadiness(pipelineUrl);
+
+  const serverPort = process.env.PORT ?? 3000;
+  await app.listen(serverPort);
 
   console.log(`\n==================================================`);
   console.log(`[Server]   URL: http://localhost:${serverPort}`);

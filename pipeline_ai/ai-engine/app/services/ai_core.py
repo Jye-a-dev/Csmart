@@ -73,27 +73,39 @@ class OneForAllAIEngine:
         return self._call_llm(system_prompt, query)
 
     # 3. STREAMING CHATBOT COPILOT
-    def stream_chat(self, history: list[dict]):
+    def stream_chat(
+        self,
+        history: list[dict],
+        system_prompt: str | None = None,
+        temperature: float = 0.7,
+    ):
+        base_vi_instruction = (
+            "Bạn là CSMART AI Copilot - Trợ lý bán hàng và chăm sóc khách hàng thông minh của hệ thống thương mại điện tử CSMART.\n"
+            "QUY TẮC BẮT BUỘC: Bạn PHẢI luôn luôn phản hồi 100% bằng Tiếng Việt tự nhiên, lịch sự, chính xác và dễ hiểu. "
+            "Tuyệt đối không trả lời bằng Tiếng Anh hoặc ngôn ngữ khác (ngoại trừ mã sản phẩm, SKU hoặc tên thương hiệu riêng)."
+        )
+
+        full_system_prompt = f"{base_vi_instruction}\n\n{system_prompt}" if system_prompt else base_vi_instruction
+
         if self.llm is None:
-            last_msg = history[-1]["content"] if history and "content" in history[-1] else ""
-            fallback = f"Xin chào! Tôi là CSMART AI Copilot. Tôi đã nhận được yêu cầu: '{last_msg}'. Hệ thống đang tư vấn và hỗ trợ thông tin mua sắm cho bạn."
+            last_msg = (history[-1]["content"] if history and "content" in history[-1] else "").lower()
+            if any(k in last_msg for k in ["sản phẩm", "bao nhiêu", "hàng", "quần", "áo", "giá"]):
+                fallback = "Hệ thống CSMART cung cấp đa dạng các mẫu thời trang, phụ kiện và sản phẩm chính hãng với mức giá ưu đãi. Bạn đang muốn tìm sản phẩm nào cụ thể để tôi tư vấn chi tiết hơn?"
+            elif any(k in last_msg for k in ["chào", "hi", "hello"]):
+                fallback = "Chào bạn! Tôi là CSMART AI Copilot. Tôi có thể hỗ trợ bạn tra cứu thông tin sản phẩm, giá cả và tình trạng đơn hàng. Bạn cần giúp gì hôm nay?"
+            else:
+                fallback = "Tôi luôn sẵn sàng hỗ trợ bạn tìm kiếm sản phẩm và tra cứu thông tin đơn hàng tại CSMART. Bạn hãy cho tôi biết nhu cầu nhé."
             for word in fallback.split():
                 yield word + " "
             return
-            
-        system_prompt = (
-            "Bạn là trợ lý mua sắm AI Copilot thông minh của SmartCart. "
-            "Hãy hỗ trợ và tư vấn mua sắm, trả lời các thắc mắc về đơn hàng, sản phẩm của shop. "
-            "Trả lời ngắn gọn, tự nhiên, thân thiện bằng Tiếng Việt."
-        )
-        
-        messages = [{"role": "system", "content": system_prompt}] + history
-        
+
+        messages = [{"role": "system", "content": full_system_prompt}] + history
+
         try:
             response_stream = self.llm.create_chat_completion(
                 messages=messages,
                 max_tokens=512,
-                temperature=0.7,
+                temperature=temperature,
                 stream=True
             )
             for chunk in response_stream:
@@ -104,7 +116,7 @@ class OneForAllAIEngine:
                     if content:
                         yield content
         except Exception as e:
-            fallback = f"CSMART AI Copilot đã nhận thông điệp của bạn. Lỗi kết nối mô hình local ({str(e)}), hệ thống phản hồi tự động."
+            fallback = f"Tôi đang gặp gián đoạn kết nối mô hình cục bộ ({str(e)}). Vui lòng thử lại sau giây lát."
             for word in fallback.split():
                 yield word + " "
 

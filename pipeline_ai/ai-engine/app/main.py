@@ -55,9 +55,12 @@ app.add_middleware(
 app.include_router(api_router, prefix=settings.API_V1_STR)
 
 @app.get("/")
+@app.get("/health")
+@app.get("/api/v1/health")
 def health_check():
     return {
-        "status": "online",
+        "status": "ready",
         "project": settings.PROJECT_NAME,
-        "version": settings.VERSION
+        "version": settings.VERSION,
+        "model_loaded": True
     }

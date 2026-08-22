@@ -57,18 +57,45 @@ export function useCopilot() {
 
     try {
       const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
-      
-      const response = await fetch(`${BASE_URL}/copilot/chat/stream`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify(payload),
-      });
+      let response: Response | null = null;
+      let lastError: Error | null = null;
+      const maxRetries = 3;
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+      for (let attempt = 0; attempt < maxRetries; attempt++) {
+        try {
+          response = await fetch(`${BASE_URL}/copilot/chat/stream`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            },
+            body: JSON.stringify(payload),
+          });
+
+          if (response.ok) {
+            break;
+          }
+
+          // If server is 502/503/504 or restarting, retry
+          if ([500, 502, 503, 504].includes(response.status) && attempt < maxRetries - 1) {
+            await new Promise((resolve) => setTimeout(resolve, 1000 * Math.pow(2, attempt)));
+            continue;
+          }
+
+          const errText = await response.text();
+          throw new Error(`HTTP error ${response.status}: ${errText || response.statusText}`);
+        } catch (fetchErr) {
+          lastError = fetchErr as Error;
+          if (attempt < maxRetries - 1) {
+            await new Promise((resolve) => setTimeout(resolve, 1000 * Math.pow(2, attempt)));
+          } else {
+            throw lastError;
+          }
+        }
+      }
+
+      if (!response || !response.ok) {
+        throw lastError || new Error('Failed to connect to Copilot Stream.');
       }
 
       const reader = response.body?.getReader();

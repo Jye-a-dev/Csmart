@@ -6,7 +6,7 @@ import { ChatMessageDto } from '@/types/ai/copilot';
 interface CopilotTabProps {
   messages: ChatMessageDto[];
   isTyping: boolean;
-  typingRole: 'assistant' | 'user';
+  typingRole: 'assistant' | 'user' | 'system';
   chatInput: string;
   setChatInput: (value: string) => void;
   onSubmit: (e: React.FormEvent) => void;

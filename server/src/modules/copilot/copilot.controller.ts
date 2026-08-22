@@ -9,18 +9,52 @@ import {
   MessageEvent,
   BadRequestException,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiQuery } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiQuery, ApiProperty } from '@nestjs/swagger';
 import { Observable } from 'rxjs';
 import type { Response } from 'express';
+import {
+  IsString,
+  IsOptional,
+  IsNumber,
+  IsArray,
+  ValidateNested,
+  IsIn,
+} from 'class-validator';
+import { Type } from 'class-transformer';
 import { CopilotService } from './copilot.service';
 
-class ChatMessageDto {
-  role: 'user' | 'assistant';
+export class ChatMessageDto {
+  @ApiProperty({ example: 'user', enum: ['user', 'assistant', 'system'] })
+  @IsString()
+  @IsIn(['user', 'assistant', 'system'])
+  role: 'user' | 'assistant' | 'system';
+
+  @ApiProperty({ example: 'Xin chào shop!' })
+  @IsString()
   content: string;
 }
 
-class ChatStreamDto {
+export class ChatStreamDto {
+  @ApiProperty({ type: [ChatMessageDto] })
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ChatMessageDto)
   messages: ChatMessageDto[];
+
+  @ApiProperty({ example: 0.7, required: false })
+  @IsOptional()
+  @IsNumber()
+  temperature?: number;
+
+  @ApiProperty({ example: 0.75, required: false })
+  @IsOptional()
+  @IsNumber()
+  confidence_threshold?: number;
+
+  @ApiProperty({ example: 'Bạn là trợ lý CSMART...', required: false })
+  @IsOptional()
+  @IsString()
+  system_prompt?: string;
 }
 
 @ApiTags('Copilot')
@@ -61,7 +95,11 @@ export class CopilotController {
     res.setHeader('X-Accel-Buffering', 'no');
 
     const subscription = this.copilotService
-      .streamChat(body.messages)
+      .streamChat(body.messages, undefined, {
+        temperature: body.temperature,
+        confidence_threshold: body.confidence_threshold,
+        system_prompt: body.system_prompt,
+      })
       .subscribe({
         next: (event) => {
           res.write(`data: ${JSON.stringify(event.data)}\n\n`);

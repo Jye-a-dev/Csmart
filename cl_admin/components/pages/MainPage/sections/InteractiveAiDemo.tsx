@@ -27,7 +27,7 @@ export default function InteractiveAiDemo() {
   const [chatInput, setChatInput] = useState('');
   const [messages, setMessages] = useState<ChatMessageDto[]>([]);
   const [isTyping, setIsTyping] = useState<boolean>(false);
-  const [typingRole, setTypingRole] = useState<'assistant' | 'user'>('assistant');
+  const [typingRole, setTypingRole] = useState<'assistant' | 'user' | 'system'>('assistant');
   const timerRefs = useRef<(ReturnType<typeof setTimeout> | ReturnType<typeof setInterval> | number)[]>([]);
   const runSimulationRef = useRef<(stepNum: number) => void>(() => {});
 

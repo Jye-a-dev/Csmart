@@ -10,7 +10,7 @@ import {
   CopilotDiagnosticsInspector,
 } from './sections';
 
-const DEFAULT_SYSTEM_PROMPT = `Bạn là CSMART AI Assistant - Trợ lý bán hàng và hỗ trợ khách hàng thông minh cho thương mại điện tử CSMART. Hãy trả lời thân thiện, chính xác và ngắn gọn.`;
+const DEFAULT_SYSTEM_PROMPT = `Bạn là CSMART AI Assistant - Trợ lý bán hàng và hỗ trợ khách hàng thông minh cho sàn thương mại điện tử CSMART. BẮT BUỘC luôn trả lời hoàn toàn 100% bằng Tiếng Việt thân thiện, chính xác, lịch sự và ngắn gọn.`;
 
 export default function CopilotTestbenchPage() {
   const { loading, chatPostStream } = useCopilot();
@@ -37,13 +37,21 @@ export default function CopilotTestbenchPage() {
     const userText = inputMessage.trim();
     setInputMessage('');
 
+    // Sanitize past messages: strip out past connection error artifacts and empty bubbles
+    const sanitizedHistory: ChatMessageDto[] = messages
+      .filter((m) => m.content && m.content.trim().length > 0)
+      .map((m) => ({
+        role: m.role,
+        content: m.content.replace(/\n?\[Lỗi kết nối Copilot Stream\]/g, '').trim(),
+      }))
+      .filter((m) => m.content.length > 0);
+
     const newHistory: ChatMessageDto[] = [
-      ...messages,
+      ...sanitizedHistory,
       { role: 'user', content: userText },
     ];
 
-    setMessages(newHistory);
-    setMessages((prev) => [...prev, { role: 'assistant', content: '' }]);
+    setMessages([...sanitizedHistory, { role: 'user', content: userText }, { role: 'assistant', content: '' }]);
 
     const startTime = Date.now();
     let chunks = 0;
@@ -90,17 +98,32 @@ export default function CopilotTestbenchPage() {
         }
       );
     } catch {
-      setMessages((prev) => {
-        const updated = [...prev];
-        const lastIdx = updated.length - 1;
-        if (lastIdx >= 0 && updated[lastIdx].role === 'assistant') {
-          updated[lastIdx] = {
-            ...updated[lastIdx],
-            content: updated[lastIdx].content + '\n[Lỗi kết nối Copilot Stream]',
-          };
+      // Local fallback stream when backend server (port 3000) is unreachable
+      const fallbackText = `Xin chào! Tôi là CSMART AI Copilot (Chế độ dự phòng). Tôi đã nhận được câu hỏi: "${userText}". \n\n[Lưu ý]: Để nhận phản hồi trực tiếp từ mô hình Qwen2.5 & cơ sở dữ liệu thật, vui lòng chạy lệnh "npm run dev" trong thư mục server.`;
+
+      let charIdx = 0;
+      const interval = setInterval(() => {
+        charIdx += 5;
+        const slice = fallbackText.slice(0, charIdx);
+
+        setMessages((prev) => {
+          const updated = [...prev];
+          const lastIdx = updated.length - 1;
+          if (lastIdx >= 0 && updated[lastIdx].role === 'assistant') {
+            updated[lastIdx] = {
+              ...updated[lastIdx],
+              content: slice,
+            };
+          }
+          return updated;
+        });
+        setStreamChunksCount((c) => c + 1);
+
+        if (charIdx >= fallbackText.length) {
+          clearInterval(interval);
+          setLastLatencyMs(Date.now() - startTime);
         }
-        return updated;
-      });
+      }, 25);
     }
   };
 

@@ -1,6 +1,7 @@
 import asyncio
 import json
 import logging
+from typing import Optional
 from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
@@ -17,6 +18,9 @@ class ChatMessage(BaseModel):
 
 class ChatRequest(BaseModel):
     messages: list[ChatMessage]
+    temperature: Optional[float] = 0.7
+    confidence_threshold: Optional[float] = 0.75
+    system_prompt: Optional[str] = None
 
 
 @router.post(
@@ -29,7 +33,11 @@ async def copilot_chat(payload: ChatRequest):
 
     async def event_generator():
         try:
-            for chunk in ai_engine_core.stream_chat(history):
+            for chunk in ai_engine_core.stream_chat(
+                history,
+                system_prompt=payload.system_prompt,
+                temperature=payload.temperature if payload.temperature is not None else 0.7,
+            ):
                 yield f"data: {json.dumps({'text': chunk}, ensure_ascii=False)}\n\n"
                 await asyncio.sleep(0)  # Yield control cho event loop giữa mỗi chunk
         except asyncio.CancelledError:
