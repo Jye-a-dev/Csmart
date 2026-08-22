@@ -5,4 +5,8 @@ export interface ChatMessageDto {
 
 export interface ChatStreamDto {
   messages: ChatMessageDto[];
+  temperature?: number;
+  confidence_threshold?: number;
+  system_prompt?: string;
 }
+

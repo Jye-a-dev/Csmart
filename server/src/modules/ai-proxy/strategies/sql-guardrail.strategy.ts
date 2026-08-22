@@ -18,22 +18,48 @@ export class SqlGuardrailStrategy {
   ];
 
   /**
-   * Kiểm tra tính hợp lệ của câu lệnh SQL (chỉ cho phép READ-ONLY SELECT hoặc WITH)
+   * Kiểm tra tính hợp lệ của câu lệnh SQL (chỉ cho phép READ-ONLY SELECT hoặc WITH, chống Stacked Queries & SQL Injection)
    */
   public validateReadOnlySql(sql: string): SqlValidationResult {
     if (!sql || typeof sql !== 'string') {
       return { isValid: false, error: 'Câu lệnh SQL không hợp lệ' };
     }
 
-    const cleanSql = sql.trim().toLowerCase();
-    if (cleanSql.startsWith('--')) {
-      return { isValid: false, error: 'Truy vấn không hợp lệ hoặc chứa lỗi' };
+    let cleanSql = sql.trim();
+    // Bỏ các dấu chấm phẩy ở cuối câu lệnh
+    cleanSql = cleanSql.replace(/;+$/, '').trim();
+
+    // Chặn Stacked Queries (nếu vẫn còn dấu chấm phẩy bên trong câu truy vấn)
+    if (cleanSql.includes(';')) {
+      return {
+        isValid: false,
+        error: 'Truy vấn không hợp lệ: Không cho phép thực thi đa câu lệnh (Stacked Queries)',
+      };
     }
 
-    if (!cleanSql.startsWith('select') && !cleanSql.startsWith('with')) {
+    // Chặn comment injection (-- hoặc /* */)
+    if (cleanSql.includes('--') || cleanSql.includes('/*') || cleanSql.includes('*/')) {
+      return {
+        isValid: false,
+        error: 'Truy vấn chứa ký tự chú thích SQL không hợp lệ',
+      };
+    }
+
+    const lowerSql = cleanSql.toLowerCase();
+    if (!lowerSql.startsWith('select') && !lowerSql.startsWith('with')) {
       return {
         isValid: false,
         error: 'Chỉ cho phép thực thi truy vấn READ-ONLY (SELECT/WITH)',
+      };
+    }
+
+    // Chặn từ khóa DDL/DML và hàm/lệnh hệ thống nguy hiểm (dùng word boundary)
+    const dangerousPattern =
+      /\b(delete|update|insert|drop|alter|create|truncate|rename|grant|revoke|execute|exec|copy|pg_sleep)\b/i;
+    if (dangerousPattern.test(cleanSql)) {
+      return {
+        isValid: false,
+        error: 'Truy vấn chứa từ khóa làm thay đổi dữ liệu hoặc tiềm ẩn rủi ro bảo mật',
       };
     }
 

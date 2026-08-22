@@ -26,6 +26,9 @@ import {
   FolderTree,
   HelpCircle,
   ScanText,
+  Target,
+  Braces,
+  MessageSquareCode,
 } from 'lucide-react';
 type DashboardLayoutProps = {
   children: ReactNode;
@@ -75,6 +78,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         { name: 'AI Logs', href: '/ai-logs', icon: ScrollText },
         { name: 'AI Evaluator', href: '/ai-evaluator', icon: FlaskConical },
         { name: 'SQL Console', href: '/sql-console', icon: DatabaseZap },
+        { name: 'Intent Sandbox', href: '/intent-sandbox', icon: Target },
+        { name: 'NER Sandbox', href: '/ner-sandbox', icon: Braces },
+        { name: 'Copilot Testbench', href: '/copilot-testbench', icon: MessageSquareCode },
       ],
     },
     {
