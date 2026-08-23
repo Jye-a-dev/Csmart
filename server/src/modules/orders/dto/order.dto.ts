@@ -10,7 +10,7 @@ import {
   IsUUID,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { OrderStatus, ItemShippingStatus } from '../entities/order.entity';
+import { OrderStatus, ItemShippingStatus } from '../order.entity';
 
 export class CreateOrderItemDto {
   @ApiProperty({ example: 'c0eebc99-9c0b-4ef8-bb6d-6bb9bd380a33', required: false })

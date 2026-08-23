@@ -3,14 +3,14 @@ import {
   NotFoundException,
   ConflictException,
 } from '@nestjs/common';
-import { UsersRepository } from './repositories/users.repository';
+import { UsersRepository } from './users.repository';
 import {
   CreateUserDto,
   UpdateUserDto,
   CreateUserAddressDto,
   UpdateUserAddressDto,
 } from './dto/user.dto';
-import { User, UserAddress } from './entities/user.entity';
+import { User, UserAddress } from './user.entity';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()

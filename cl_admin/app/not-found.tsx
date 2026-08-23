@@ -1,5 +1,7 @@
-import NotFoundPage from '@/components/pages/NotFoundPage/Index';
+'use client';
 
-export default function NotFound() {
-  return <NotFoundPage />;
+import { NotFoundContainer } from './_components/not-found';
+
+export default function NotFoundPage() {
+  return <NotFoundContainer />;
 }

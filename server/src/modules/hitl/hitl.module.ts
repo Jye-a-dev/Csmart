@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { HitlService } from './hitl.service';
 import { HitlController } from './hitl.controller';
-import { HitlRepository } from './repositories/hitl.repository';
+import { HitlRepository } from './hitl.repository';
 
 @Module({
   controllers: [HitlController],

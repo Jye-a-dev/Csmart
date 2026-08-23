@@ -10,7 +10,7 @@ import {
   IsObject,
 } from 'class-validator';
 import { Transform } from 'class-transformer';
-import { ProductStatus } from '../entities/product.entity';
+import { ProductStatus } from '../product.entity';
 
 export class CreateProductDto {
   @ApiProperty({ example: 'PROD12345' })

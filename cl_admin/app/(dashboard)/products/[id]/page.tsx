@@ -1,9 +1,6 @@
-'use client';
+import ProductForm from '../_components/ProductForm';
 
-import { use } from 'react';
-import ProductFormPage from '@/components/pages/ProductFormPage/Index';
-
-export default function Page({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params);
-  return <ProductFormPage mode="edit" productId={id} />;
+export default async function Page({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  return <ProductForm mode="edit" productId={id} />;
 }

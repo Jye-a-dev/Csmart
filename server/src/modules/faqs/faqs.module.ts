@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { FaqsService } from './faqs.service';
 import { FaqsController } from './faqs.controller';
-import { FaqsRepository } from './repositories/faqs.repository';
+import { FaqsRepository } from './faqs.repository';
 
 @Module({
   controllers: [FaqsController],

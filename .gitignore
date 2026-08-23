@@ -108,9 +108,13 @@ public
 *.sublime-project
 
 # Python
+__pycache__/
 **/__pycache__/
 *.py[cod]
 *$py.class
+*.pyc
+*.pyo
+.pytest_cache/
 .venv/
 venv/
 ENV/

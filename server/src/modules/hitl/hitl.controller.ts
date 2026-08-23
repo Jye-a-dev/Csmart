@@ -27,7 +27,7 @@ import {
   RejectReviewDto,
   LabelReviewDto,
 } from './dto/hitl.dto';
-import type { HitlStatus } from './entities/review-queue.entity';
+import type { HitlStatus } from './review-queue.entity';
 
 interface AuthRequest extends Request {
   user?: { sub: string; email: string; role: string };

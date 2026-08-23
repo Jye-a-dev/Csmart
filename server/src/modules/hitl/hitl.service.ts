@@ -3,14 +3,14 @@ import {
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
-import { HitlRepository } from './repositories/hitl.repository';
+import { HitlRepository } from './hitl.repository';
 import {
   EnqueueReviewDto,
   ApproveReviewDto,
   RejectReviewDto,
   LabelReviewDto,
 } from './dto/hitl.dto';
-import { ReviewQueueItem, HitlStatus } from './entities/review-queue.entity';
+import { ReviewQueueItem, HitlStatus } from './review-queue.entity';
 
 @Injectable()
 export class HitlService {

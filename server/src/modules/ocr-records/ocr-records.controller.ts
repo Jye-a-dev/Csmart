@@ -12,7 +12,7 @@ import {
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
 import { OcrRecordsService } from './ocr-records.service';
 import { CreateOcrRecordDto, UpdateOcrRecordDto } from './dto/ocr-record.dto';
-import { OcrRecord } from './entities/ocr-record.entity';
+import { OcrRecord } from './ocr-record.entity';
 
 @ApiTags('OcrRecords')
 @Controller('ocr-records')

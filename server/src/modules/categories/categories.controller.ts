@@ -12,7 +12,7 @@ import {
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
 import { CategoriesService } from './categories.service';
 import { CreateCategoryDto, UpdateCategoryDto } from './dto/category.dto';
-import { Category } from './entities/category.entity';
+import { Category } from './category.entity';
 
 @ApiTags('Categories')
 @Controller('categories')

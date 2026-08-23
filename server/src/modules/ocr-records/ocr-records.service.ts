@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { OcrRecordsRepository } from './repositories/ocr-records.repository';
+import { OcrRecordsRepository } from './ocr-records.repository';
 import { CreateOcrRecordDto, UpdateOcrRecordDto } from './dto/ocr-record.dto';
-import { OcrRecord } from './entities/ocr-record.entity';
+import { OcrRecord } from './ocr-record.entity';
 
 @Injectable()
 export class OcrRecordsService {

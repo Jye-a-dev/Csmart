@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { AiLogsRepository } from './repositories/ai-logs.repository';
+import { AiLogsRepository } from './ai-logs.repository';
 import { CreateAiRequestLogDto, UpdateAiRequestLogDto } from './dto/ai-log.dto';
-import { AiRequestLog } from './entities/ai-log.entity';
+import { AiRequestLog } from './ai-log.entity';
 
 @Injectable()
 export class AiLogsService {

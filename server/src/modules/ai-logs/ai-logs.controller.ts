@@ -12,7 +12,7 @@ import {
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
 import { AiLogsService } from './ai-logs.service';
 import { CreateAiRequestLogDto, UpdateAiRequestLogDto } from './dto/ai-log.dto';
-import { AiRequestLog } from './entities/ai-log.entity';
+import { AiRequestLog } from './ai-log.entity';
 
 @ApiTags('AiLogs')
 @Controller('ai-logs')

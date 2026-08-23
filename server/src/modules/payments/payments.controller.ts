@@ -16,7 +16,7 @@ import {
   ProcessPaymentDto,
   UpdatePaymentDto,
 } from './dto/payment.dto';
-import { Payment } from './entities/payment.entity';
+import { Payment } from './payment.entity';
 
 @ApiTags('Payments')
 @Controller('payments')

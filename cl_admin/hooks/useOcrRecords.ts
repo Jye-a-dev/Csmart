@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { apiClient } from '@/libs/api-client';
-import { OcrRecordItem } from '@/components/pages/OcrPage/sections';
+import { OcrRecordItem } from '@/types/entities/ocr-record';
 
 // ─── Job Status Types ────────────────────────────────────────────────────────
 

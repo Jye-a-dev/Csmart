@@ -12,7 +12,7 @@ import {
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
 import { OrdersService } from './orders.service';
 import { CreateOrderDto, UpdateOrderDto } from './dto/order.dto';
-import { Order } from './entities/order.entity';
+import { Order } from './order.entity';
 
 @ApiTags('Orders')
 @Controller('orders')

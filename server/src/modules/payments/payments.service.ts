@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { PaymentsRepository } from './repositories/payments.repository';
+import { PaymentsRepository } from './payments.repository';
 import {
   CreatePaymentDto,
   ProcessPaymentDto,
@@ -10,7 +10,7 @@ import {
   Payment,
   PaymentMethod,
   PaymentStatus,
-} from './entities/payment.entity';
+} from './payment.entity';
 import * as crypto from 'crypto';
 
 export interface ProcessPaymentResult {

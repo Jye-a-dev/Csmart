@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { ProductsRepository } from './repositories/products.repository';
+import { ProductsRepository } from './products.repository';
 import { CreateProductDto, UpdateProductDto } from './dto/product.dto';
-import { Product } from './entities/product.entity';
+import { Product } from './product.entity';
 import { AiClientService } from '../../common/services/ai-client.service';
 
 @Injectable()

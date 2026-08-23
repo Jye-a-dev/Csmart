@@ -81,7 +81,7 @@ if __name__ == "__main__":
     
     parser = argparse.ArgumentParser(description="Export HITL reviewed dataset to ChatML JSONL format.")
     parser.add_argument("--db-url", type=str, default=default_db, help="PostgreSQL connection URL")
-    parser.add_argument("--output", "-o", type=str, default="pipeline_ai/datasets/dataset_hitl_updated.jsonl", help="Output JSONL file path")
+    parser.add_argument("--output", "-o", type=str, default="pipeline_ai/data/dataset_hitl_updated.jsonl", help="Output JSONL file path")
     parser.add_argument("--min-count", "-m", type=int, default=1, help="Minimum threshold count to export")
     
     args = parser.parse_args()

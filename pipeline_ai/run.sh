@@ -10,9 +10,8 @@ fi
 
 if [ "$1" = "start" ]; then
     echo "[1/2] Installing requirements..."
-    pip install --user -r ./ai-engine/requirements.txt
+    pip install --user -r requirements.txt
 
-    cd ai-engine
     while true; do
         echo "[2/2] Starting FastAPI app on port $PORT..."
         python -m uvicorn app.main:app --host 0.0.0.0 --port "$PORT" &
@@ -34,7 +33,6 @@ if [ "$1" = "start" ]; then
             break
         fi
     done
-    cd ..
 else
     echo "Usage: ./run.sh start"
 fi

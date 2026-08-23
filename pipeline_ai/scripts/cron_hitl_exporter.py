@@ -24,7 +24,7 @@ if __name__ == "__main__":
     
     parser = argparse.ArgumentParser(description="Cron / Worker monitoring HITL dataset thresholds.")
     parser.add_argument("--db-url", type=str, default=default_db, help="PostgreSQL connection URL")
-    parser.add_argument("--output", "-o", type=str, default="pipeline_ai/datasets/dataset_hitl_updated.jsonl", help="Output JSONL file path")
+    parser.add_argument("--output", "-o", type=str, default="pipeline_ai/data/dataset_hitl_updated.jsonl", help="Output JSONL file path")
     parser.add_argument("--threshold", "-t", type=int, default=100, help="Record count threshold to trigger dataset export")
     parser.add_argument("--interval", "-i", type=int, default=300, help="Check interval in seconds (default: 300s)")
     

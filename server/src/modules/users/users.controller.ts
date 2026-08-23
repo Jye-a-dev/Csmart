@@ -17,7 +17,7 @@ import {
   CreateUserAddressDto,
   UpdateUserAddressDto,
 } from './dto/user.dto';
-import { User, UserAddress } from './entities/user.entity';
+import { User, UserAddress } from './user.entity';
 
 @ApiTags('Users')
 @Controller('users')
