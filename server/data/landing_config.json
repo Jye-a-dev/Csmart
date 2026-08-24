@@ -1,0 +1,45 @@
+{
+  "announcement": {
+    "message": "Miễn phí vận chuyển toàn quốc cho đơn hàng từ 499.000đ | Đổi trả trong 30 ngày",
+    "hotline": "1900 1000",
+    "faqLinkText": "Trợ giúp & FAQ"
+  },
+  "hero": {
+    "pillTag": "BỘ SƯU TẬP MÙA HÈ 2026",
+    "headline": "Nâng Tầm Phong Cách Sống Mỗi Ngày Cùng CSMART",
+    "description": "Hàng ngàn sản phẩm thời trang, thiết bị gia dụng và phụ kiện cao cấp chính hãng. Giao hàng hỏa tốc trong 24 giờ.",
+    "primaryCtaText": "Mua Sắm Ngay",
+    "primaryCtaLink": "#featured-products",
+    "secondaryCtaText": "Xem Danh Mục",
+    "secondaryCtaLink": "#categories",
+    "gradientClass": "from-rose-600 via-red-500 to-orange-500",
+    "imageMode": "background",
+    "imageUrl": "https://dynamic-media-cdn.tripadvisor.com/media/photo-o/2b/1b/30/d0/tr-mart-supermarket-sonasea.jpg?w=900&h=500&s=1"
+  },
+  "trustBadges": [
+    {
+      "id": "tb-1",
+      "title": "Giao Hàng Miễn Phí",
+      "subtitle": "Cho đơn hàng từ 499k",
+      "icon": "truck"
+    },
+    {
+      "id": "tb-2",
+      "title": "100% Chính Hãng",
+      "subtitle": "Cam kết chất lượng cao",
+      "icon": "shield"
+    },
+    {
+      "id": "tb-3",
+      "title": "30 Ngày Đổi Trả",
+      "subtitle": "Thủ tục nhanh chóng",
+      "icon": "refresh"
+    },
+    {
+      "id": "tb-4",
+      "title": "Hỗ Trợ 24/7",
+      "subtitle": "Tư vấn tận tình chu đáo",
+      "icon": "headset"
+    }
+  ]
+}

@@ -1,34 +1,32 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import { useProducts, useCategories } from '@/hooks';
 import { Product, CreateProductDto, UpdateProductDto } from '@/types/entities/product';
 import { Category } from '@/types/entities/category';
 import { ProductsTable, ProductModal, ConfirmDeleteModal } from '@/app/(dashboard)/products/_components';
 import { CategoryProductsHeader } from '../../_components';
 
-interface CategoryProductsPageProps {
-  categorySlug: string;
-}
-
-export default function CategoryProductsPage({ categorySlug }: CategoryProductsPageProps) {
+export default function CategoryProductsPage() {
   const router = useRouter();
+  const params = useParams();
+  const categorySlug = (params?.slug as string) || '';
+
   const {
     loading: productsLoading,
     createProduct,
     findAllProducts,
     updateProduct,
-    removeProduct
+    removeProduct,
   } = useProducts();
 
   const {
     loading: categoriesLoading,
-    findAllCategories
+    findAllCategories,
   } = useCategories();
 
   // State
-  const [currentCategory, setCurrentCategory] = useState<Category | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
 
@@ -47,18 +45,33 @@ export default function CategoryProductsPage({ categorySlug }: CategoryProductsP
   const loadData = useCallback(async () => {
     if (!categorySlug) return;
     try {
-      // Find all categories
-      const catsData = await findAllCategories({ limit: 100 });
+      // Find all categories and products
+      const [catsData, prodsData] = await Promise.all([
+        findAllCategories({ limit: 200 }),
+        findAllProducts({ limit: 200 }),
+      ]);
+
       setCategories(catsData || []);
+      setProducts(prodsData || []);
 
-      // Find current category matching the slug
-      const cat = catsData?.find(c => c.slug === categorySlug);
+      const rawSlug = decodeURIComponent(categorySlug).toLowerCase().trim();
+      const cat = catsData?.find((c) => {
+        const slug = String(c.slug ?? '').toLowerCase().trim();
+        const id = String(c.id ?? '').toLowerCase().trim();
+        const name = String(c.name ?? '').toLowerCase().trim();
+        return (
+          slug === rawSlug ||
+          id === rawSlug ||
+          name === rawSlug ||
+          (slug && slug.includes(rawSlug)) ||
+          (rawSlug && rawSlug.includes(slug))
+        );
+      });
+
       if (cat) {
-        setCurrentCategory(cat);
-
-        // Find all products to filter
-        const prodsData = await findAllProducts({ limit: 150 });
-        setProducts(prodsData || []);
+        setSelectedCatFilter(String(cat.id));
+      } else {
+        setSelectedCatFilter(rawSlug);
       }
     } catch (err) {
       console.error('Failed to load category products data', err);
@@ -66,38 +79,56 @@ export default function CategoryProductsPage({ categorySlug }: CategoryProductsP
   }, [categorySlug, findAllCategories, findAllProducts]);
 
   useEffect(() => {
-    const t = setTimeout(() => void loadData(), 0);
-    return () => clearTimeout(t);
+    let ignore = false;
+    async function init() {
+      if (!ignore) {
+        await loadData();
+      }
+    }
+    void init();
+    return () => {
+      ignore = true;
+    };
   }, [loadData]);
 
-  // Sync category state if categories change
-  useEffect(() => {
-    if (categorySlug && categories.length > 0) {
-      const cat = categories.find(c => c.slug === categorySlug);
-      if (cat) setCurrentCategory(cat);
-    }
-  }, [categorySlug, categories]);
+  // Derived current category from loaded categories with resilient fallback
+  const rawSlug = decodeURIComponent(categorySlug).toLowerCase().trim();
+  const matchedCategory =
+    categories.find((c) => {
+      const slug = String(c.slug ?? '').toLowerCase().trim();
+      const id = String(c.id ?? '').toLowerCase().trim();
+      const name = String(c.name ?? '').toLowerCase().trim();
+      return (
+        slug === rawSlug ||
+        id === rawSlug ||
+        name === rawSlug ||
+        (slug && slug.includes(rawSlug)) ||
+        (rawSlug && rawSlug.includes(slug))
+      );
+    }) || null;
 
-  // Handle category filter dropdown changes
-  useEffect(() => {
-    if (selectedCatFilter && selectedCatFilter !== 'ALL') {
-      const targetCat = categories.find(c => c.id === selectedCatFilter);
+  const currentCategory =
+    matchedCategory ||
+    (categories.length > 0
+      ? {
+          id: rawSlug,
+          name: rawSlug.toUpperCase(),
+          slug: rawSlug,
+          description: `Danh mục: ${rawSlug}`,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        }
+      : null);
+
+  const handleCategoryFilterChange = (catId: string) => {
+    setSelectedCatFilter(catId);
+    if (catId && catId !== 'ALL') {
+      const targetCat = categories.find((c) => c.id === catId);
       if (targetCat && targetCat.slug !== categorySlug) {
         router.push(`/products/category/${targetCat.slug}`);
       }
     }
-  }, [selectedCatFilter, categorySlug, categories, router]);
-
-  // Sync selectedCatFilter dropdown selection with slug prop changes
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      const currentCat = categories.find(c => c.slug === categorySlug);
-      if (currentCat) {
-        setSelectedCatFilter(String(currentCat.id));
-      }
-    }, 0);
-    return () => clearTimeout(timer);
-  }, [categorySlug, categories]);
+  };
 
   // Product CRUD handlers
   const handleProductSubmit = async (id?: string, payload?: CreateProductDto | UpdateProductDto) => {
@@ -165,7 +196,7 @@ export default function CategoryProductsPage({ categorySlug }: CategoryProductsP
         searchTerm={productSearch}
         setSearchTerm={setProductSearch}
         selectedCategory={selectedCatFilter}
-        setSelectedCategory={setSelectedCatFilter}
+        setSelectedCategory={handleCategoryFilterChange}
       />
 
       {/* Create/Edit Product Modal */}

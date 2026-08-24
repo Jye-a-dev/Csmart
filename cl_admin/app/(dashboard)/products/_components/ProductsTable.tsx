@@ -50,10 +50,32 @@ export default function ProductsTable({
     return cat ? cat.name : `Danh mục (${String(id).slice(0, 8)}...)`;
   };
 
+  // Recursively collect parent and all child category IDs
+  const getAllCategoryIdsInTree = (catId: string, allCats: Category[]): string[] => {
+    const directChildren = allCats.filter(c => c.parent_id === catId);
+    let ids: string[] = [catId];
+    for (const child of directChildren) {
+      ids = [...ids, ...getAllCategoryIdsInTree(child.id, allCats)];
+    }
+    return ids;
+  };
+
+  const targetCategoryIds =
+    !selectedCategory || selectedCategory === 'ALL'
+      ? []
+      : getAllCategoryIdsInTree(selectedCategory, categories);
+
   const filteredProducts = products.filter(p => {
-    const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          p.sku.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCat = !selectedCategory || selectedCategory === 'ALL' || String(p.category_id) === selectedCategory;
+    const matchesSearch =
+      p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      p.sku.toLowerCase().includes(searchTerm.toLowerCase());
+
+    const matchesCat =
+      !selectedCategory ||
+      selectedCategory === 'ALL' ||
+      targetCategoryIds.includes(String(p.category_id)) ||
+      String(p.category_id) === selectedCategory;
+
     const matchesStatus = statusFilter === 'ALL' || p.status === statusFilter;
     return matchesSearch && matchesCat && matchesStatus;
   });

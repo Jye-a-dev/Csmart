@@ -10,6 +10,8 @@ interface CategoryCardProps {
   onEdit: (category: Category) => void;
   onDelete: (id: string) => void;
   onViewChildren?: (category: Category) => void;
+  isFeaturedOnLanding?: boolean;
+  onToggleLanding?: (category: Category, nextState: boolean) => void;
 }
 
 export default function CategoryCard({
@@ -18,7 +20,9 @@ export default function CategoryCard({
   products,
   onEdit,
   onDelete,
-  onViewChildren
+  onViewChildren,
+  isFeaturedOnLanding = false,
+  onToggleLanding,
 }: CategoryCardProps) {
   const router = useRouter();
 
@@ -27,15 +31,9 @@ export default function CategoryCard({
   const hasChildren = subCategories.length > 0;
 
   // Find parent category name
-  const getParentName = () => {
-    if (!category.parent_id) return null;
-    const parent = categories.find(c => c.id === category.parent_id);
-    return parent ? parent.name : `#${category.parent_id}`;
-  };
 
   // Count products in this category (or child categories)
   const productCount = products.filter(p => p.category_id === category.id).length;
-  const parentName = getParentName();
 
   const handleMainAction = () => {
     if (hasChildren) {
@@ -52,11 +50,28 @@ export default function CategoryCard({
   return (
     <div className="border-4 border-[#09090B] bg-white p-6 shadow-[6px_6px_0px_0px_#09090B] flex flex-col justify-between hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-[4px_4px_0px_0px_#09090B] transition-all min-h-60">
       <div>
-        <div className="flex justify-between items-start mb-3 border-b-2 border-dashed border-[#09090B]/10 pb-3">
-          <div className="flex items-center gap-2 text-zinc-500 font-mono text-[10px] font-bold uppercase">
-            <Tag size={12} className="text-[#F97316]" />
-            SLUG: {category.slug}
+        <div className="flex justify-between items-center mb-3 border-b-2 border-dashed border-[#09090B]/10 pb-3 gap-2">
+          <div className="flex items-center gap-1.5 text-zinc-500 font-mono text-[10px] font-bold uppercase truncate">
+            <Tag size={12} className="text-[#F97316] shrink-0" />
+            <span className="truncate">SLUG: {category.slug}</span>
           </div>
+
+          {/* Landing Page ON/OFF Toggle */}
+          {onToggleLanding && (
+            <button
+              type="button"
+              onClick={() => onToggleLanding(category, !isFeaturedOnLanding)}
+              className={`shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-mono font-bold border-2 transition-all cursor-pointer active:scale-95 ${
+                isFeaturedOnLanding
+                  ? 'bg-emerald-100 text-emerald-900 border-emerald-600 shadow-[2px_2px_0px_0px_#09090B]'
+                  : 'bg-zinc-100 text-zinc-500 border-zinc-300 hover:border-[#09090B] hover:text-zinc-800'
+              }`}
+              title={isFeaturedOnLanding ? 'Đang hiển thị ở Landing Page (Click để tắt)' : 'Đang ẩn khỏi Landing Page (Click để bật)'}
+            >
+              <span className={`w-2 h-2 rounded-full ${isFeaturedOnLanding ? 'bg-emerald-600 animate-pulse' : 'bg-zinc-400'}`} />
+              <span>{isFeaturedOnLanding ? 'Landing: BẬT' : 'Landing: TẮT'}</span>
+            </button>
+          )}
         </div>
 
         <h3 className="text-lg font-black text-[#09090B] uppercase tracking-tight line-clamp-1 mb-1">

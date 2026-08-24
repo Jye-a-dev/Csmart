@@ -29,6 +29,7 @@ import {
   Target,
   Braces,
   MessageSquareCode,
+  Palette,
 } from 'lucide-react';
 type DashboardLayoutProps = {
   children: ReactNode;
@@ -63,9 +64,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       label: 'NGHIỆP VỤ',
       items: [
         { name: 'Tổng Quan', href: '/dashboard', icon: LayoutDashboard },
+        { name: 'Landing CMS', href: '/landing-page', icon: Palette },
         { name: 'Đơn Hàng', href: '/orders', icon: ShoppingBag },
-        { name: 'Sản Phẩm', href: '/products', icon: Package },
-        { name: 'Danh Mục', href: '/categories', icon: FolderTree },
+        { name: 'Sản Phẩm & Danh Mục', href: '/products', icon: Package },
         { name: 'Thanh Toán', href: '/payments', icon: CreditCard },
         { name: 'Khách Hàng', href: '/customers', icon: Users },
       ],

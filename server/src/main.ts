@@ -7,7 +7,7 @@ import { spawn } from 'child_process';
 import * as path from 'path';
 
 function startPipelineAI() {
-  const pipelineDir = path.resolve(process.cwd(), '../pipeline_ai/ai-engine');
+  const pipelineDir = path.resolve(process.cwd(), '../pipeline_ai');
   const isDev = process.env.NODE_ENV !== 'production';
 
   const pipeline = spawn(
@@ -25,7 +25,7 @@ function startPipelineAI() {
     {
       cwd: pipelineDir,
       stdio: 'pipe',
-      shell: false,
+      shell: process.platform === 'win32',
     },
   );
 
@@ -60,7 +60,11 @@ function startPipelineAI() {
   return pipeline;
 }
 
-async function pollPipelineReadiness(url: string, maxRetries = 20, delayMs = 500): Promise<boolean> {
+async function pollPipelineReadiness(
+  url: string,
+  maxRetries = 20,
+  delayMs = 500,
+): Promise<boolean> {
   const prefix = '\x1b[35m[Pipeline Readiness]\x1b[0m';
   for (let i = 1; i <= maxRetries; i++) {
     try {
@@ -74,7 +78,9 @@ async function pollPipelineReadiness(url: string, maxRetries = 20, delayMs = 500
     }
     await new Promise((resolve) => setTimeout(resolve, delayMs));
   }
-  console.warn(`${prefix} AI Engine health check timed out after ${maxRetries * delayMs}ms. Fallback mode enabled.`);
+  console.warn(
+    `${prefix} AI Engine health check timed out after ${maxRetries * delayMs}ms. Fallback mode enabled.`,
+  );
   return false;
 }
 

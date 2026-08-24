@@ -55,7 +55,7 @@ CsmartAI/
   - `ner_pipeline.py`: Regex and semantic extraction for order codes, addresses, and customer intents.
   - `hybrid_search.py`: Vector embeddings combined with keyword search for product retrieval.
 - **HITL Integration**: Low-confidence requests (`confidence_score < 0.70` or `flag_for_review = true`) are pushed to `ai_review_queue` for manual audit and exported for fine-tuning via `scripts/export_hitl_dataset.py`.
-
+.000.00000000000000000
 ### 2.3. Admin Portal (`cl_admin`)
 - **Framework**: Next.js App Router (React 19, TypeScript)
 - **Architecture**: Route-colocated sub-components under `app/(dashboard)/<route>/_components/`. Shared global UI primitives located in `components/ui/` and `components/layouts/`.

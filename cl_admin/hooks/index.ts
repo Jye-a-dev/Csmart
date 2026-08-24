@@ -9,3 +9,4 @@ export * from './useOrders';
 export * from './usePayments';
 export * from './useProducts';
 export * from './useUsers';
+export * from './useLandingConfig';
