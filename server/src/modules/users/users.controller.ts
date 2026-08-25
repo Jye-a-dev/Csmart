@@ -62,6 +62,13 @@ export class UsersController {
     return this.usersService.countBy(filters);
   }
 
+  @Get(':id/stats')
+  @ApiOperation({ summary: 'Get user points and order stats' })
+  @ApiResponse({ status: 200 })
+  getUserStats(@Param('id') id: string) {
+    return this.usersService.getUserStats(id);
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Get user by ID' })
   @ApiResponse({ status: 200, type: User })

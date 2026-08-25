@@ -213,10 +213,25 @@ export function useUsers() {
     }
   }, []);
 
+  // Lấy điểm thưởng và thống kê người dùng
+  const getUserStats = useCallback(async (id: string): Promise<{ points: number; total_orders: number; total_spent: number; membership_tier: string }> => {
+    setLoading(true);
+    setError(null);
+    try {
+      return await apiClient<{ points: number; total_orders: number; total_spent: number; membership_tier: string }>(`/users/${id}/stats`);
+    } catch (err) {
+      setError(err as Error);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   return {
     loading,
     error,
     findOneUser,
+    getUserStats,
     updateUser,
     findAddresses,
     createAddress,

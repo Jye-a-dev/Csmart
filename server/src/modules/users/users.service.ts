@@ -80,6 +80,11 @@ export class UsersService {
     await this.usersRepository.updateLastLogin(id);
   }
 
+  async getUserStats(id: string): Promise<{ points: number; total_orders: number; total_spent: number; membership_tier: string }> {
+    await this.findOne(id);
+    return this.usersRepository.getUserStats(id);
+  }
+
   // Address operations
   async createAddress(
     userId: string,

@@ -133,6 +133,28 @@ export class UsersRepository extends BaseRepository {
     await this.query(sql, [id]);
   }
 
+  async getUserStats(userId: string): Promise<{ points: number; total_orders: number; total_spent: number; membership_tier: string }> {
+    const sql = `
+      SELECT 
+        COALESCE(FLOOR(SUM(CASE WHEN status != 'CANCELLED' THEN total_amount ELSE 0 END) / 10000), 0)::int + 50 AS points,
+        COUNT(id)::int AS total_orders,
+        COALESCE(SUM(CASE WHEN status != 'CANCELLED' THEN total_amount ELSE 0 END), 0)::numeric AS total_spent
+      FROM orders
+      WHERE user_id = $1
+    `;
+    const res = await this.queryOne<{ points: number | string; total_orders: number | string; total_spent: number | string }>(sql, [userId]);
+    const points = Number(res?.points || 50);
+    const total_orders = Number(res?.total_orders || 0);
+    const total_spent = Number(res?.total_spent || 0);
+
+    let membership_tier = 'THÀNH VIÊN ĐỒNG';
+    if (points >= 1000) membership_tier = 'THÀNH VIÊN KIM CƯƠNG';
+    else if (points >= 500) membership_tier = 'THÀNH VIÊN VÀNG';
+    else if (points >= 200) membership_tier = 'THÀNH VIÊN BẠC';
+
+    return { points, total_orders, total_spent, membership_tier };
+  }
+
   // ADDRESSES
   async createAddress(
     userId: string,

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import HeroSection from './sections/HeroSection';
 import TrustPropsSection from './sections/TrustPropsSection';
 import CategoriesSection from './sections/CategoriesSection';
@@ -11,11 +11,29 @@ import type { Product } from '@/types/entities/product';
 import { Check } from 'lucide-react';
 
 export default function MainPage() {
-  const [searchKeyword, setSearchKeyword] = useState<string>('');
+  const [searchKeyword, setSearchKeyword] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      return new URLSearchParams(window.location.search).get('q') || '';
+    }
+    return '';
+  });
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const [activeRole] = useState<'CUSTOMER' | 'SUPPORT'>('CUSTOMER');
   const [isSupportConsoleOpen, setIsSupportConsoleOpen] = useState<boolean>(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  // Sync search keyword from global search events
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const handleSearchEvent = (e: Event) => {
+      const customEvent = e as CustomEvent<string>;
+      setSearchKeyword(customEvent.detail ?? '');
+    };
+
+    window.addEventListener('csmart-search', handleSearchEvent);
+    return () => window.removeEventListener('csmart-search', handleSearchEvent);
+  }, []);
 
   const showToast = useCallback((msg: string) => {
     setToastMessage(msg);
@@ -34,6 +52,13 @@ export default function MainPage() {
   const handleClearFilters = useCallback(() => {
     setSearchKeyword('');
     setSelectedCategoryId(null);
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      params.delete('q');
+      const newUrl = `${window.location.pathname}${params.toString() ? `?${params.toString()}` : ''}`;
+      window.history.replaceState({}, '', newUrl);
+      window.dispatchEvent(new CustomEvent('csmart-search', { detail: '' }));
+    }
   }, []);
 
   return (

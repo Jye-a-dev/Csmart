@@ -100,6 +100,11 @@ interface FeaturedProductsSectionProps {
   onClearFilters?: () => void;
 }
 
+interface HybridSearchApiResponse {
+  results?: Product[];
+  data?: Product[];
+}
+
 export default function FeaturedProductsSection({
   searchKeyword = '',
   selectedCategoryId = null,
@@ -115,17 +120,46 @@ export default function FeaturedProductsSection({
     let isMounted = true;
 
     if (searchKeyword.trim()) {
-      hybridSearch(searchKeyword.trim(), 8)
-        .then((data) => {
-          if (isMounted) setProducts(data || []);
+      hybridSearch(searchKeyword.trim(), 12)
+        .then((res: Product[] | HybridSearchApiResponse | unknown) => {
+          let list: Product[] = [];
+          if (Array.isArray(res)) {
+            list = res as Product[];
+          } else if (res && typeof res === 'object') {
+            const apiRes = res as HybridSearchApiResponse;
+            if (Array.isArray(apiRes.results)) list = apiRes.results;
+            else if (Array.isArray(apiRes.data)) list = apiRes.data;
+          }
+
+          // Fallback matching against default mock list if AI hybrid search returned 0 items
+          if (list.length === 0) {
+            const kw = searchKeyword.toLowerCase().trim();
+            const fallbackFiltered = DEFAULT_PRODUCTS.filter(
+              (p) =>
+                p.name.toLowerCase().includes(kw) ||
+                p.category_name?.toLowerCase().includes(kw) ||
+                p.sku.toLowerCase().includes(kw)
+            );
+            if (isMounted) setProducts(fallbackFiltered as unknown as Product[]);
+          } else {
+            if (isMounted) setProducts(list);
+          }
         })
         .catch(() => {
-          if (isMounted) setProducts([]);
+          const kw = searchKeyword.toLowerCase().trim();
+          const fallbackFiltered = DEFAULT_PRODUCTS.filter(
+            (p) =>
+              p.name.toLowerCase().includes(kw) ||
+              p.category_name?.toLowerCase().includes(kw) ||
+              p.sku.toLowerCase().includes(kw)
+          );
+          if (isMounted) setProducts(fallbackFiltered as unknown as Product[]);
         });
     } else {
-      findAllProducts({ limit: 8, offset: 0 })
+      findAllProducts({ limit: 12, offset: 0 })
         .then((data) => {
-          if (isMounted) setProducts(data || []);
+          if (isMounted && Array.isArray(data)) setProducts(data);
+          else if (isMounted) setProducts([]);
         })
         .catch(() => {
           if (isMounted) setProducts([]);
@@ -137,7 +171,7 @@ export default function FeaturedProductsSection({
     };
   }, [searchKeyword, findAllProducts, hybridSearch]);
 
-  const baseList = products.length > 0 ? products : DEFAULT_PRODUCTS;
+  const baseList = products.length > 0 ? products : (searchKeyword.trim() ? [] : DEFAULT_PRODUCTS);
 
   const filteredProducts = selectedCategoryId
     ? baseList.filter((p) => (p as { category_id?: string }).category_id === selectedCategoryId)
@@ -173,14 +207,27 @@ export default function FeaturedProductsSection({
         <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-6 gap-4">
           <div>
             <h2 className="text-xl sm:text-2xl font-bold text-zinc-900 tracking-tight">
-              Sản Phẩm Đang Bán Chạy
+              {searchKeyword.trim()
+                ? `Kết Quả Tìm Kiếm Cho: "${searchKeyword}"`
+                : 'Sản Phẩm Đang Bán Chạy'}
             </h2>
             <p className="text-xs sm:text-sm text-zinc-500 mt-1">
-              Các mặt hàng được khách hàng đánh giá cao nhất
+              {searchKeyword.trim()
+                ? `Tìm thấy ${filteredProducts.length} sản phẩm tương thích`
+                : 'Các mặt hàng được khách hàng đánh giá cao nhất'}
             </p>
           </div>
 
           <div className="flex items-center gap-2">
+            {searchKeyword.trim() && onClearFilters && (
+              <button
+                type="button"
+                onClick={onClearFilters}
+                className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-orange-50 text-orange-700 border border-orange-200 hover:bg-orange-100 transition-colors cursor-pointer"
+              >
+                Xóa tìm kiếm
+              </button>
+            )}
             <button
               type="button"
               onClick={() => setActiveTab('ALL')}
@@ -210,7 +257,7 @@ export default function FeaturedProductsSection({
         {loading && (
           <div className="py-12 text-center text-sm text-zinc-500 flex items-center justify-center gap-2">
             <Sparkles size={16} className="animate-spin text-orange-600" />
-            <span>Đang tải danh sách sản phẩm...</span>
+            <span>Đang tìm kiếm danh sách sản phẩm...</span>
           </div>
         )}
 
@@ -237,7 +284,7 @@ export default function FeaturedProductsSection({
 
         {/* Products Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {filteredProducts.slice(0, 4).map((product, idx) => {
+          {filteredProducts.map((product, idx) => {
             const isAdded = !!addedIds[product.id];
             const fallbackMeta = DEFAULT_PRODUCTS[idx % DEFAULT_PRODUCTS.length];
             const displayRating = (product as { rating?: number }).rating || fallbackMeta.rating || 4.8;

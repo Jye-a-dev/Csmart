@@ -55,6 +55,7 @@ interface PublicNavbarProps {
   activeRole?: 'CUSTOMER' | 'SUPPORT';
   onRoleChange?: (role: 'CUSTOMER' | 'SUPPORT') => void;
   onOpenSupportConsole?: () => void;
+  onToggleSidebar?: () => void;
 }
 
 export default function PublicNavbar({
@@ -62,6 +63,7 @@ export default function PublicNavbar({
   cartCount = 0,
   activeRole = 'CUSTOMER',
   onOpenSupportConsole,
+  onToggleSidebar,
 }: PublicNavbarProps) {
   const { logout } = useAuth();
   const { openAuthModal, requireAuth } = useAuthModal();
@@ -79,9 +81,20 @@ export default function PublicNavbar({
   return (
     <header className="sticky top-0 z-40 w-full bg-white/95 backdrop-blur-md border-b border-zinc-200 px-4 sm:px-6 lg:px-8 py-3">
       <div className="mx-auto max-w-7xl flex items-center justify-between gap-4">
-        {/* Left: Brand Logo */}
-        <div className="flex items-center gap-3">
-          <Link href="/" className="flex items-center gap-2.5 group">
+        {/* Left: Brand Logo & Sidebar Toggle */}
+        <div className="flex items-center gap-2 sm:gap-3">
+          {onToggleSidebar && (
+            <button
+              type="button"
+              onClick={onToggleSidebar}
+              className="lg:hidden p-2 rounded-xl text-zinc-700 hover:bg-zinc-100 transition-colors cursor-pointer"
+              title="Mở menu người dùng"
+            >
+              <Menu size={20} />
+            </button>
+          )}
+
+          <Link href={user ? '/user' : '/'} className="flex items-center gap-2.5 group">
             <div className="w-9 h-9 rounded-xl bg-orange-600 flex items-center justify-center text-white font-black text-base shadow-sm group-hover:scale-105 transition-transform">
               CS
             </div>
@@ -110,40 +123,23 @@ export default function PublicNavbar({
             </button>
           )}
 
-          {/* Cart button */}
-          <button
-            type="button"
-            onClick={handleCartClick}
-            className="relative p-2 rounded-full text-zinc-700 hover:bg-zinc-100 transition-colors cursor-pointer"
-            title="Giỏ hàng của bạn"
-          >
-            <ShoppingBag size={22} />
-            <span className="absolute 0 top-0.5 right-0.5 bg-orange-600 text-white text-[10px] font-bold w-4.5 h-4.5 flex items-center justify-center rounded-full ring-2 ring-white">
-              {cartCount > 0 ? cartCount : 2}
-            </span>
-          </button>
+          {/* Cart button - visible when logged in */}
+          {user && (
+            <button
+              type="button"
+              onClick={handleCartClick}
+              className="relative p-2 rounded-full text-zinc-700 hover:bg-zinc-100 transition-colors cursor-pointer"
+              title="Giỏ hàng của bạn"
+            >
+              <ShoppingBag size={22} />
+              <span className="absolute top-0.5 right-0.5 bg-orange-600 text-white text-[10px] font-bold w-4.5 h-4.5 flex items-center justify-center rounded-full ring-2 ring-white">
+                {cartCount > 0 ? cartCount : 0}
+              </span>
+            </button>
+          )}
 
-          {/* Auth Button */}
-          {user ? (
-            <div className="flex items-center gap-2">
-              <div className="flex flex-col text-right">
-                <span className="font-bold text-xs text-zinc-900 max-w-28 truncate">
-                  {user.full_name}
-                </span>
-                <span className="text-[10px] text-orange-600 uppercase font-bold">
-                  {user.role}
-                </span>
-              </div>
-              <button
-                type="button"
-                onClick={logout}
-                className="p-2 rounded-full text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900 transition-colors cursor-pointer"
-                title="Đăng xuất"
-              >
-                <LogOut size={16} />
-              </button>
-            </div>
-          ) : (
+          {/* Login button - only when not authenticated */}
+          {!user && (
             <button
               type="button"
               onClick={() => openAuthModal('Đăng nhập tài khoản CSMART')}
