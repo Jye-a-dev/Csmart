@@ -4,7 +4,7 @@ import numpy as np
 from abc import ABC, abstractmethod
 from typing import List, Dict, Any, Optional, Tuple
 from pydantic import BaseModel, Field
-from app.core.model_loader import model_loader
+from app.services.model_loader import model_loader
 from app.services.hybrid_search import hybrid_search_service
 
 logger = logging.getLogger(__name__)
