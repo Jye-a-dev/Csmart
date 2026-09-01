@@ -6,6 +6,7 @@ import {
   Eye,
   Edit3,
   Trash2,
+  PackagePlus,
   FileSpreadsheet,
   CheckCircle2,
   AlertTriangle,
@@ -25,6 +26,8 @@ export interface OcrRecordItem extends OcrExtractedData {
   updated_at?: string;
   status: 'VERIFIED' | 'NEEDS_REVIEW';
   notes?: string;
+  is_product_created?: boolean;
+  product_id?: string;
 }
 
 interface OcrRecordsTableProps {
@@ -33,6 +36,7 @@ interface OcrRecordsTableProps {
   onViewRecord: (record: OcrRecordItem) => void;
   onEditRecord: (record: OcrRecordItem) => void;
   onDeleteRecord: (record: OcrRecordItem) => void;
+  onQuickCreateProduct?: (record: OcrRecordItem) => void;
   onExportCsv: () => void;
 }
 
@@ -42,6 +46,7 @@ export const OcrRecordsTable: React.FC<OcrRecordsTableProps> = React.memo(({
   onViewRecord,
   onEditRecord,
   onDeleteRecord,
+  onQuickCreateProduct,
   onExportCsv,
 }) => {
   const [searchTerm, setSearchTerm] = useState<string>('');
@@ -186,7 +191,7 @@ export const OcrRecordsTable: React.FC<OcrRecordsTableProps> = React.memo(({
               <th className="p-3 border-r border-zinc-700">TỔNG TIỀN</th>
               <th className="p-3 border-r border-zinc-700 text-center">TỰ TIN</th>
               <th className="p-3 border-r border-zinc-700">THỜI GIAN</th>
-              <th className="p-3 text-center w-32">THAO TÁC</th>
+              <th className="p-3 text-center w-36">THAO TÁC</th>
             </tr>
           </thead>
           <tbody className="divide-y border-t border-[#09090B]">
@@ -265,11 +270,10 @@ export const OcrRecordsTable: React.FC<OcrRecordsTableProps> = React.memo(({
                   {/* Confidence Score & Status */}
                   <td className="p-3 border-r border-[#09090B] text-center">
                     <span
-                      className={`inline-flex items-center gap-1 font-bold text-[10px] px-2 py-0.5 border ${
-                        item.confidence_score >= 0.8
-                          ? 'bg-emerald-100 text-emerald-900 border-emerald-400'
-                          : 'bg-amber-100 text-amber-900 border-amber-400'
-                      }`}
+                      className={`inline-flex items-center gap-1 font-bold text-[10px] px-2 py-0.5 border ${item.confidence_score >= 0.8
+                        ? 'bg-emerald-100 text-emerald-900 border-emerald-400'
+                        : 'bg-amber-100 text-amber-900 border-amber-400'
+                        }`}
                     >
                       {item.confidence_score >= 0.8 ? (
                         <CheckCircle2 size={11} className="text-emerald-600" />
@@ -288,6 +292,26 @@ export const OcrRecordsTable: React.FC<OcrRecordsTableProps> = React.memo(({
                   {/* Actions */}
                   <td className="p-3 text-center">
                     <div className="flex items-center justify-center gap-1.5">
+                      {onQuickCreateProduct && (
+                        item.is_product_created ? (
+                          <button
+                            disabled
+                            className="p-1.5 border border-zinc-300 bg-zinc-100 text-emerald-600 cursor-not-allowed opacity-80"
+                            title="Chứng từ này đã được tạo thành sản phẩm (không thể thêm lần 2)"
+                          >
+                            <CheckCircle2 size={14} className="text-emerald-600" />
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => onQuickCreateProduct(item)}
+                            className="p-1.5 border border-[#09090B] bg-emerald-50 text-emerald-700 hover:bg-emerald-600 hover:text-white transition-colors cursor-pointer"
+                            title="Tạo nhanh sản phẩm từ chứng từ này"
+                          >
+                            <PackagePlus size={14} />
+                          </button>
+                        )
+                      )}
+
                       <button
                         onClick={() => onViewRecord(item)}
                         className="p-1.5 border border-[#09090B] bg-white text-[#09090B] hover:bg-[#F97316] hover:text-white transition-colors cursor-pointer"

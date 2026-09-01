@@ -11,9 +11,9 @@ export class OcrRecordsRepository extends BaseRepository {
         document_type, order_code, tracking_number, courier_name,
         customer_name, phone_number, address, total_amount,
         confidence_score, execution_time_ms, image_url, status,
-        extracted_items, raw_text_chunks
+        extracted_items, raw_text_chunks, is_product_created, product_id
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13::jsonb, $14::jsonb)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13::jsonb, $14::jsonb, $15, $16)
       RETURNING *
     `;
     const items = (dto.extracted_items || []) as Record<string, unknown>[];
@@ -59,6 +59,8 @@ export class OcrRecordsRepository extends BaseRepository {
       dto.status || 'VERIFIED',
       JSON.stringify(items),
       JSON.stringify(dto.raw_text_chunks || []),
+      dto.is_product_created !== undefined ? Boolean(dto.is_product_created) : false,
+      dto.product_id || null,
     ];
 
     const row = await this.queryOne<OcrRecord>(sql, params);
@@ -136,6 +138,8 @@ export class OcrRecordsRepository extends BaseRepository {
       'execution_time_ms',
       'image_url',
       'status',
+      'is_product_created',
+      'product_id',
     ];
 
     fields.forEach((field) => {

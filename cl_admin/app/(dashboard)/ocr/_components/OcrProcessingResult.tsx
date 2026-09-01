@@ -13,6 +13,7 @@ import {
   MapPin,
   DollarSign,
   FileText,
+  PackagePlus,
 } from 'lucide-react';
 import { OcrDocType } from './OcrUploaderSection';
 
@@ -47,22 +48,27 @@ export interface OcrExtractedData {
   origin?: string;
   type?: string;
   color?: string;
+  is_product_created?: boolean;
+  product_id?: string;
 }
 
 interface OcrProcessingResultProps {
   result: OcrExtractedData | null;
   onSaveRecord: (data: OcrExtractedData) => void;
+  onOpenCreateProduct?: (data: OcrExtractedData) => void;
 }
 
 export const OcrProcessingResult: React.FC<OcrProcessingResultProps> = ({
   result,
   onSaveRecord,
+  onOpenCreateProduct,
 }) => {
   const [copied, setCopied] = useState<boolean>(false);
 
   if (!result) return null;
 
   const isHighConfidence = result.confidence_score >= 0.8;
+  const isProductLabel = result.document_type === 'PRODUCT_LABEL';
 
   const handleCopyJson = () => {
     navigator.clipboard.writeText(JSON.stringify(result, null, 2));
@@ -83,18 +89,17 @@ export const OcrProcessingResult: React.FC<OcrProcessingResultProps> = ({
               BƯỚC 2: KẾT QUẢ AI BÓC TÁCH TỰ ĐỘNG
             </h3>
             <p className="font-mono text-xs text-zinc-500">
-              Kiểm tra thông tin trước khi nhấn lưu vào danh sách hệ thống
+              Kiểm tra thông tin trước khi nhấn lưu vào danh sách hệ thống hoặc tạo sản phẩm
             </p>
           </div>
         </div>
 
         {/* Confidence Badge */}
         <div
-          className={`flex items-center gap-2 px-3 py-1.5 border-2 font-mono text-xs font-bold uppercase shadow-[2px_2px_0px_0px_#09090B] ${
-            isHighConfidence
+          className={`flex items-center gap-2 px-3 py-1.5 border-2 font-mono text-xs font-bold uppercase shadow-[2px_2px_0px_0px_#09090B] ${isHighConfidence
               ? 'bg-emerald-100 text-emerald-900 border-emerald-500'
               : 'bg-amber-100 text-amber-900 border-amber-500'
-          }`}
+            }`}
         >
           {isHighConfidence ? (
             <CheckCircle2 size={16} className="text-emerald-600" />
@@ -119,8 +124,8 @@ export const OcrProcessingResult: React.FC<OcrProcessingResultProps> = ({
             {result.document_type === 'INVOICE'
               ? 'MÃ HÓA ĐƠN BÁN HÀNG'
               : result.document_type === 'SHIPPING_LABEL'
-              ? 'MÃ VẬN ĐƠN (TRACKING)'
-              : 'MÃ SẢN PHẨM / SKU'}
+                ? 'MÃ VẬN ĐƠN (TRACKING)'
+                : 'MÃ SẢN PHẨM / SKU'}
           </div>
           <div className="font-mono font-black text-sm text-[#09090B]">
             {result.order_code || result.tracking_number || 'N/A'}
@@ -139,8 +144,8 @@ export const OcrProcessingResult: React.FC<OcrProcessingResultProps> = ({
             {result.document_type === 'INVOICE'
               ? 'KHÁCH HÀNG MUA HÀNG'
               : result.document_type === 'SHIPPING_LABEL'
-              ? 'NGƯỜI NHẬN BƯU GỬI'
-              : 'TÊN SẢN PHẨM'}
+                ? 'NGƯỜI NHẬN BƯU GỬI'
+                : 'TÊN SẢN PHẨM'}
           </div>
           <div className="font-mono font-black text-sm text-[#09090B]">
             {result.document_type === 'PRODUCT_LABEL'
@@ -193,15 +198,14 @@ export const OcrProcessingResult: React.FC<OcrProcessingResultProps> = ({
             {result.document_type === 'SHIPPING_LABEL'
               ? 'TIỀN THU HỘ (COD)'
               : result.document_type === 'PRODUCT_LABEL'
-              ? 'ĐƠN GIÁ NIÊM YẾT'
-              : 'TỔNG TIỀN HÓA ĐƠN'}
+                ? 'ĐƠN GIÁ NIÊM YẾT'
+                : 'TỔNG TIỀN HÓA ĐƠN'}
           </div>
           <div className="font-mono font-black text-lg text-[#F97316]">
             {result.total_amount.toLocaleString('vi-VN')} đ
           </div>
         </div>
       </div>
-
 
       {/* Extracted Items Table */}
       {result.extracted_items && result.extracted_items.length > 0 && (
@@ -257,7 +261,6 @@ export const OcrProcessingResult: React.FC<OcrProcessingResultProps> = ({
         </div>
       )}
 
-
       {/* Raw Chunks Snippet */}
       <div className="mb-6 bg-zinc-900 text-zinc-200 p-3 border-2 border-[#09090B] font-mono text-[11px]">
         <div className="flex items-center justify-between text-zinc-400 font-bold uppercase mb-1">
@@ -282,6 +285,28 @@ export const OcrProcessingResult: React.FC<OcrProcessingResultProps> = ({
           {copied ? <Check size={15} className="text-emerald-600" /> : <Copy size={15} />}
           {copied ? 'Đã sao chép JSON' : 'Sao chép JSON'}
         </button>
+
+        {/* Direct Action for Product Label: Pre-check & Create Product */}
+        {isProductLabel && onOpenCreateProduct && (
+          result.is_product_created ? (
+            <button
+              disabled
+              className="flex items-center gap-2 bg-zinc-200 text-emerald-800 font-mono font-bold text-xs px-6 py-2.5 uppercase border-2 border-zinc-400 cursor-not-allowed opacity-90"
+              title="Sản phẩm này đã được tạo thành công vào hệ thống (không thể thêm lần 2)"
+            >
+              <CheckCircle2 size={16} className="text-emerald-600" />
+              ĐÃ TẠO SẢN PHẨM
+            </button>
+          ) : (
+            <button
+              onClick={() => onOpenCreateProduct(result)}
+              className="flex items-center gap-2 bg-blue-600 text-white font-mono font-black text-xs px-6 py-2.5 uppercase border-2 border-[#09090B] shadow-[3px_3px_0px_0px_#09090B] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all hover:bg-blue-700 cursor-pointer"
+            >
+              <PackagePlus size={16} />
+              TẠO SẢN PHẨM TỰ ĐỘNG (PRE-CHECK)
+            </button>
+          )
+        )}
 
         <button
           onClick={() => onSaveRecord(result)}

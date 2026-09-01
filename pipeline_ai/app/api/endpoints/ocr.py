@@ -3,9 +3,6 @@ from pydantic import BaseModel, Field
 from typing import Dict, Any, Optional, List
 from app.services.ocr_pipeline import ocr_pipeline
 from app.services.evaluator import log_request
-from PIL import Image
-import io
-import numpy as np
 import time
 
 router = APIRouter()
@@ -50,13 +47,11 @@ async def extract_ocr(file: UploadFile = File(...)):
     try:
         start_time = time.time()
 
-        # Đọc tệp hình ảnh từ bộ nhớ
+        # Đọc tệp hình ảnh trực tiếp từ stream
         contents = await file.read()
-        image = Image.open(io.BytesIO(contents)).convert("RGB")
-        image_np = np.array(image)
 
         # Chạy qua component-based Universal OCR pipeline
-        result = await ocr_pipeline.run(image_np=image_np, image_bytes=contents)
+        result = await ocr_pipeline.run(image_bytes=contents)
 
         if result.status == "error":
             raise HTTPException(status_code=500, detail=result.error_message or "Lỗi khi xử lý OCR.")

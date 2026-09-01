@@ -57,6 +57,12 @@ export class OcrRecord {
   @ApiProperty({ type: [String] })
   raw_text_chunks: string[];
 
+  @ApiProperty({ required: false, default: false })
+  is_product_created?: boolean;
+
+  @ApiProperty({ required: false })
+  product_id?: string;
+
   @ApiProperty()
   created_at: Date;
 

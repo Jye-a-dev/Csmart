@@ -95,6 +95,15 @@ export class CreateOcrRecordDto {
   @IsString()
   @IsOptional()
   color?: string;
+
+  @ApiProperty({ required: false, example: false })
+  @IsOptional()
+  is_product_created?: boolean;
+
+  @ApiProperty({ required: false })
+  @IsString()
+  @IsOptional()
+  product_id?: string;
 }
 
 export class UpdateOcrRecordDto extends PartialType(CreateOcrRecordDto) {}

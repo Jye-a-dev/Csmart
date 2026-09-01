@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Product, ProductStatus } from '@/types/entities/product';
 import { Category } from '@/types/entities/category';
-import { Search, Edit, Trash2, Filter } from 'lucide-react';
+import { Search, Edit, Trash2, Filter, Sparkles } from 'lucide-react';
 
 interface ProductsTableProps {
   products: Product[];
@@ -96,7 +96,7 @@ export default function ProductsTable({
             className="w-full pl-10 pr-4 py-3 border-2 border-[#09090B] focus:outline-none focus:bg-zinc-50 font-mono text-sm bg-white shadow-[3px_3px_0px_0px_#09090B]"
           />
         </div>
-        
+
         <div className="md:col-span-4 relative">
           <select
             value={statusFilter}
@@ -149,7 +149,7 @@ export default function ProductsTable({
                     <td className="py-4 pr-4 font-mono font-bold text-[#09090B]">
                       {p.sku}
                     </td>
-                    <td className="py-4 px-4 font-bold text-[#09090B] max-w-xs truncate" title={p.name}>
+                    <td className="py-4 px-4 font-bold text-[#09090B] max-w-xs" title={p.name}>
                       <div className="flex items-center gap-2.5">
                         {p.images && p.images.length > 0 ? (
                           /* eslint-disable-next-line @next/next/no-img-element */
@@ -163,7 +163,17 @@ export default function ProductsTable({
                             N/A
                           </div>
                         )}
-                        <span className="truncate">{p.name}</span>
+                        <div className="flex flex-col min-w-0">
+                          <span className="truncate">{p.name}</span>
+                          {(p.tags?.includes('OCR_SCAN') ||
+                            p.tags?.includes('OCR_EXTRACTED') ||
+                            p.tags?.includes('PRODUCT_LABEL') ||
+                            (p.attributes as any)?.source === 'OCR') && (
+                              <span className="inline-flex items-center gap-1 bg-purple-100 text-purple-900 border border-purple-400 font-mono text-[9px] font-bold px-1.5 py-0.5 mt-1 w-fit">
+                                <Sparkles size={10} className="text-purple-600" /> TỪ OCR
+                              </span>
+                            )}
+                        </div>
                       </div>
                     </td>
                     <td className="py-4 px-4 text-zinc-500 font-mono text-xs">

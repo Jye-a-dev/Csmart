@@ -9,17 +9,25 @@ import {
   OcrRecordsTable,
   OcrRecordModal,
   OcrDeleteModal,
+  OcrQuickCreateProductModal,
   OcrExtractedData,
   OcrRecordItem,
 } from './_components';
 import { useOcrRecords } from '@/hooks/useOcrRecords';
+import { useProducts, useCategories } from '@/hooks';
+import { CreateProductDto } from '@/types/entities/product';
+import { Category } from '@/types/entities/category';
 import { OcrToast, ToastState } from './_components/OcrToast';
 import { useOcrProcessor } from './_hooks/useOcrProcessor';
 import { exportOcrRecordsToCsv } from './_utils/exportCsv';
 
 export default function OcrPage() {
   const { loading: tableLoading, fetchRecords, createRecord, updateRecord, deleteRecord } = useOcrRecords();
+  const { createProduct } = useProducts();
+  const { findAllCategories } = useCategories();
+
   const [records, setRecords] = useState<OcrRecordItem[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
 
   // Toast feedback state & callback
   const [toast, setToast] = useState<ToastState | null>(null);
@@ -37,6 +45,9 @@ export default function OcrPage() {
   const [selectedRecord, setSelectedRecord] = useState<OcrRecordItem | null>(null);
   const [isRecordModalOpen, setIsRecordModalOpen] = useState<boolean>(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false);
+  const [isQuickCreateModalOpen, setIsQuickCreateModalOpen] = useState<boolean>(false);
+  const [quickCreateSource, setQuickCreateSource] = useState<OcrExtractedData | null>(null);
+  const [isSubmittingProduct, setIsSubmittingProduct] = useState<boolean>(false);
 
   // Load records from backend database
   const loadRecords = useCallback(async () => {
@@ -49,6 +60,7 @@ export default function OcrPage() {
     }
   }, [fetchRecords, showToast]);
 
+  // Load initial data (records and categories)
   useEffect(() => {
     let isMounted = true;
     fetchRecords()
@@ -61,10 +73,19 @@ export default function OcrPage() {
           showToast('Không thể kết nối cơ sở dữ liệu OCR', 'err');
         }
       });
+
+    findAllCategories({ limit: 200 })
+      .then((cats) => {
+        if (isMounted) setCategories(cats || []);
+      })
+      .catch((catErr) => {
+        console.error('Failed to fetch categories:', catErr);
+      });
+
     return () => {
       isMounted = false;
     };
-  }, [fetchRecords, showToast]);
+  }, [fetchRecords, findAllCategories, showToast]);
 
   // Save record from OCR extraction result to database
   const handleSaveExtractionRecord = async (data: OcrExtractedData) => {
@@ -81,6 +102,72 @@ export default function OcrPage() {
       console.error('Save OCR record failed:', err);
       showToast('Lỗi khi lưu chứng từ', 'err');
     }
+  };
+
+  // Direct Product Creation from OCR result
+  const handleConfirmQuickCreateProduct = async (dto: CreateProductDto) => {
+    setIsSubmittingProduct(true);
+    try {
+      const created = await createProduct(dto);
+      showToast(`Đã tạo sản phẩm '${created.name}' thành công! (Mã: ${created.sku})`);
+      setIsQuickCreateModalOpen(false);
+
+      const targetData = quickCreateSource || currentExtraction;
+      // If from saved table (has id), update existing record
+      if (targetData && 'id' in targetData && (targetData as OcrRecordItem).id) {
+        const recordId = (targetData as OcrRecordItem).id;
+        try {
+          await updateRecord(recordId, {
+            is_product_created: true,
+            product_id: created.id,
+            status: 'VERIFIED',
+          });
+        } catch (updateErr) {
+          console.warn('Update OCR record link error:', updateErr);
+        }
+        setRecords((prev) =>
+          prev.map((r) =>
+            r.id === recordId
+              ? { ...r, is_product_created: true, product_id: created.id, status: 'VERIFIED' }
+              : r
+          )
+        );
+      } else if (targetData) {
+        // Auto-save the OCR record with status VERIFIED and is_product_created
+        try {
+          const rec = await createRecord({
+            ...targetData,
+            product_name: created.name,
+            order_code: created.sku,
+            status: 'VERIFIED',
+            is_product_created: true,
+            product_id: created.id,
+            image_url: targetData.image_url || 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=600&auto=format&fit=crop&q=80',
+          });
+          setRecords((prev) => [rec, ...prev]);
+        } catch (recErr) {
+          console.warn('Auto-save OCR record notice:', recErr);
+        }
+      }
+
+      // Update currentExtraction state to disable button on live result card
+      if (currentExtraction && (!quickCreateSource || !('id' in quickCreateSource))) {
+        setCurrentExtraction((prev) =>
+          prev ? { ...prev, is_product_created: true, product_id: created.id } : null
+        );
+      }
+      setQuickCreateSource(null);
+    } catch (err) {
+      console.error('Failed to create product from OCR:', err);
+      showToast('Lỗi khi tạo sản phẩm từ OCR. Vui lòng kiểm tra lại các trường!', 'err');
+    } finally {
+      setIsSubmittingProduct(false);
+    }
+  };
+
+  const handleQuickCreateProductFromRecord = (record: OcrRecordItem) => {
+    setQuickCreateSource(record);
+    setIsQuickCreateModalOpen(true);
   };
 
   // Modal actions
@@ -174,7 +261,7 @@ export default function OcrPage() {
       Math.round(
         (records.filter((r) => (r.confidence_score || 0.9) >= 0.8).length /
           Math.max(1, records.length)) *
-          100,
+        100,
       ),
     [records],
   );
@@ -210,6 +297,23 @@ export default function OcrPage() {
       <OcrProcessingResult
         result={currentExtraction}
         onSaveRecord={handleSaveExtractionRecord}
+        onOpenCreateProduct={() => {
+          setQuickCreateSource(currentExtraction);
+          setIsQuickCreateModalOpen(true);
+        }}
+      />
+
+      {/* Quick Create Product From Label Modal with Pre-check Matrix */}
+      <OcrQuickCreateProductModal
+        isOpen={isQuickCreateModalOpen}
+        result={quickCreateSource || currentExtraction}
+        categories={categories}
+        isSubmitting={isSubmittingProduct}
+        onClose={() => {
+          setIsQuickCreateModalOpen(false);
+          setQuickCreateSource(null);
+        }}
+        onConfirmCreate={handleConfirmQuickCreateProduct}
       />
 
       {/* CRUD Records Table Section */}
@@ -219,6 +323,7 @@ export default function OcrPage() {
         onViewRecord={handleViewRecord}
         onEditRecord={handleEditRecord}
         onDeleteRecord={handleDeleteRecord}
+        onQuickCreateProduct={handleQuickCreateProductFromRecord}
         onExportCsv={() => exportOcrRecordsToCsv(records, () => showToast('Đã xuất file CSV thành công!'))}
       />
 

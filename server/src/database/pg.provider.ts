@@ -43,9 +43,14 @@ export const PgProvider: Provider = {
           status VARCHAR(50) DEFAULT 'VERIFIED',
           extracted_items JSONB DEFAULT '[]'::jsonb,
           raw_text_chunks JSONB DEFAULT '[]'::jsonb,
+          is_product_created BOOLEAN DEFAULT FALSE,
+          product_id TEXT,
           created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
           updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL
         );
+
+        ALTER TABLE ocr_records ADD COLUMN IF NOT EXISTS is_product_created BOOLEAN DEFAULT FALSE;
+        ALTER TABLE ocr_records ADD COLUMN IF NOT EXISTS product_id TEXT;
       `);
 
       client.release();

@@ -5,3 +5,4 @@ export * from './OcrProcessingResult';
 export * from './OcrRecordsTable';
 export * from './OcrRecordModal';
 export * from './OcrDeleteModal';
+export * from './OcrQuickCreateProductModal';

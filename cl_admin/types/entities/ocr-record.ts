@@ -31,6 +31,8 @@ export interface OcrExtractedData {
   origin?: string;
   type?: string;
   color?: string;
+  is_product_created?: boolean;
+  product_id?: string;
 }
 
 export interface OcrRecordItem extends OcrExtractedData {
@@ -40,4 +42,6 @@ export interface OcrRecordItem extends OcrExtractedData {
   updated_at?: string;
   status: 'VERIFIED' | 'NEEDS_REVIEW';
   notes?: string;
+  is_product_created?: boolean;
+  product_id?: string;
 }

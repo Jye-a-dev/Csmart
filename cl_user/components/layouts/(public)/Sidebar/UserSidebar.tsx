@@ -22,6 +22,20 @@ import {
   PanelLeftOpen,
 } from 'lucide-react';
 
+interface SidebarNavItem {
+  name: string;
+  href: string;
+  icon: React.ComponentType<{ size?: number; className?: string }>;
+  exact?: boolean;
+  badge?: string;
+  highlight?: boolean;
+}
+
+interface SidebarNavGroup {
+  label: string;
+  items: SidebarNavItem[];
+}
+
 interface UserSidebarProps {
   user: User | null;
   mobileOpen: boolean;
@@ -47,7 +61,6 @@ export default function UserSidebar({ user, mobileOpen, onClose }: UserSidebarPr
     if (!user?.id) return;
     let isMounted = true;
 
-    setLoadingStats(true);
     getUserStats(user.id)
       .then((data) => {
         if (isMounted && data) {
@@ -80,7 +93,7 @@ export default function UserSidebar({ user, mobileOpen, onClose }: UserSidebarPr
     window.location.href = '/login';
   };
 
-  const navGroups = [
+  const navGroups: SidebarNavGroup[] = [
     {
       label: 'MUA SẮM & KHÁM PHÁ',
       items: [
@@ -299,25 +312,24 @@ export default function UserSidebar({ user, mobileOpen, onClose }: UserSidebarPr
 
   return (
     <>
-      {/* Desktop Sticky Sidebar with Dynamic Smooth Collapse Width */}
+      {/* Desktop Persistent Sidebar */}
       <aside
-        className={`hidden lg:flex flex-col bg-white border-r border-zinc-200 h-screen sticky top-0 z-30 shadow-xs shrink-0 transition-all duration-300 ease-in-out ${
-          collapsed ? 'w-20' : 'w-64 xl:w-72'
+        className={`hidden lg:flex flex-col shrink-0 border-r border-zinc-200 bg-white sticky top-0 h-screen transition-all duration-300 z-30 ${
+          collapsed ? 'w-20' : 'w-72'
         }`}
       >
         {renderContent(false)}
       </aside>
 
-      {/* Mobile Slide-over Drawer */}
+      {/* Mobile Backdrop & Drawer */}
       {mobileOpen && (
-        <div
-          className="lg:hidden fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex animate-in fade-in duration-200"
-          onClick={onClose}
-        >
+        <div className="fixed inset-0 z-50 flex lg:hidden">
           <div
-            className="w-72 max-w-[80vw] h-full bg-white shadow-2xl animate-in slide-in-from-left duration-300"
-            onClick={(e) => e.stopPropagation()}
-          >
+            className="fixed inset-0 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200"
+            onClick={onClose}
+          />
+
+          <div className="relative w-80 max-w-[85vw] h-full bg-white shadow-2xl z-10 animate-in slide-in-from-left duration-200 flex flex-col">
             {renderContent(true)}
           </div>
         </div>
