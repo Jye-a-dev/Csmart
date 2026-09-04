@@ -98,7 +98,7 @@ export default function UserSidebar({ user, mobileOpen, onClose }: UserSidebarPr
       label: 'MUA SẮM & KHÁM PHÁ',
       items: [
         { name: 'Cửa Hàng Trực Tuyến', href: '/user', icon: Store, exact: true },
-        { name: 'Danh Mục Ngành Hàng', href: '/user#categories', icon: Layers },
+        { name: 'Danh Mục Ngành Hàng', href: '/user/categories', icon: Layers },
         { name: 'Sản Phẩm Bán Chạy', href: '/user#featured-products', icon: Flame, badge: 'HOT' },
       ],
     },
