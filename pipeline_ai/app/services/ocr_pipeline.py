@@ -99,8 +99,9 @@ class OCRInferenceComponent(OCRPipelineComponent):
             context.raw_text = ""
             context.confidence_score = 0.0
             context.flag_for_review = True
-            context.is_fallback = True
-            context.status = "success"
+            context.is_fallback = False
+            context.status = "failed"
+            context.error_message = "EasyOCR reader service is not initialized in memory"
             return context
 
         input_image: Any = context.processed_image_np if context.processed_image_np is not None else context.image_np
@@ -111,8 +112,9 @@ class OCRInferenceComponent(OCRPipelineComponent):
             context.raw_text = ""
             context.confidence_score = 0.0
             context.flag_for_review = True
-            context.is_fallback = True
-            context.status = "success"
+            context.is_fallback = False
+            context.status = "failed"
+            context.error_message = "Invalid or unreadable image input"
             return context
 
         try:
@@ -156,7 +158,7 @@ class OCRInferenceComponent(OCRPipelineComponent):
                 except Exception as crop_err:
                     logger.warning(f"[OCRInferenceComponent] Crop scan exception: {crop_err}")
 
-            avg_confidence = round(sum(confidence_scores) / len(confidence_scores), 2) if confidence_scores else 0.0
+            avg_confidence = round(sum(confidence_scores) / len(confidence_scores), 4) if confidence_scores else 0.0
             raw_text = " ".join(extracted_words)
 
             context.extracted_words = extracted_words
@@ -172,8 +174,8 @@ class OCRInferenceComponent(OCRPipelineComponent):
             context.raw_text = ""
             context.confidence_score = 0.0
             context.flag_for_review = True
-            context.is_fallback = True
-            context.status = "success"
+            context.is_fallback = False
+            context.status = "failed"
             context.error_message = str(e)
 
         return context

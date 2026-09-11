@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { Pool } from 'pg';
 
 export const PG_CONNECTION = 'PG_CONNECTION';
+export const PG_READONLY_CONNECTION = 'PG_READONLY_CONNECTION';
 
 export const PgProvider: Provider = {
   provide: PG_CONNECTION,
@@ -51,6 +52,18 @@ export const PgProvider: Provider = {
 
         ALTER TABLE ocr_records ADD COLUMN IF NOT EXISTS is_product_created BOOLEAN DEFAULT FALSE;
         ALTER TABLE ocr_records ADD COLUMN IF NOT EXISTS product_id TEXT;
+
+        -- Create read-only role for Text-to-SQL security isolation
+        DO $$
+        BEGIN
+          IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'csmart_readonly') THEN
+            CREATE ROLE csmart_readonly WITH LOGIN PASSWORD 'csmart_ro_pass';
+          END IF;
+        END
+        $$;
+        GRANT USAGE ON SCHEMA public TO csmart_readonly;
+        GRANT SELECT ON ALL TABLES IN SCHEMA public TO csmart_readonly;
+        ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO csmart_readonly;
       `);
 
       client.release();
@@ -61,5 +74,43 @@ export const PgProvider: Provider = {
     }
 
     return pool;
+  },
+};
+
+export const PgReadonlyProvider: Provider = {
+  provide: PG_READONLY_CONNECTION,
+  inject: [ConfigService],
+  useFactory: async (configService: ConfigService) => {
+    const logger = new Logger('PgReadonlyProvider');
+    const primaryUrl = configService.get<string>('DATABASE_URL') || '';
+    const readonlyUrl = configService.get<string>('READONLY_DATABASE_URL');
+
+    // Build read-only connection string using csmart_readonly credentials if not explicitly configured
+    let targetUrl = readonlyUrl;
+    if (!targetUrl && primaryUrl) {
+      try {
+        const parsed = new URL(primaryUrl);
+        parsed.username = 'csmart_readonly';
+        parsed.password = 'csmart_ro_pass';
+        targetUrl = parsed.toString();
+      } catch {
+        targetUrl = primaryUrl;
+      }
+    }
+
+    const pool = new Pool({
+      connectionString: targetUrl || primaryUrl,
+      max: 5,
+    });
+
+    try {
+      const client = await pool.connect();
+      logger.log('Dedicated read-only connection established for Text-to-SQL execution');
+      client.release();
+      return pool;
+    } catch (err) {
+      logger.warn(`Could not connect as csmart_readonly (${err}). Falling back to primary pool.`);
+      return new Pool({ connectionString: primaryUrl, max: 5 });
+    }
   },
 };

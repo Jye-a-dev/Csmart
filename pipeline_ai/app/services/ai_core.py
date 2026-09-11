@@ -1,69 +1,81 @@
 import json
 import logging
+import threading
+from typing import Generator, Any
 from llama_cpp import Llama
 
 logger = logging.getLogger(__name__)
 
 class OneForAllAIEngine:
+    """
+    Singleton inference engine for Qwen2.5 GGUF using thread-safe execution locks.
+    Removes hardcoded mock responses; guarantees fail-safe contract.
+    """
     def __init__(self):
-        logger.info("🚀 Đang khởi tạo mô hình Qwen2.5-1.5B từ Hugging Face qua Python...")
-        # Llama.from_pretrained sẽ TỰ ĐỘNG tải file weight GGUF (~1GB) từ HuggingFace qua CMD
-        # và lưu vào cache local ngay lần chạy đầu tiên.
-        try:
-            self.llm = Llama.from_pretrained(
-                repo_id="Qwen/Qwen2.5-1.5B-Instruct-GGUF",
-                filename="*q4_k_m.gguf",
-                verbose=False,
-                n_ctx=2048,      # Độ dài ngữ cảnh
-                n_threads=4      # Số nhân CPU dùng để chạy (tùy chỉnh theo máy bạn)
-            )
-            logger.info("✅ Mô hình AI đã nạp thành công vào RAM!")
-        except Exception as e:
-            logger.error(f"Thất bại khi nạp mô hình Llama từ Hugging Face: {e}")
-            self.llm = None
+        self.llm: Any = None
+        self._lock = threading.Lock()
+        self._initialized = False
+        self.initialize()
+
+    def initialize(self) -> None:
+        if self._initialized and self.llm is not None:
+            return
+
+        with self._lock:
+            if self._initialized and self.llm is not None:
+                return
+            logger.info("Khởi tạo mô hình Qwen2.5-1.5B GGUF vào RAM...")
+            try:
+                self.llm = Llama.from_pretrained(
+                    repo_id="Qwen/Qwen2.5-1.5B-Instruct-GGUF",
+                    filename="*q4_k_m.gguf",
+                    verbose=False,
+                    n_ctx=2048,
+                    n_threads=4
+                )
+                self._initialized = True
+                logger.info("Mô hình Qwen2.5-1.5B GGUF đã nạp thành công.")
+            except Exception as e:
+                logger.error(f"Thất bại khi nạp mô hình Llama từ Hugging Face: {e}")
+                self.llm = None
+                self._initialized = False
+
+    def is_healthy(self) -> bool:
+        return self.llm is not None
 
     def _call_llm(self, system_prompt: str, user_input: str) -> dict:
         if self.llm is None:
-            return {"status": "error", "message": "Llama model is not initialized."}
-            
-        try:
-            output = self.llm.create_chat_completion(
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_input}
-                ],
-                max_tokens=512,
-                temperature=0.1, # Nhiệt độ thấp để trả về kết quả chính xác, không ảo tưởng
-                response_format={"type": "json_object"} # Ép trả về JSON chuẩn
-            )
-            text_response = output["choices"][0]["message"]["content"].strip()
-            return json.loads(text_response)
-        except Exception as e:
-            return {"status": "error", "message": str(e)}
+            return {
+                "status": "error",
+                "message": "Llama model runtime is unavailable or failed to initialize",
+                "confidence_score": 0.0,
+                "flag_for_review": True
+            }
 
-    # 1. API TEXT-TO-SQL DYNAMIC
-    def text_to_sql(self, question: str):
-        system_prompt = """
-        Bạn là chuyên gia PostgreSQL của SmartCart.
-        Database Schema:
-        - users (id, full_name, email, role)
-        - products (id, name, price, stock)
-        - orders (id, user_id, status, created_at)
-        - order_items (id, order_id, product_id, quantity)
+        # Mutex lock tuần tự hóa các yêu cầu suy luận, tránh crash CPU/RAM
+        with self._lock:
+            try:
+                output = self.llm.create_chat_completion(
+                    messages=[
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": user_input}
+                    ],
+                    max_tokens=512,
+                    temperature=0.1,
+                    response_format={"type": "json_object"}
+                )
+                text_response = output["choices"][0]["message"]["content"].strip()
+                return json.loads(text_response)
+            except Exception as e:
+                logger.error(f"[OneForAllAIEngine] Inference error: {e}")
+                return {
+                    "status": "error",
+                    "message": str(e),
+                    "confidence_score": 0.0,
+                    "flag_for_review": True
+                }
 
-        Nhiệm vụ: Dịch câu hỏi thành câu lệnh SQL Read-Only (SELECT).
-        QUY TẮC BẮT BUỘC:
-        1. Nếu câu hỏi là Yêu cầu thiết kế Schema/DDL (ví dụ: 'Mỗi khách hàng có tên, email...') hoặc vô nghĩa -> Trả về generated_sql = "-- INVALID_QUERY" và confidence_score = 0.1.
-        2. BẮT BUỘC chỉ sinh câu lệnh SQL Read-Only (SELECT). Tuyệt đối KHÔNG sinh câu lệnh sửa đổi dữ liệu (DELETE, UPDATE, INSERT, DROP, v.v.).
-        3. Nếu câu hỏi yêu cầu xóa/sửa đổi/hủy dữ liệu (ví dụ: 'hủy các đơn hàng ở tphcm'), bạn PHẢI chuyển đổi yêu cầu đó thành câu lệnh SELECT tương ứng để truy vấn/hiển thị danh sách dữ liệu mục tiêu (ví dụ: `SELECT orders.* FROM orders JOIN users ON orders.user_id = users.id WHERE users.full_name LIKE '%tphcm%'` hoặc lọc theo điều kiện tương ứng).
-        4. Với câu hỏi Có/Không (Yes/No - ví dụ: 'Có sản phẩm nào giá > 100k không?', 'Có khách hàng nào tên A không?'): Ưu tiên sinh SQL dạng `SELECT EXISTS(...) AS answer` hoặc `SELECT COUNT(*) AS count ...` hoặc `SELECT 1 FROM ... WHERE ... LIMIT 1` để xác định câu trả lời Yes/No chính xác.
-
-        Trả về định dạng JSON duy nhất:
-        {"generated_sql": "...", "confidence_score": 0.9, "flag_for_review": false}
-        """
-        return self._call_llm(system_prompt, question)
-
-    # 2. API CLASSIFY INTENT
+    # 1. API CLASSIFY INTENT
     def classify_intent(self, query: str):
         system_prompt = """
         Phân loại ý định tìm kiếm e-commerce thành 1 trong các intent: [SEARCH_PRODUCT, CANCEL_ORDER, ASK_FAQ, UNKNOWN].
@@ -72,13 +84,13 @@ class OneForAllAIEngine:
         """
         return self._call_llm(system_prompt, query)
 
-    # 3. STREAMING CHATBOT COPILOT
+    # 2. STREAMING CHATBOT COPILOT
     def stream_chat(
         self,
         history: list[dict],
         system_prompt: str | None = None,
         temperature: float = 0.7,
-    ):
+    ) -> Generator[str, None, None]:
         base_vi_instruction = (
             "Bạn là CSMART AI Copilot - Trợ lý bán hàng và chăm sóc khách hàng thông minh của hệ thống thương mại điện tử CSMART.\n"
             "QUY TẮC BẮT BUỘC: Bạn PHẢI luôn luôn phản hồi 100% bằng Tiếng Việt tự nhiên, lịch sự, chính xác và dễ hiểu. "
@@ -88,39 +100,31 @@ class OneForAllAIEngine:
         full_system_prompt = f"{base_vi_instruction}\n\n{system_prompt}" if system_prompt else base_vi_instruction
 
         if self.llm is None:
-            last_msg = (history[-1]["content"] if history and "content" in history[-1] else "").lower()
-            if any(k in last_msg for k in ["sản phẩm", "bao nhiêu", "hàng", "quần", "áo", "giá"]):
-                fallback = "Hệ thống CSMART cung cấp đa dạng các mẫu thời trang, phụ kiện và sản phẩm chính hãng với mức giá ưu đãi. Bạn đang muốn tìm sản phẩm nào cụ thể để tôi tư vấn chi tiết hơn?"
-            elif any(k in last_msg for k in ["chào", "hi", "hello"]):
-                fallback = "Chào bạn! Tôi là CSMART AI Copilot. Tôi có thể hỗ trợ bạn tra cứu thông tin sản phẩm, giá cả và tình trạng đơn hàng. Bạn cần giúp gì hôm nay?"
-            else:
-                fallback = "Tôi luôn sẵn sàng hỗ trợ bạn tìm kiếm sản phẩm và tra cứu thông tin đơn hàng tại CSMART. Bạn hãy cho tôi biết nhu cầu nhé."
-            for word in fallback.split():
-                yield word + " "
+            yield "Dịch vụ AI Copilot hiện đang bảo trì hoặc chưa sẵn sàng. Vui lòng thử lại sau hoặc liên hệ nhân viên hỗ trợ."
             return
 
         messages = [{"role": "system", "content": full_system_prompt}] + history
 
-        try:
-            response_stream = self.llm.create_chat_completion(
-                messages=messages,
-                max_tokens=512,
-                temperature=temperature,
-                stream=True
-            )
-            for chunk in response_stream:
-                choices = chunk.get("choices", [])
-                if choices:
-                    delta = choices[0].get("delta", {})
-                    content = delta.get("content", "")
-                    if content:
-                        yield content
-        except Exception as e:
-            fallback = f"Tôi đang gặp gián đoạn kết nối mô hình cục bộ ({str(e)}). Vui lòng thử lại sau giây lát."
-            for word in fallback.split():
-                yield word + " "
+        with self._lock:
+            try:
+                response_stream = self.llm.create_chat_completion(
+                    messages=messages,
+                    max_tokens=512,
+                    temperature=temperature,
+                    stream=True
+                )
+                for chunk in response_stream:
+                    choices = chunk.get("choices", [])
+                    if choices:
+                        delta = choices[0].get("delta", {})
+                        content = delta.get("content", "")
+                        if content:
+                            yield content
+            except Exception as e:
+                logger.error(f"[OneForAllAIEngine] Streaming failed: {e}")
+                yield f"\n[Gián đoạn mô hình AI: {str(e)}]"
 
-    # 4. API PARSE OCR ENTITIES WITH LLM
+    # 3. API PARSE OCR ENTITIES WITH LLM
     def parse_ocr_entities(self, raw_ocr_text: str) -> dict:
         if not raw_ocr_text or not raw_ocr_text.strip():
             return {}

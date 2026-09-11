@@ -1,0 +1,87 @@
+﻿version: '3.8'
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: csmart_postgres_prod
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-csmart_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-csmart_password}
+      POSTGRES_DB: ${POSTGRES_DB:-csmart_db}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata_prod:/var/lib/postgresql/data
+      - ./schema.sql:/docker-entrypoint-initdb.d/01_schema.sql
+      - ./seed.sql:/docker-entrypoint-initdb.d/02_seed.sql
+      - ./03_create_readonly_user.sql:/docker-entrypoint-initdb.d/03_create_readonly_user.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U csmart_user -d csmart_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: csmart_redis_prod
+    restart: always
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory", "512mb", "--maxmemory-policy", "noeviction"]
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata_prod:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  pipeline_ai:
+    build:
+      context: .
+      dockerfile: pipeline_ai/Dockerfile
+    container_name: csmart_pipeline_ai_prod
+    restart: always
+    command: ["gunicorn", "app.main:app", "-w", "1", "-k", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:8000", "--timeout", "120", "--graceful-timeout", "30"]
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-csmart_user}:${POSTGRES_PASSWORD:-csmart_password}@postgres:5432/${POSTGRES_DB:-csmart_db}
+      - HF_HOME=/root/.cache/huggingface
+      - EASYOCR_MODULE_PATH=/root/.EasyOCR
+    volumes:
+      - hf_cache:/root/.cache/huggingface
+      - ocr_cache:/root/.EasyOCR
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  server:
+    build:
+      context: .
+      dockerfile: server/Dockerfile
+    container_name: csmart_server_prod
+    restart: always
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-csmart_user}:${POSTGRES_PASSWORD:-csmart_password}@postgres:5432/${POSTGRES_DB:-csmart_db}
+      - READONLY_DATABASE_URL=postgresql://csmart_readonly:csmart_ro_pass@postgres:5432/${POSTGRES_DB:-csmart_db}
+      - AI_ENGINE_URL=http://pipeline_ai:8000
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - THROTTLE_TTL=60000
+      - THROTTLE_LIMIT=60
+    ports:
+      - "3000:3000"
+    depends_on:
+      - postgres
+      - redis
+      - pipeline_ai
+
+volumes:
+  pgdata_prod:
+  redisdata_prod:
+  hf_cache:
+  ocr_cache:

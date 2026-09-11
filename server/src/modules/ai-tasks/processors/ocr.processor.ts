@@ -3,11 +3,25 @@ import { Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
 import { AiClientService } from '../../../common/services/ai-client.service';
 import { OcrRecordsService } from '../../ocr-records/ocr-records.service';
+import { HitlService } from '../../hitl/hitl.service';
 
 interface OcrJobData {
   filename: string;
   fileBase64: string;
   contentType: string;
+  userId?: string;
+}
+
+interface UniversalOcrEntities {
+  name: string | null;
+  category: string | null;
+  brand: string | null;
+  sku_barcode: string | null;
+  unit_price: number | null;
+  origin: string | null;
+  size_dimension: string | null;
+  color: string | null;
+  specifications: Record<string, any>;
 }
 
 interface OcrResult {
@@ -17,6 +31,7 @@ interface OcrResult {
   raw_text: string;
   confidence_score: number;
   flag_for_review: boolean;
+  entities?: UniversalOcrEntities;
   data: {
     name: string;
     origin?: string;
@@ -35,6 +50,7 @@ export class OcrProcessor extends WorkerHost {
   constructor(
     private readonly aiClient: AiClientService,
     private readonly ocrRecordsService: OcrRecordsService,
+    private readonly hitlService: HitlService,
   ) {
     super();
   }
@@ -44,7 +60,7 @@ export class OcrProcessor extends WorkerHost {
       `Processing OCR job ${job.id} for file: ${job.data.filename}`,
     );
     const startTime = Date.now();
-    const { filename, fileBase64, contentType } = job.data;
+    const { filename, fileBase64, contentType, userId } = job.data;
     const buffer = Buffer.from(fileBase64, 'base64');
 
     // Create form data using native FormData
@@ -52,20 +68,21 @@ export class OcrProcessor extends WorkerHost {
     const blob = new Blob([buffer], { type: contentType });
     formData.append('file', blob, filename);
 
-    const fallback: OcrResult = {
-      success: true,
-      status: 'success',
-      extracted_words: ['Mock', 'Fallback', 'Local', 'Brand'],
-      raw_text: 'Mock Fallback Local Brand',
-      confidence_score: 0.5,
+    // Production Fail-Safe: Zero confidence, explicit failure indicators
+    const failSafeFallback: OcrResult = {
+      success: false,
+      status: 'failed',
+      extracted_words: [],
+      raw_text: '',
+      confidence_score: 0.0,
       flag_for_review: true,
       data: {
-        name: 'Mock Fallback Local Brand',
-        origin: 'Việt Nam',
-        type: 'áo',
-        price: 350000,
-        color: 'Mock',
-        raw_text: 'Mock Fallback Local Brand',
+        name: 'Inference Failure / Unrecognized Document',
+        origin: '',
+        type: '',
+        color: '',
+        price: 0,
+        raw_text: '',
       },
       similar_products: [],
     };
@@ -74,37 +91,52 @@ export class OcrProcessor extends WorkerHost {
     const result = await this.aiClient.request<OcrResult>(
       '/api/v1/extract-ocr',
       { method: 'POST', body: formData },
-      fallback,
+      failSafeFallback,
     );
 
     const executionTimeMs = Date.now() - startTime;
+    const isReliable =
+      result.status === 'success' &&
+      result.confidence_score >= 0.70 &&
+      !result.flag_for_review;
 
     // Persist kết quả vào bảng ocr_records để Admin có thể tra cứu
     try {
-      await this.ocrRecordsService.create({
-        document_type: 'PRODUCT_LABEL',
-        order_code: `OCR-JOB-${job.id ?? Date.now()}`,
-        customer_name: result.data?.name ?? 'Unknown',
+      const persistedRecord = await this.ocrRecordsService.create({
+        document_type: result.entities?.category || 'PRODUCT_LABEL',
+        order_code: result.entities?.sku_barcode || `OCR-JOB-${job.id ?? Date.now()}`,
+        customer_name: result.entities?.name || result.data?.name || 'Unknown',
         confidence_score: result.confidence_score ?? 0,
-        status: result.status === 'success' ? 'VERIFIED' : 'FAILED',
+        status: isReliable ? 'VERIFIED' : 'PENDING_REVIEW',
         raw_text_chunks: result.extracted_words ?? [],
         execution_time_ms: executionTimeMs,
         extracted_items: [
           {
-            name: result.data?.name ?? 'Unknown',
-            origin: result.data?.origin ?? 'Việt Nam',
-            type: result.data?.type ?? 'áo',
-            color: result.data?.color ?? 'Đen',
-            price: result.data?.price ?? 0,
+            name: result.entities?.name || result.data?.name || 'Unknown',
+            unit_price: result.entities?.unit_price || result.data?.price || 0,
+            quantity: 1,
           },
         ],
       });
-      this.logger.log(`OCR job ${job.id} persisted to ocr_records.`);
-    } catch (err) {
+      this.logger.log(`OCR job ${job.id} persisted to ocr_records (id: ${persistedRecord.id}).`);
 
-      // Persist thất bại không nên làm fail toàn bộ job
+      // Tự động đẩy vào HITL Review Queue nếu độ tin cậy thấp hoặc lỗi
+      if (!isReliable) {
+        await this.hitlService.enqueue({
+          endpoint: 'extract-ocr',
+          user_id: userId,
+          input_text: `File: ${filename} (Job #${job.id})`,
+          output_json: {
+            ...result,
+            ocr_record_id: persistedRecord.id,
+          },
+          confidence_score: result.confidence_score ?? 0,
+        });
+        this.logger.warn(`OCR job ${job.id} dispatched to ai_review_queue (Confidence: ${result.confidence_score}).`);
+      }
+    } catch (err) {
       this.logger.error(
-        `Failed to persist OCR result for job ${job.id}: ${String(err)}`,
+        `Failed to persist or review OCR result for job ${job.id}: ${String(err)}`,
       );
     }
 

@@ -1,7 +1,7 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { Pool } from 'pg';
 import { BaseService } from '../../common/services/base.service';
-import { PG_CONNECTION } from '../../database/pg.provider';
+import { PG_CONNECTION, PG_READONLY_CONNECTION } from '../../database/pg.provider';
 import { AiClientService } from '../../common/services/ai-client.service';
 import { AiLogsService } from '../ai-logs/ai-logs.service';
 import { HitlService } from '../hitl/hitl.service';
@@ -24,6 +24,7 @@ export class AiProxyService extends BaseService {
     private readonly hitlService: HitlService,
     private readonly sqlGuardrail: SqlGuardrailStrategy,
     @Inject(PG_CONNECTION) private readonly pool: Pool,
+    @Inject(PG_READONLY_CONNECTION) private readonly readonlyPool: Pool,
   ) {
     super(AiProxyService.name);
   }
@@ -92,30 +93,56 @@ export class AiProxyService extends BaseService {
     const shouldReview =
       flagForReview || confidenceScore < CONFIDENCE_THRESHOLD;
 
-    // Post-log: cập nhật kết quả thực tế
-    await this.aiLogsService.update(preLog.id, {
-      output_json: result,
-      confidence_score: confidenceScore,
-      flag_for_review: shouldReview,
-      execution_time_ms: executionTimeMs,
-    });
+    // Post-log & HITL enqueue: Wrapped in atomic PostgreSQL transaction to prevent orphaned logs
+    const client = await this.pool.connect();
+    try {
+      await client.query('BEGIN');
 
-    // Nếu cần review → đưa vào HITL queue và liên kết log
-    if (shouldReview) {
-      const reviewEntry = await this.hitlService.enqueue({
-        log_id: preLog.id,
-        endpoint,
-        user_id: userId,
-        input_text: inputText,
-        output_json: result,
-        confidence_score: confidenceScore,
-      });
-      // Cập nhật review_id vào log
-      await this.aiLogsService.updateReviewId(preLog.id, reviewEntry.id);
+      let reviewId: string | null = null;
+      if (shouldReview) {
+        const reviewSql = `
+          INSERT INTO ai_review_queue (log_id, endpoint, user_id, input_text, output_json, confidence_score, status)
+          VALUES ($1, $2, $3, $4, $5, $6, 'PENDING')
+          RETURNING id
+        `;
+        const reviewRes = await client.query(reviewSql, [
+          preLog.id,
+          endpoint,
+          userId || null,
+          inputText,
+          JSON.stringify(result),
+          confidenceScore,
+        ]);
+        reviewId = reviewRes.rows[0]?.id || null;
+        this.logWarn(
+          `[HITL] ${endpoint} enqueued for review (review_id=${reviewId}, confidence=${confidenceScore}, flag=${flagForReview})`,
+        );
+      }
 
-      this.logWarn(
-        `[HITL] ${endpoint} enqueued for review (confidence=${confidenceScore}, flag=${flagForReview})`,
-      );
+      const updateLogSql = `
+        UPDATE ai_request_logs
+        SET output_json = $1,
+            confidence_score = $2,
+            flag_for_review = $3,
+            execution_time_ms = $4,
+            review_id = $5
+        WHERE id = $6
+      `;
+      await client.query(updateLogSql, [
+        JSON.stringify(result),
+        confidenceScore,
+        shouldReview,
+        executionTimeMs,
+        reviewId,
+        preLog.id,
+      ]);
+
+      await client.query('COMMIT');
+    } catch (txErr) {
+      await client.query('ROLLBACK');
+      this.logError(`[HITL Transaction Error] Atomic log and review update failed: ${txErr}`);
+    } finally {
+      client.release();
     }
 
     return result;
@@ -254,7 +281,7 @@ export class AiProxyService extends BaseService {
 
       const startTime = Date.now();
       try {
-        const queryRes = await this.pool.query(sql);
+        const queryRes = await this.readonlyPool.query(sql);
         const rows = this.sqlGuardrail.sanitizeRows(
           queryRes.rows as Record<string, unknown>[],
         );

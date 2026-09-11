@@ -13,3 +13,4 @@ easyocr>=1.7.0
 torch
 torchvision
 opencv-python-headless
+gunicorn>=21.2.0

@@ -6,6 +6,7 @@ import { AiTasksController } from './ai-tasks.controller';
 import { OcrProcessor } from './processors/ocr.processor';
 import { EvalProcessor } from './processors/eval.processor';
 import { OcrRecordsModule } from '../ocr-records/ocr-records.module';
+import { HitlModule } from '../hitl/hitl.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { OcrRecordsModule } from '../ocr-records/ocr-records.module';
     }),
     BullModule.registerQueue({ name: 'ocr-queue' }, { name: 'eval-queue' }),
     OcrRecordsModule, // Cung cấp OcrRecordsService cho OcrProcessor
+    HitlModule, // Cung cấp HitlService cho OcrProcessor
   ],
   controllers: [AiTasksController],
   providers: [AiTasksService, OcrProcessor, EvalProcessor],

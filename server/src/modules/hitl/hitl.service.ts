@@ -2,6 +2,9 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  Logger,
+  Inject,
+  forwardRef,
 } from '@nestjs/common';
 import { HitlRepository } from './hitl.repository';
 import {
@@ -11,10 +14,21 @@ import {
   LabelReviewDto,
 } from './dto/hitl.dto';
 import { ReviewQueueItem, HitlStatus } from './review-queue.entity';
+import { OrdersService } from '../orders/orders.service';
+import { OrderStatus } from '../orders/order.entity';
+import { OcrRecordsService } from '../ocr-records/ocr-records.service';
 
 @Injectable()
 export class HitlService {
-  constructor(private readonly hitlRepository: HitlRepository) {}
+  private readonly logger = new Logger(HitlService.name);
+
+  constructor(
+    private readonly hitlRepository: HitlRepository,
+    @Inject(forwardRef(() => OrdersService))
+    private readonly ordersService: OrdersService,
+    @Inject(forwardRef(() => OcrRecordsService))
+    private readonly ocrRecordsService: OcrRecordsService,
+  ) {}
 
   /** Đưa vào hàng đợi review (gọi nội bộ từ AiProxyService) */
   async enqueue(dto: EnqueueReviewDto): Promise<ReviewQueueItem> {
@@ -40,13 +54,55 @@ export class HitlService {
     return item;
   }
 
-  /** Admin/Support duyệt → APPROVED */
+  /** Admin/Support duyệt → APPROVED và kích hoạt luồng nghiệp vụ thực tế */
   async approve(
     id: string,
     reviewerId: string,
     dto: ApproveReviewDto,
   ): Promise<ReviewQueueItem> {
-    await this.findOne(id);
+    const item = await this.findOne(id);
+
+    // Business Automation 1: NER Slot Approval Execution
+    if (item.endpoint === 'extract-ner' && item.output_json) {
+      const output = item.output_json as Record<string, any>;
+      const intent = output.intent;
+      const slots = output.slots || {};
+      const orderIdentifier = slots.order_id || (slots.order_ids && slots.order_ids[0]);
+
+      if (orderIdentifier) {
+        try {
+          if (intent === 'CANCEL_ORDER') {
+            await this.ordersService.update(orderIdentifier, {
+              status: OrderStatus.CANCELLED,
+              cancel_reason: dto.reviewer_note || 'Hủy đơn qua AI NER (HITL Approved)',
+            });
+            this.logger.log(`[HITL Action] Order ${orderIdentifier} cancelled on approval.`);
+          } else if (intent === 'UPDATE_ADDRESS' && slots.new_address) {
+            await this.ordersService.update(orderIdentifier, {
+              shipping_address: slots.new_address,
+              note: `Địa chỉ cập nhật từ AI NER (HITL #${id})`,
+            });
+            this.logger.log(`[HITL Action] Order ${orderIdentifier} address updated to: ${slots.new_address}`);
+          }
+        } catch (actionErr) {
+          this.logger.error(`Failed to execute downstream order action for HITL #${id}: ${actionErr}`);
+        }
+      }
+    }
+
+    // Business Automation 2: OCR Label Verification State
+    if (item.endpoint === 'extract-ocr' && item.output_json) {
+      const ocrRecordId = (item.output_json as Record<string, any>).ocr_record_id;
+      if (ocrRecordId) {
+        try {
+          await this.ocrRecordsService.update(ocrRecordId, { status: 'VERIFIED' });
+          this.logger.log(`[HITL Action] OCR record ${ocrRecordId} marked as VERIFIED.`);
+        } catch (ocrErr) {
+          this.logger.error(`Failed to update OCR record status for HITL #${id}: ${ocrErr}`);
+        }
+      }
+    }
+
     return (await this.hitlRepository.approve(
       id,
       reviewerId,

@@ -63,6 +63,24 @@ export class SqlGuardrailStrategy {
       };
     }
 
+    // Chặn CTE Write bypass (e.g. WITH deleted AS (DELETE ...))
+    const cteWritePattern = /\bwith\b[\s\S]*?\b(insert|update|delete|drop|alter|truncate)\b/i;
+    if (cteWritePattern.test(cleanSql)) {
+      return {
+        isValid: false,
+        error: 'Truy vấn CTE chứa thao tác thay đổi dữ liệu trái phép',
+      };
+    }
+
+    // Chặn so sánh Integer literals trên cột UUID (gây crash PostgreSQL)
+    const uuidMismatchPattern = /\b(id|user_id|category_id|product_id|order_id)\s*=\s*\d+\b/i;
+    if (uuidMismatchPattern.test(cleanSql)) {
+      return {
+        isValid: false,
+        error: 'Truy vấn không hợp lệ: Lỗi ép kiểu integer trên khóa định danh UUID',
+      };
+    }
+
     return { isValid: true };
   }
 

@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { OcrDocType, OcrExtractedData } from '@/types/entities/ocr-record';
+import { apiClient } from '@/libs/api-client';
 
 interface SimilarProduct {
   name?: string;
@@ -41,35 +42,42 @@ export function useOcrProcessor(showToast: (msg: string, type?: 'ok' | 'err') =>
           const formData = new FormData();
           formData.append('file', blob, 'ocr_document.jpg');
 
-          let res: Response | null = null;
-          const apiUrls = [
-            'http://127.0.0.1:8000/api/v1/extract-ocr',
-            'http://localhost:8000/api/v1/extract-ocr',
-            '/api/v1/extract-ocr',
-            'http://127.0.0.1:5000/api/v1/extract-ocr',
-            'http://localhost:5000/api/v1/extract-ocr',
-          ];
+          let resData: any = null;
 
-          for (const url of apiUrls) {
-            try {
-              const fetchAttempt = await fetch(url, {
-                method: 'POST',
-                body: formData,
-              });
-              if (fetchAttempt.ok) {
-                res = fetchAttempt;
-                break;
-              } else {
-                console.warn(`[OCR Fetch] ${url} status ${fetchAttempt.status}`);
+          // Call NestJS Proxy POST /ai/ocr to enqueue into BullMQ
+          try {
+            const submitRes = await apiClient<{ success: boolean; jobId?: string }>('/ai/ocr', {
+              method: 'POST',
+              body: formData,
+            });
+
+            const jobId = submitRes?.jobId;
+            if (jobId) {
+              showToast(`Tác vụ OCR #${jobId} đang xử lý ngầm...`, 'ok');
+
+              // Polling status through NestJS BullMQ state machine
+              const maxAttempts = 40;
+              for (let i = 0; i < maxAttempts; i++) {
+                await new Promise((resolve) => setTimeout(resolve, 1500));
+                const statusRes = await apiClient<{
+                  state: string;
+                  returnValue?: any;
+                  failedReason?: string;
+                }>(`/ai-tasks/status/ocr/${jobId}`);
+
+                if (statusRes?.state === 'completed' && statusRes.returnValue) {
+                  resData = statusRes.returnValue;
+                  break;
+                } else if (statusRes?.state === 'failed') {
+                  throw new Error(statusRes.failedReason || 'OCR worker job failed');
+                }
               }
-            } catch (errAttempt) {
-              console.warn(`[OCR Fetch Error] ${url}:`, errAttempt);
             }
+          } catch (proxyErr) {
+            console.warn('[OCR Proxy Call]', proxyErr);
           }
 
-          if (res && res.ok) {
-            const resData = await res.json();
-            if (resData.success) {
+          if (resData && (resData.success || resData.status === 'success')) {
               const rawWords: string[] = resData.extracted_words || [];
               const rawText: string = resData.raw_text || resData.data?.raw_text || '';
               const entities = resData.entities || {};

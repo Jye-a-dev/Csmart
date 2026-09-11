@@ -109,12 +109,16 @@ export default function CategoriesSection({
             </p>
           </div>
 
+          <button
+            type="button"
+            onClick={() => onSelectCategory && onSelectCategory(null)}
           <Link
             href="/user/categories"
             className="text-xs sm:text-sm font-semibold text-orange-600 hover:text-orange-700 inline-flex items-center gap-1 cursor-pointer"
           >
             <span>Xem tất cả</span>
             <span>&rarr;</span>
+          </button>
           </Link>
         </div>
 

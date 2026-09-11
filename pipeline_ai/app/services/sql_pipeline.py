@@ -25,24 +25,46 @@ class SQLPipelineComponent(ABC):
         pass
 
 class DatasetMatchComponent(SQLPipelineComponent):
+    """
+    Step 1: Matches natural language query against validated e-commerce query templates.
+    Rejects generic cross-domain benchmark schemas to ensure CsmartAI compatibility.
+    """
+    ALLOWED_TABLES = {
+        "categories", "products", "users", "user_addresses",
+        "orders", "order_items", "payments", "faqs"
+    }
+
     def process(self, context: SQLPipelineContext) -> SQLPipelineContext:
         if context.generated_sql:
             return context
 
         query, score = vitext2sql_service.translate_with_score(context.question)
-        if score >= 0.15:
+        query_lower = query.lower()
+        has_valid_table = any(
+            f" {tbl} " in f" {query_lower} " or f" {tbl};" in f" {query_lower} "
+            for tbl in self.ALLOWED_TABLES
+        )
+        has_int_id_clause = bool(
+            re.search(r'\b(id|user_id|category_id|product_id|order_id)\s*=\s*\d+\b', query_lower)
+        )
+
+        if score >= 0.85 and has_valid_table and not has_int_id_clause:
             context.generated_sql = query
             context.confidence_score = score
-            
+            context.flag_for_review = False
+            logger.info(f"[DatasetMatchComponent] Exact verified match accepted (Confidence: {score:.2f})")
+
         return context
 
 class FewShotRAGComponent(SQLPipelineComponent):
+    """
+    Step 2: Fetches verified LABELLED and APPROVED examples from ai_review_queue to ground LLM inference.
+    """
     def __init__(self, limit: int = 5):
         self.limit = limit
 
     async def get_few_shot_examples(self) -> str:
         if db_service.pool is None:
-            logger.warning("Database pool is not initialized for FewShotRAGComponent.")
             return ""
 
         try:
@@ -50,6 +72,7 @@ class FewShotRAGComponent(SQLPipelineComponent):
                 SELECT input_text, corrected_label 
                 FROM ai_review_queue 
                 WHERE status IN ('LABELLED', 'APPROVED') 
+                  AND endpoint = 'text-to-sql'
                   AND corrected_label IS NOT NULL 
                   AND TRIM(corrected_label) != ''
                 ORDER BY reviewed_at DESC NULLS LAST, created_at DESC 
@@ -59,26 +82,24 @@ class FewShotRAGComponent(SQLPipelineComponent):
             if not rows:
                 return ""
 
-            examples = "\nDưới đây là các câu truy vấn mẫu đã được duyệt bởi chuyên gia:\n"
+            examples = "\nCÁC CÂU TRUY VẤN MẪU ĐÃ ĐƯỢC DUYỆT (PRODUCTION VERIFIED):\n"
             for row in rows:
                 input_text = row["input_text"] or ""
-                corrected_label = row["corrected_label"] or ""
-                examples += f"- Input: {input_text}\n  Correct SQL: {corrected_label}\n"
-            
+                corrected_sql = row["corrected_label"] or ""
+                # Ensure retrieved examples do not propagate invalid integer ID comparisons
+                if not re.search(r'\b(id|user_id|category_id|product_id|order_id)\s*=\s*\d+\b', corrected_sql):
+                    examples += f"- Câu hỏi: {input_text}\n  SQL: {corrected_sql}\n"
             return examples
         except Exception as e:
-            logger.error(f"Lỗi khi lấy few-shot examples từ ai_review_queue: {e}")
+            logger.error(f"[FewShotRAGComponent] Failed to fetch examples: {e}")
             return ""
 
     def process(self, context: SQLPipelineContext) -> SQLPipelineContext:
         try:
             loop = asyncio.get_event_loop()
-            if loop.is_running():
-                context.few_shot_examples = ""
-            else:
+            if not loop.is_running():
                 context.few_shot_examples = loop.run_until_complete(self.get_few_shot_examples())
-        except Exception as e:
-            logger.error(f"Lỗi FewShotRAGComponent process: {e}")
+        except Exception:
             context.few_shot_examples = ""
         return context
 
@@ -87,93 +108,122 @@ class FewShotRAGComponent(SQLPipelineComponent):
         return context
 
 class LLMGenerateComponent(SQLPipelineComponent):
+    """
+    Step 3: Synthesizes PostgreSQL SELECT statements via Qwen LLM.
+    Strictly mandates UUID literals and relationships; prohibits integer primary/foreign keys.
+    """
     def process(self, context: SQLPipelineContext) -> SQLPipelineContext:
-        if context.generated_sql and context.confidence_score >= 0.70:
+        if context.generated_sql and context.confidence_score >= 0.85:
             return context
 
         few_shot = context.few_shot_examples or ""
         system_prompt = f"""
-        Bạn là chuyên gia PostgreSQL của hệ thống CsmartAI.
-        BẢNG THÔNG TIN SCHEMA CỦA DATABASE HIỆN TẠI (BẮT BUỘC CHỈ SỬ DỤNG CÁC BẢNG VÀ CỘT NÀY):
-        - categories (id UUID, name VARCHAR, slug VARCHAR, description TEXT, parent_id UUID, image_url_1 VARCHAR, image_url_2 VARCHAR, created_at TIMESTAMP)
-        - products (id UUID, sku VARCHAR, name VARCHAR, slug VARCHAR, category_id UUID, description TEXT, base_price DECIMAL, discount_price DECIMAL, stock_quantity INT, status VARCHAR, is_published BOOLEAN, tags JSONB, attributes JSONB, created_at TIMESTAMP, updated_at TIMESTAMP)
-        - users (id UUID, full_name VARCHAR, email VARCHAR, phone VARCHAR, role VARCHAR, is_active BOOLEAN, avatar_url VARCHAR, last_login_at TIMESTAMP, created_at TIMESTAMP, updated_at TIMESTAMP)
-        - user_addresses (id UUID, user_id UUID, recipient_name VARCHAR, phone VARCHAR, street_address VARCHAR, ward VARCHAR, district VARCHAR, city_province VARCHAR, is_default BOOLEAN, created_at TIMESTAMP)
-        - orders (id UUID, order_code VARCHAR, user_id UUID, status VARCHAR, total_amount DECIMAL, shipping_fee DECIMAL, discount_amount DECIMAL, shipping_address TEXT, note TEXT, cancel_reason TEXT, created_at TIMESTAMP, updated_at TIMESTAMP)
-        - order_items (id UUID, order_id UUID, product_id UUID, product_name VARCHAR, unit_price DECIMAL, quantity INT, subtotal DECIMAL, shipping_status VARCHAR, courier_name VARCHAR, tracking_number VARCHAR, estimated_delivery TIMESTAMP, delivered_at TIMESTAMP)
-        - payments (id UUID, order_id UUID, payment_method VARCHAR, payment_status VARCHAR, transaction_code VARCHAR, amount DECIMAL, paid_at TIMESTAMP, created_at TIMESTAMP)
-        - faqs (id UUID, topic VARCHAR, question TEXT, answer TEXT, is_active BOOLEAN, created_at TIMESTAMP)
+Bạn là chuyên gia PostgreSQL của hệ thống CsmartAI.
+DATABASE SCHEMA CHUẨN (MỌI KHÓA CHÍNH VÀ KHÓA NGOẠI LÀ UUID, TUYỆT ĐỐI KHÔNG DÙNG INTEGER CHO ID):
+- categories (id UUID, name VARCHAR, slug VARCHAR, description TEXT, parent_id UUID, image_url_1 TEXT, image_url_2 TEXT, created_at TIMESTAMPTZ)
+- products (id UUID, sku VARCHAR, name VARCHAR, slug VARCHAR, category_id UUID, description TEXT, base_price NUMERIC(12,2), discount_price NUMERIC(12,2), stock_quantity INT, status VARCHAR, is_published BOOLEAN, tags VARCHAR[], attributes JSONB, created_at TIMESTAMPTZ, updated_at TIMESTAMPTZ)
+- users (id UUID, full_name VARCHAR, email VARCHAR, phone VARCHAR, role VARCHAR, is_active BOOLEAN, avatar_url TEXT, last_login_at TIMESTAMPTZ, created_at TIMESTAMPTZ, updated_at TIMESTAMPTZ)
+- user_addresses (id UUID, user_id UUID, recipient_name VARCHAR, phone VARCHAR, street_address TEXT, ward VARCHAR, district VARCHAR, city_province VARCHAR, is_default BOOLEAN, created_at TIMESTAMPTZ)
+- orders (id UUID, order_code VARCHAR, user_id UUID, status VARCHAR, total_amount NUMERIC(12,2), shipping_fee NUMERIC(10,2), discount_amount NUMERIC(10,2), shipping_address TEXT, note TEXT, cancel_reason TEXT, created_at TIMESTAMPTZ, updated_at TIMESTAMPTZ)
+- order_items (id UUID, order_id UUID, product_id UUID, product_name VARCHAR, unit_price NUMERIC(12,2), quantity INT, subtotal NUMERIC(12,2), shipping_status VARCHAR, courier_name VARCHAR, tracking_number VARCHAR, estimated_delivery TIMESTAMPTZ, delivered_at TIMESTAMPTZ)
+- payments (id UUID, order_id UUID, payment_method VARCHAR, payment_status VARCHAR, transaction_code VARCHAR, amount NUMERIC(12,2), paid_at TIMESTAMPTZ, created_at TIMESTAMPTZ)
+- faqs (id UUID, topic VARCHAR, question TEXT, answer TEXT, is_active BOOLEAN, created_at TIMESTAMPTZ)
 
-        QUY TẮC BẮT BUỘC VỀ TÊN BẢNG VÀ CỘT:
-        1. Bảng categories: Cột id (UUID), name (Tên danh mục).
-        2. Bảng products: Liên kết với categories bằng `products.category_id = categories.id`.
-        3. CHỈ SINH CÂU LỆNH SQL READ-ONLY (SELECT / WITH). Không sinh DDL/DML (DELETE, UPDATE, INSERT, DROP, ALTER).
-        4. Với câu hỏi "Cho tôi số lượng danh mục và tên của nó": `SELECT count(*) as total_categories, string_agg(name, ', ') as category_names FROM categories;` hoặc `SELECT id, name FROM categories;`
-        5. Với câu hỏi Có/Không (Yes/No questions): Ưu tiên sinh SQL dạng `SELECT EXISTS(...) AS answer` hoặc `SELECT COUNT(*) AS count ...` hoặc `SELECT 1 FROM ... WHERE ... LIMIT 1` để xác định câu trả lời Yes/No chính xác.
-        {few_shot}
-        Trả về định dạng JSON duy nhất:
-        {{"generated_sql": "...", "confidence_score": 0.95, "flag_for_review": false}}
-        """
-
+QUY TẮC BẮT BUỘC:
+1. ID và Khóa ngoại là kiểu UUID. TUYỆT ĐỐI KHÔNG sinh điều kiện dạng `WHERE id = 1` hoặc `WHERE user_id = 5` (PostgreSQL sẽ ném lỗi cast 'operator does not exist: uuid = integer').
+2. Khi người dùng tìm theo mã, bắt buộc lọc theo cột chuỗi: `order_code = 'ORD-...'`, `sku = '...'`, `email = '...'`, `phone = '...'`. Nếu bắt buộc ép UUID literal, phải dùng format: `'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11'::uuid`.
+3. CHỈ SINH CÂU TRUY VẤN READ-ONLY BẮT ĐẦU BẰNG `SELECT` HOẶC `WITH`. Tuyệt đối không sinh INSERT, UPDATE, DELETE, DROP, ALTER, TRUNCATE, EXEC, EXECUTE.
+4. Với câu hỏi Yes/No: Dùng cú pháp `SELECT EXISTS(...) AS answer` hoặc `SELECT COUNT(*) > 0 AS answer ...`.
+{few_shot}
+Trả về định dạng JSON duy nhất:
+{{"generated_sql": "SELECT ...", "confidence_score": 0.95, "flag_for_review": false}}
+"""
         result = ai_engine_core._call_llm(system_prompt, context.question)
         if result.get("status") == "error":
-            context.status = "error"
+            context.status = "failed"
             context.error_message = result.get("message")
+            context.generated_sql = "-- INFERENCE_FAILED"
+            context.confidence_score = 0.0
+            context.flag_for_review = True
         else:
-            context.generated_sql = result.get("generated_sql", "-- CANNOT_GENERATE_SQL")
-            context.confidence_score = result.get("confidence_score", 0.0)
+            context.generated_sql = result.get("generated_sql", "-- INFERENCE_FAILED")
+            context.confidence_score = float(result.get("confidence_score", 0.0))
+            context.flag_for_review = result.get("flag_for_review", True)
             
         return context
 
 class ValidatorComponent(SQLPipelineComponent):
+    """
+    Step 4: Strict Security and Semantic Guardrail.
+    Blocks Stacked Queries, SQL Comment Injections, CTE write attacks, and UUID-integer type mismatches.
+    """
+    UNSAFE_PATTERN = re.compile(
+        r'\b(DELETE|UPDATE|INSERT|DROP|ALTER|CREATE|TRUNCATE|RENAME|GRANT|REVOKE|EXEC|EXECUTE|COPY|PG_SLEEP)\b',
+        re.IGNORECASE
+    )
+    CTE_WRITE_PATTERN = re.compile(
+        r'\bWITH\b[\s\S]*?\b(INSERT|UPDATE|DELETE|DROP|ALTER|TRUNCATE)\b',
+        re.IGNORECASE
+    )
+    UUID_INT_MISMATCH = re.compile(
+        r'\b(id|user_id|category_id|product_id|order_id)\s*=\s*\d+\b',
+        re.IGNORECASE
+    )
+
     def process(self, context: SQLPipelineContext) -> SQLPipelineContext:
-        if not context.generated_sql:
-            context.generated_sql = "-- CANNOT_GENERATE_SQL"
-            context.confidence_score = 0.0
+        if not context.generated_sql or context.generated_sql.startswith("--"):
             context.flag_for_review = True
+            context.confidence_score = 0.0
             return context
 
         sql = context.generated_sql.strip()
         sql_clean = re.sub(r';+$', '', sql).strip()
 
-        has_stacked_query = ';' in sql_clean
-        has_comment_injection = '--' in sql_clean or '/*' in sql_clean or '*/' in sql_clean
-
-        unsafe_pattern = re.compile(
-            r'\b(DELETE|UPDATE|INSERT|DROP|ALTER|CREATE|TRUNCATE|RENAME|GRANT|REVOKE|EXEC|EXECUTE|COPY|PG_SLEEP)\b',
-            re.IGNORECASE
-        )
-        has_unsafe_keywords = bool(unsafe_pattern.search(sql_clean))
+        # Reject stacked queries and comments
+        has_stacked = ';' in sql_clean
+        has_comments = '--' in sql_clean or '/*' in sql_clean or '*/' in sql_clean
+        has_unsafe_words = bool(self.UNSAFE_PATTERN.search(sql_clean))
+        has_cte_write = bool(self.CTE_WRITE_PATTERN.search(sql_clean))
+        has_uuid_mismatch = bool(self.UUID_INT_MISMATCH.search(sql_clean))
 
         sql_upper = sql_clean.upper()
         is_read_only = sql_upper.startswith("SELECT") or sql_upper.startswith("WITH")
 
-        if has_stacked_query or has_comment_injection or has_unsafe_keywords or not is_read_only or "INVALID" in sql_upper:
+        if (
+            has_stacked
+            or has_comments
+            or has_unsafe_words
+            or has_cte_write
+            or not is_read_only
+            or has_uuid_mismatch
+            or "INVALID" in sql_upper
+        ):
+            logger.warning(f"[ValidatorComponent] Blocked invalid/unsafe SQL: {sql_clean}")
             context.flag_for_review = True
             context.generated_sql = "-- INVALID_QUERY"
             context.confidence_score = 0.0
+            context.status = "failed"
+            context.error_message = "SQL validation failed: contains illegal operations or UUID/Integer schema mismatch"
         else:
-            context.flag_for_review = context.confidence_score < 0.70
+            context.generated_sql = sql_clean
+            context.flag_for_review = context.confidence_score < 0.75
 
         return context
 
 class SQLPipeline:
-    def __init__(self, components: List[SQLPipelineComponent] = None):
-        if components is None:
-            self.components = [
-                DatasetMatchComponent(),
-                FewShotRAGComponent(),
-                LLMGenerateComponent(),
-                ValidatorComponent(),
-            ]
-        else:
-            self.components = components
+    def __init__(self, components: Optional[List[SQLPipelineComponent]] = None):
+        self.components = components or [
+            DatasetMatchComponent(),
+            FewShotRAGComponent(),
+            LLMGenerateComponent(),
+            ValidatorComponent(),
+        ]
 
     def run(self, question: str) -> SQLPipelineContext:
         context = SQLPipelineContext(question=question)
         for component in self.components:
             context = component.process(context)
-            if context.status == "error":
+            if context.status == "failed" and context.generated_sql == "-- INFERENCE_FAILED":
                 break
         return context
 
@@ -184,7 +234,7 @@ class SQLPipeline:
                 context = await component.process_async(context)
             else:
                 context = component.process(context)
-            if context.status == "error":
+            if context.status == "failed" and context.generated_sql == "-- INFERENCE_FAILED":
                 break
         return context
 

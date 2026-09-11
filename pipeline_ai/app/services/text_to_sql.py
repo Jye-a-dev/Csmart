@@ -121,8 +121,8 @@ class ViText2SQLService(BaseAIService):
                 best_sim = sim
                 best_match = item
 
-        # If similarity threshold is too low (e.g. < 0.15), return a default fallback query
-        if best_match and best_sim >= 0.15:
+        # Only return matched query if similarity meets high confidence threshold
+        if best_match and best_sim >= 0.85:
             return best_match["query"], best_sim
         else:
             # Fallback mapper for custom queries
@@ -137,7 +137,7 @@ class ViText2SQLService(BaseAIService):
                     ORDER BY cancel_count DESC LIMIT 3;
                 """.strip()
                 return query, 0.85
-            return "SELECT * FROM products LIMIT 10;", 0.0
+            return "-- NO_DATASET_MATCH", 0.0
 
 vitext2sql_service = ViText2SQLService()
 
