@@ -1,10 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { BaseRepository } from '../../database/base.repository';
 import { AiRequestLog } from './ai-log.entity';
-import {
-  CreateAiRequestLogDto,
-  UpdateAiRequestLogDto,
-} from './dto/ai-log.dto';
+import { CreateAiRequestLogDto, UpdateAiRequestLogDto } from './dto/ai-log.dto';
 
 @Injectable()
 export class AiLogsRepository extends BaseRepository {

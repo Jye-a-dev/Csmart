@@ -97,14 +97,15 @@ export class OcrProcessor extends WorkerHost {
     const executionTimeMs = Date.now() - startTime;
     const isReliable =
       result.status === 'success' &&
-      result.confidence_score >= 0.70 &&
+      result.confidence_score >= 0.7 &&
       !result.flag_for_review;
 
     // Persist kết quả vào bảng ocr_records để Admin có thể tra cứu
     try {
       const persistedRecord = await this.ocrRecordsService.create({
         document_type: result.entities?.category || 'PRODUCT_LABEL',
-        order_code: result.entities?.sku_barcode || `OCR-JOB-${job.id ?? Date.now()}`,
+        order_code:
+          result.entities?.sku_barcode || `OCR-JOB-${job.id ?? Date.now()}`,
         customer_name: result.entities?.name || result.data?.name || 'Unknown',
         confidence_score: result.confidence_score ?? 0,
         status: isReliable ? 'VERIFIED' : 'PENDING_REVIEW',
@@ -118,7 +119,9 @@ export class OcrProcessor extends WorkerHost {
           },
         ],
       });
-      this.logger.log(`OCR job ${job.id} persisted to ocr_records (id: ${persistedRecord.id}).`);
+      this.logger.log(
+        `OCR job ${job.id} persisted to ocr_records (id: ${persistedRecord.id}).`,
+      );
 
       // Tự động đẩy vào HITL Review Queue nếu độ tin cậy thấp hoặc lỗi
       if (!isReliable) {
@@ -132,7 +135,9 @@ export class OcrProcessor extends WorkerHost {
           },
           confidence_score: result.confidence_score ?? 0,
         });
-        this.logger.warn(`OCR job ${job.id} dispatched to ai_review_queue (Confidence: ${result.confidence_score}).`);
+        this.logger.warn(
+          `OCR job ${job.id} dispatched to ai_review_queue (Confidence: ${result.confidence_score}).`,
+        );
       }
     } catch (err) {
       this.logger.error(

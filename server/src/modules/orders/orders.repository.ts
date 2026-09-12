@@ -10,6 +10,25 @@ export class OrdersRepository extends BaseRepository {
     try {
       await client.query('BEGIN');
 
+      let resolvedUserId: number | null = null;
+      if (dto.user_id) {
+        if (typeof dto.user_id === 'number' || /^\d+$/.test(String(dto.user_id))) {
+          resolvedUserId = Number(dto.user_id);
+        } else {
+          const userRes = await client.query<{ id: number }>(
+            'SELECT id FROM users WHERE uuid::text = $1 LIMIT 1',
+            [String(dto.user_id)],
+          );
+          if (userRes.rows.length > 0) {
+            resolvedUserId = userRes.rows[0].id;
+          }
+        }
+      }
+
+      const generatedCode =
+        dto.order_code ||
+        `ORD-${Date.now().toString(36).toUpperCase()}-${Math.floor(Math.random() * 1000)}`;
+
       const orderSql = `
         INSERT INTO orders (
           order_code, user_id, status, total_amount, shipping_fee, 
@@ -20,8 +39,8 @@ export class OrdersRepository extends BaseRepository {
                   discount_amount, shipping_address, note, cancel_reason, created_at, updated_at
       `;
       const orderParams = [
-        dto.order_code,
-        dto.user_id || null,
+        generatedCode,
+        resolvedUserId,
         dto.status || 'PENDING',
         dto.total_amount,
         dto.shipping_fee !== undefined ? dto.shipping_fee : 0,
@@ -45,19 +64,28 @@ export class OrdersRepository extends BaseRepository {
       `;
 
       const createdItems: OrderItem[] = [];
-      for (const item of dto.items) {
-        const itemParams = [
-          newOrder.id,
-          item.product_id || null,
-          item.product_name,
-          item.unit_price,
-          item.quantity,
-          item.shipping_status || 'PENDING',
-          item.courier_name || null,
-          item.tracking_number || null,
-        ];
-        const itemRes = await client.query<OrderItem>(itemSql, itemParams);
-        createdItems.push(itemRes.rows[0]);
+      if (dto.items && Array.isArray(dto.items)) {
+        for (const item of dto.items) {
+          let resolvedProductId: number | null = null;
+          if (item.product_id) {
+            if (typeof item.product_id === 'number' || /^\d+$/.test(String(item.product_id))) {
+              resolvedProductId = Number(item.product_id);
+            }
+          }
+
+          const itemParams = [
+            newOrder.id,
+            resolvedProductId,
+            item.product_name,
+            item.unit_price,
+            item.quantity,
+            item.shipping_status || 'PENDING',
+            item.courier_name || null,
+            item.tracking_number || null,
+          ];
+          const itemRes = await client.query<OrderItem>(itemSql, itemParams);
+          createdItems.push(itemRes.rows[0]);
+        }
       }
 
       await client.query('COMMIT');
@@ -71,15 +99,50 @@ export class OrdersRepository extends BaseRepository {
     }
   }
 
-  async findAllOrders(limit = 10, offset = 0): Promise<Order[]> {
+  async findAllOrders(
+    limit = 10,
+    offset = 0,
+    filters?: { user_id?: string | number; status?: string; search?: string },
+  ): Promise<Order[]> {
+    const whereClauses: string[] = [];
+    const params: any[] = [];
+    let paramIndex = 1;
+
+    if (filters?.user_id) {
+      if (typeof filters.user_id === 'number' || /^\d+$/.test(String(filters.user_id))) {
+        whereClauses.push(`user_id = $${paramIndex++}`);
+        params.push(Number(filters.user_id));
+      } else {
+        whereClauses.push(
+          `user_id IN (SELECT id FROM users WHERE uuid::text = $${paramIndex++})`,
+        );
+        params.push(String(filters.user_id));
+      }
+    }
+    if (filters?.status) {
+      whereClauses.push(`status = $${paramIndex++}`);
+      params.push(filters.status);
+    }
+    if (filters?.search) {
+      whereClauses.push(
+        `(order_code ILIKE $${paramIndex} OR shipping_address ILIKE $${paramIndex})`,
+      );
+      paramIndex++;
+      params.push(`%${filters.search}%`);
+    }
+
+    const whereSql =
+      whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
     const sql = `
       SELECT id, order_code, user_id, status, total_amount, shipping_fee, 
              discount_amount, shipping_address, note, cancel_reason, created_at, updated_at
       FROM orders
-      ORDER BY id DESC
-      LIMIT $1 OFFSET $2
+      ${whereSql}
+      ORDER BY created_at DESC, id DESC
+      LIMIT $${paramIndex++} OFFSET $${paramIndex++}
     `;
-    const orders = await this.query<Order>(sql, [limit, offset]);
+    params.push(limit, offset);
+    const orders = await this.query<Order>(sql, params);
 
     for (const order of orders) {
       order.items = await this.findOrderItemsByOrderId(order.id);
@@ -87,12 +150,20 @@ export class OrdersRepository extends BaseRepository {
     return orders;
   }
 
-  async findOrderById(id: string): Promise<Order | null> {
-    const sql = `
+  async findOrderById(id: string | number): Promise<Order | null> {
+    const isNum = typeof id === 'number' || /^\d+$/.test(String(id));
+    const sql = isNum
+      ? `
       SELECT id, order_code, user_id, status, total_amount, shipping_fee, 
              discount_amount, shipping_address, note, cancel_reason, created_at, updated_at
       FROM orders
       WHERE id = $1
+    `
+      : `
+      SELECT id, order_code, user_id, status, total_amount, shipping_fee, 
+             discount_amount, shipping_address, note, cancel_reason, created_at, updated_at
+      FROM orders
+      WHERE order_code = $1
     `;
     const order = await this.queryOne<Order>(sql, [id]);
     if (order) {

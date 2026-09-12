@@ -47,14 +47,29 @@ export class ProductsRepository extends BaseRepository {
     return this.query<Product>(sql, [limit, offset]);
   }
 
-  async findProductById(id: string): Promise<Product | null> {
-    const sql = `
-      SELECT id, sku, name, slug, category_id, description, short_description, specifications, colors, base_price, 
-             discount_price, stock_quantity, status, is_published, tags, attributes, images, created_at, updated_at
-      FROM products
-      WHERE id = $1
-    `;
-    return this.queryOne<Product>(sql, [id]);
+  async findProductById(identifier: string): Promise<Product | null> {
+    const isUuid =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+        identifier,
+      );
+    if (isUuid) {
+      const sql = `
+        SELECT id, sku, name, slug, category_id, description, short_description, specifications, colors, base_price, 
+               discount_price, stock_quantity, status, is_published, tags, attributes, images, created_at, updated_at
+        FROM products
+        WHERE id = $1
+      `;
+      return this.queryOne<Product>(sql, [identifier]);
+    } else {
+      const sql = `
+        SELECT id, sku, name, slug, category_id, description, short_description, specifications, colors, base_price, 
+               discount_price, stock_quantity, status, is_published, tags, attributes, images, created_at, updated_at
+        FROM products
+        WHERE slug = $1 OR sku = $1 OR LOWER(name) = LOWER($1)
+        LIMIT 1
+      `;
+      return this.queryOne<Product>(sql, [identifier]);
+    }
   }
 
   async updateProduct(

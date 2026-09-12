@@ -33,12 +33,17 @@ export class SqlGuardrailStrategy {
     if (cleanSql.includes(';')) {
       return {
         isValid: false,
-        error: 'Truy vấn không hợp lệ: Không cho phép thực thi đa câu lệnh (Stacked Queries)',
+        error:
+          'Truy vấn không hợp lệ: Không cho phép thực thi đa câu lệnh (Stacked Queries)',
       };
     }
 
     // Chặn comment injection (-- hoặc /* */)
-    if (cleanSql.includes('--') || cleanSql.includes('/*') || cleanSql.includes('*/')) {
+    if (
+      cleanSql.includes('--') ||
+      cleanSql.includes('/*') ||
+      cleanSql.includes('*/')
+    ) {
       return {
         isValid: false,
         error: 'Truy vấn chứa ký tự chú thích SQL không hợp lệ',
@@ -59,12 +64,14 @@ export class SqlGuardrailStrategy {
     if (dangerousPattern.test(cleanSql)) {
       return {
         isValid: false,
-        error: 'Truy vấn chứa từ khóa làm thay đổi dữ liệu hoặc tiềm ẩn rủi ro bảo mật',
+        error:
+          'Truy vấn chứa từ khóa làm thay đổi dữ liệu hoặc tiềm ẩn rủi ro bảo mật',
       };
     }
 
     // Chặn CTE Write bypass (e.g. WITH deleted AS (DELETE ...))
-    const cteWritePattern = /\bwith\b[\s\S]*?\b(insert|update|delete|drop|alter|truncate)\b/i;
+    const cteWritePattern =
+      /\bwith\b[\s\S]*?\b(insert|update|delete|drop|alter|truncate)\b/i;
     if (cteWritePattern.test(cleanSql)) {
       return {
         isValid: false,
@@ -73,11 +80,13 @@ export class SqlGuardrailStrategy {
     }
 
     // Chặn so sánh Integer literals trên cột UUID (gây crash PostgreSQL)
-    const uuidMismatchPattern = /\b(id|user_id|category_id|product_id|order_id)\s*=\s*\d+\b/i;
+    const uuidMismatchPattern =
+      /\b(id|user_id|category_id|product_id|order_id)\s*=\s*\d+\b/i;
     if (uuidMismatchPattern.test(cleanSql)) {
       return {
         isValid: false,
-        error: 'Truy vấn không hợp lệ: Lỗi ép kiểu integer trên khóa định danh UUID',
+        error:
+          'Truy vấn không hợp lệ: Lỗi ép kiểu integer trên khóa định danh UUID',
       };
     }
 

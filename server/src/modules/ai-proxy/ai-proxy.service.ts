@@ -1,7 +1,10 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { Pool } from 'pg';
 import { BaseService } from '../../common/services/base.service';
-import { PG_CONNECTION, PG_READONLY_CONNECTION } from '../../database/pg.provider';
+import {
+  PG_CONNECTION,
+  PG_READONLY_CONNECTION,
+} from '../../database/pg.provider';
 import { AiClientService } from '../../common/services/ai-client.service';
 import { AiLogsService } from '../ai-logs/ai-logs.service';
 import { HitlService } from '../hitl/hitl.service';
@@ -105,7 +108,7 @@ export class AiProxyService extends BaseService {
           VALUES ($1, $2, $3, $4, $5, $6, 'PENDING')
           RETURNING id
         `;
-        const reviewRes = await client.query(reviewSql, [
+        const reviewRes = await client.query<{ id: string }>(reviewSql, [
           preLog.id,
           endpoint,
           userId || null,
@@ -140,7 +143,9 @@ export class AiProxyService extends BaseService {
       await client.query('COMMIT');
     } catch (txErr) {
       await client.query('ROLLBACK');
-      this.logError(`[HITL Transaction Error] Atomic log and review update failed: ${txErr}`);
+      this.logError(
+        `[HITL Transaction Error] Atomic log and review update failed: ${txErr}`,
+      );
     } finally {
       client.release();
     }

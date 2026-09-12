@@ -105,11 +105,15 @@ export const PgReadonlyProvider: Provider = {
 
     try {
       const client = await pool.connect();
-      logger.log('Dedicated read-only connection established for Text-to-SQL execution');
+      logger.log(
+        'Dedicated read-only connection established for Text-to-SQL execution',
+      );
       client.release();
       return pool;
     } catch (err) {
-      logger.warn(`Could not connect as csmart_readonly (${err}). Falling back to primary pool.`);
+      logger.warn(
+        `Could not connect as csmart_readonly (${err}). Falling back to primary pool.`,
+      );
       return new Pool({ connectionString: primaryUrl, max: 5 });
     }
   },

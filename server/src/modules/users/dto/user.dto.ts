@@ -5,7 +5,6 @@ import {
   IsOptional,
   IsBoolean,
   IsEnum,
-  IsInt,
 } from 'class-validator';
 
 export class CreateUserDto {

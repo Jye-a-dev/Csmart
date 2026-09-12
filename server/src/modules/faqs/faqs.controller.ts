@@ -70,10 +70,7 @@ export class FaqsController {
   @Patch(':id')
   @ApiOperation({ summary: 'Update FAQ' })
   @ApiResponse({ status: 200, type: Faq })
-  update(
-    @Param('id') id: string,
-    @Body() updateFaqDto: UpdateFaqDto,
-  ) {
+  update(@Param('id') id: string, @Body() updateFaqDto: UpdateFaqDto) {
     return this.faqsService.update(id, updateFaqDto);
   }
 

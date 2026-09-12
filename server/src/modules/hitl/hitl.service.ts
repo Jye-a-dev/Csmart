@@ -64,41 +64,63 @@ export class HitlService {
 
     // Business Automation 1: NER Slot Approval Execution
     if (item.endpoint === 'extract-ner' && item.output_json) {
-      const output = item.output_json as Record<string, any>;
+      const output = item.output_json as {
+        intent?: string;
+        slots?: {
+          order_id?: string;
+          order_ids?: string[];
+          new_address?: string;
+        };
+      };
       const intent = output.intent;
       const slots = output.slots || {};
-      const orderIdentifier = slots.order_id || (slots.order_ids && slots.order_ids[0]);
+      const orderIdentifier =
+        slots.order_id || (slots.order_ids && slots.order_ids[0]);
 
       if (orderIdentifier) {
         try {
           if (intent === 'CANCEL_ORDER') {
             await this.ordersService.update(orderIdentifier, {
               status: OrderStatus.CANCELLED,
-              cancel_reason: dto.reviewer_note || 'Hủy đơn qua AI NER (HITL Approved)',
+              cancel_reason:
+                dto.reviewer_note || 'Hủy đơn qua AI NER (HITL Approved)',
             });
-            this.logger.log(`[HITL Action] Order ${orderIdentifier} cancelled on approval.`);
+            this.logger.log(
+              `[HITL Action] Order ${orderIdentifier} cancelled on approval.`,
+            );
           } else if (intent === 'UPDATE_ADDRESS' && slots.new_address) {
             await this.ordersService.update(orderIdentifier, {
               shipping_address: slots.new_address,
               note: `Địa chỉ cập nhật từ AI NER (HITL #${id})`,
             });
-            this.logger.log(`[HITL Action] Order ${orderIdentifier} address updated to: ${slots.new_address}`);
+            this.logger.log(
+              `[HITL Action] Order ${orderIdentifier} address updated to: ${slots.new_address}`,
+            );
           }
         } catch (actionErr) {
-          this.logger.error(`Failed to execute downstream order action for HITL #${id}: ${actionErr}`);
+          this.logger.error(
+            `Failed to execute downstream order action for HITL #${id}: ${actionErr}`,
+          );
         }
       }
     }
 
     // Business Automation 2: OCR Label Verification State
     if (item.endpoint === 'extract-ocr' && item.output_json) {
-      const ocrRecordId = (item.output_json as Record<string, any>).ocr_record_id;
+      const output = item.output_json as { ocr_record_id?: string };
+      const ocrRecordId = output.ocr_record_id;
       if (ocrRecordId) {
         try {
-          await this.ocrRecordsService.update(ocrRecordId, { status: 'VERIFIED' });
-          this.logger.log(`[HITL Action] OCR record ${ocrRecordId} marked as VERIFIED.`);
+          await this.ocrRecordsService.update(ocrRecordId, {
+            status: 'VERIFIED',
+          });
+          this.logger.log(
+            `[HITL Action] OCR record ${ocrRecordId} marked as VERIFIED.`,
+          );
         } catch (ocrErr) {
-          this.logger.error(`Failed to update OCR record status for HITL #${id}: ${ocrErr}`);
+          this.logger.error(
+            `Failed to update OCR record status for HITL #${id}: ${ocrErr}`,
+          );
         }
       }
     }

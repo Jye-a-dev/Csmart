@@ -304,9 +304,7 @@ ${productsList || 'Không có sản phẩm nào'}
       const historyList = Array.isArray(messages)
         ? (messages as Array<{ role?: string; content?: string }>)
         : [];
-      const lastUserMsg = (
-        historyList[historyList.length - 1]?.content || ''
-      )
+      const lastUserMsg = (historyList[historyList.length - 1]?.content || '')
         .trim()
         .toLowerCase();
       const isFirstTurn =

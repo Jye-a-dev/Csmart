@@ -1,5 +1,11 @@
 import { ApiProperty, PartialType } from '@nestjs/swagger';
-import { IsInt, IsEnum, IsString, IsOptional, IsNumber, IsUUID } from 'class-validator';
+import {
+  IsEnum,
+  IsString,
+  IsOptional,
+  IsNumber,
+  IsUUID,
+} from 'class-validator';
 import { PaymentMethod, PaymentStatus } from '../payment.entity';
 
 export class CreatePaymentDto {
@@ -43,11 +49,13 @@ export class ProcessPaymentDto {
   @IsEnum(PaymentMethod)
   payment_method: PaymentMethod;
 
-  @ApiProperty({ example: 'http://localhost:5000/orders/success', required: false })
+  @ApiProperty({
+    example: 'http://localhost:5000/orders/success',
+    required: false,
+  })
   @IsOptional()
   @IsString()
   return_url?: string;
 }
 
 export class UpdatePaymentDto extends PartialType(CreatePaymentDto) {}
-

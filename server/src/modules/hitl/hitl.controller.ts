@@ -141,7 +141,8 @@ export class HitlController {
   @Get('export')
   @Roles('ADMIN')
   @ApiOperation({
-    summary: 'Export LABELLED records → .jsonl cho fine-tune Qwen2.5 (Admin only)',
+    summary:
+      'Export LABELLED records → .jsonl cho fine-tune Qwen2.5 (Admin only)',
   })
   async export(@Res() res: import('express').Response) {
     const jsonl = await this.hitlService.exportFineTuneDataset();

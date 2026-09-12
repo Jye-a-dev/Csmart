@@ -6,11 +6,7 @@ import {
   ProcessPaymentDto,
   UpdatePaymentDto,
 } from './dto/payment.dto';
-import {
-  Payment,
-  PaymentMethod,
-  PaymentStatus,
-} from './payment.entity';
+import { Payment, PaymentMethod, PaymentStatus } from './payment.entity';
 import * as crypto from 'crypto';
 
 export interface ProcessPaymentResult {

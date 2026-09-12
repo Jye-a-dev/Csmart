@@ -6,13 +6,19 @@ export class ReviewQueueItem {
   @ApiProperty({ example: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11' })
   id: string;
 
-  @ApiProperty({ example: 'b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a22', required: false })
+  @ApiProperty({
+    example: 'b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a22',
+    required: false,
+  })
   log_id?: string;
 
   @ApiProperty({ example: 'classify-intent' })
   endpoint: string;
 
-  @ApiProperty({ example: 'c0eebc99-9c0b-4ef8-bb6d-6bb9bd380a33', required: false })
+  @ApiProperty({
+    example: 'c0eebc99-9c0b-4ef8-bb6d-6bb9bd380a33',
+    required: false,
+  })
   user_id?: string;
 
   @ApiProperty({ example: 'Tìm áo thun trắng', required: false })
@@ -24,7 +30,10 @@ export class ReviewQueueItem {
   @ApiProperty({ example: 0.62, required: false })
   confidence_score?: number;
 
-  @ApiProperty({ example: 'd0eebc99-9c0b-4ef8-bb6d-6bb9bd380a44', required: false })
+  @ApiProperty({
+    example: 'd0eebc99-9c0b-4ef8-bb6d-6bb9bd380a44',
+    required: false,
+  })
   reviewer_id?: string;
 
   @ApiProperty({ example: 'PENDING' })

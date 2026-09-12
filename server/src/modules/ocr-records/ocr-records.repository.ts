@@ -59,7 +59,9 @@ export class OcrRecordsRepository extends BaseRepository {
       dto.status || 'VERIFIED',
       JSON.stringify(items),
       JSON.stringify(dto.raw_text_chunks || []),
-      dto.is_product_created !== undefined ? Boolean(dto.is_product_created) : false,
+      dto.is_product_created !== undefined
+        ? Boolean(dto.is_product_created)
+        : false,
       dto.product_id || null,
     ];
 

@@ -133,7 +133,12 @@ export class UsersRepository extends BaseRepository {
     await this.query(sql, [id]);
   }
 
-  async getUserStats(userId: string): Promise<{ points: number; total_orders: number; total_spent: number; membership_tier: string }> {
+  async getUserStats(userId: string): Promise<{
+    points: number;
+    total_orders: number;
+    total_spent: number;
+    membership_tier: string;
+  }> {
     const sql = `
       SELECT 
         COALESCE(FLOOR(SUM(CASE WHEN status != 'CANCELLED' THEN total_amount ELSE 0 END) / 10000), 0)::int + 50 AS points,
@@ -142,7 +147,11 @@ export class UsersRepository extends BaseRepository {
       FROM orders
       WHERE user_id = $1
     `;
-    const res = await this.queryOne<{ points: number | string; total_orders: number | string; total_spent: number | string }>(sql, [userId]);
+    const res = await this.queryOne<{
+      points: number | string;
+      total_orders: number | string;
+      total_spent: number | string;
+    }>(sql, [userId]);
     const points = Number(res?.points || 50);
     const total_orders = Number(res?.total_orders || 0);
     const total_spent = Number(res?.total_spent || 0);

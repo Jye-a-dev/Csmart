@@ -49,11 +49,15 @@ export class AiTasksService {
     return {
       id: job.id,
       state,
+      status: state,
       progress: job.progress,
       failedReason: job.failedReason,
+      result: job.returnvalue as unknown,
       returnValue: job.returnvalue as unknown,
       timestamp: new Date(job.timestamp).toISOString(),
-      processedOn: processedOnVal ? new Date(processedOnVal).toISOString() : null,
+      processedOn: processedOnVal
+        ? new Date(processedOnVal).toISOString()
+        : null,
       finishedOn: finishedOnVal ? new Date(finishedOnVal).toISOString() : null,
     };
   }

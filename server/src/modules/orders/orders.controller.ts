@@ -27,15 +27,25 @@ export class OrdersController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Get all orders' })
+  @ApiOperation({ summary: 'Get all orders with filtering' })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiQuery({ name: 'offset', required: false, type: Number })
+  @ApiQuery({ name: 'user_id', required: false, type: String })
+  @ApiQuery({ name: 'status', required: false, type: String })
+  @ApiQuery({ name: 'search', required: false, type: String })
   @ApiResponse({ status: 200, type: [Order] })
   findAll(
     @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
     @Query('offset', new ParseIntPipe({ optional: true })) offset?: number,
+    @Query('user_id') userId?: string,
+    @Query('status') status?: string,
+    @Query('search') search?: string,
   ) {
-    return this.ordersService.findAll(limit || 10, offset || 0);
+    return this.ordersService.findAll(limit || 10, offset || 0, {
+      user_id: userId,
+      status,
+      search,
+    });
   }
 
   @Get('count/all')
@@ -74,10 +84,7 @@ export class OrdersController {
   @Patch(':id')
   @ApiOperation({ summary: 'Update order' })
   @ApiResponse({ status: 200, type: Order })
-  update(
-    @Param('id') id: string,
-    @Body() updateOrderDto: UpdateOrderDto,
-  ) {
+  update(@Param('id') id: string, @Body() updateOrderDto: UpdateOrderDto) {
     return this.ordersService.update(id, updateOrderDto);
   }
 

@@ -13,10 +13,12 @@ import { Type } from 'class-transformer';
 import { OrderStatus, ItemShippingStatus } from '../order.entity';
 
 export class CreateOrderItemDto {
-  @ApiProperty({ example: 'c0eebc99-9c0b-4ef8-bb6d-6bb9bd380a33', required: false })
+  @ApiProperty({
+    example: '1',
+    required: false,
+  })
   @IsOptional()
-  @IsUUID()
-  product_id?: string;
+  product_id?: string | number;
 
   @ApiProperty({ example: 'Awesome Product' })
   @IsString()
@@ -55,10 +57,12 @@ export class CreateOrderDto {
   @IsString()
   order_code: string;
 
-  @ApiProperty({ example: 'd0eebc99-9c0b-4ef8-bb6d-6bb9bd380a44', required: false })
+  @ApiProperty({
+    example: '1',
+    required: false,
+  })
   @IsOptional()
-  @IsUUID()
-  user_id?: string;
+  user_id?: string | number;
 
   @ApiProperty({ example: 'PENDING', enum: OrderStatus, default: 'PENDING' })
   @IsOptional()

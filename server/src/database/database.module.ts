@@ -1,5 +1,10 @@
 import { Module, Global } from '@nestjs/common';
-import { PgProvider, PgReadonlyProvider, PG_CONNECTION, PG_READONLY_CONNECTION } from './pg.provider';
+import {
+  PgProvider,
+  PgReadonlyProvider,
+  PG_CONNECTION,
+  PG_READONLY_CONNECTION,
+} from './pg.provider';
 
 @Global()
 @Module({

@@ -26,7 +26,10 @@ export class OrderItem {
   @ApiProperty({ example: 'b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a22' })
   order_id: string;
 
-  @ApiProperty({ example: 'c0eebc99-9c0b-4ef8-bb6d-6bb9bd380a33', required: false })
+  @ApiProperty({
+    example: 'c0eebc99-9c0b-4ef8-bb6d-6bb9bd380a33',
+    required: false,
+  })
   product_id?: string;
 
   @ApiProperty({ example: 'Awesome Product' })
@@ -64,7 +67,10 @@ export class Order {
   @ApiProperty({ example: 'ORD12345' })
   order_code: string;
 
-  @ApiProperty({ example: 'd0eebc99-9c0b-4ef8-bb6d-6bb9bd380a44', required: false })
+  @ApiProperty({
+    example: 'd0eebc99-9c0b-4ef8-bb6d-6bb9bd380a44',
+    required: false,
+  })
   user_id?: string;
 
   @ApiProperty({ example: 'PENDING', enum: OrderStatus })
