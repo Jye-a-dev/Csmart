@@ -129,7 +129,7 @@ components/
 │        └─ BaseNavbar.tsx
 └─ pages/
    └─ MainPage/
-      └─ Index.tsx
+      └─ MainPage.tsx
 
 constants/
 hooks/
@@ -174,7 +174,7 @@ Request "/"
 -> PublicNavbar
 -> BaseNavbar
 -> app/(public)/page.tsx
--> components/pages/MainPage/Index.tsx
+-> components/pages/MainPage/MainPage.tsx
 -> PublicFooter
 -> BaseFooter
 ```

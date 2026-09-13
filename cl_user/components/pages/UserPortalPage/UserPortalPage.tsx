@@ -100,19 +100,21 @@ export default function UserPortalPage() {
         }
       });
 
-    setLoadingOrders(true);
-    findAllOrders({ limit: 3 })
-      .then((orders) => {
+    void (async () => {
+      await Promise.resolve();
+      if (!isMounted) return;
+      setLoadingOrders(true);
+      try {
+        const orders = await findAllOrders({ limit: 3 });
         if (isMounted && Array.isArray(orders)) {
           setRecentOrders(orders);
         }
-      })
-      .catch(() => {
+      } catch {
         if (isMounted) setRecentOrders([]);
-      })
-      .finally(() => {
+      } finally {
         if (isMounted) setLoadingOrders(false);
-      });
+      }
+    })();
 
     return () => {
       isMounted = false;

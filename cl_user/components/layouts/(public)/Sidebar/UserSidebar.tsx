@@ -98,18 +98,17 @@ export default function UserSidebar({ user, mobileOpen, onClose }: UserSidebarPr
       label: 'MUA SẮM & KHÁM PHÁ',
       items: [
         { name: 'Cửa Hàng Trực Tuyến', href: '/user', icon: Store, exact: true },
-        { name: 'Danh Mục Ngành Hàng', href: '/user#categories', icon: Layers },
         { name: 'Danh Mục Ngành Hàng', href: '/user/categories', icon: Layers },
-        { name: 'Sản Phẩm Bán Chạy', href: '/user#featured-products', icon: Flame, badge: 'HOT' },
+        { name: 'Sản Phẩm Bán Chạy', href: '/user/featured-products', icon: Flame, badge: 'HOT' },
       ],
     },
     {
       label: 'TÀI KHOẢN & ĐƠN HÀNG',
       items: [
-        { name: 'Đơn Hàng Của Tôi', href: '/user#featured-products', icon: Package },
-        { name: 'Sổ Địa Chỉ Nhận Hàng', href: '/user#featured-products', icon: MapPin },
-        { name: 'Kho Voucher & Ưu Đãi', href: '/user#featured-products', icon: Gift, badge: '50k' },
-        { name: 'Thẻ & Phương Thức TT', href: '/user#featured-products', icon: CreditCard },
+        { name: 'Đơn Hàng Của Tôi', href: '/user/orders', icon: Package },
+        { name: 'Sổ Địa Chỉ Nhận Hàng', href: '/user/addresses', icon: MapPin },
+        { name: 'Kho Voucher & Ưu Đãi', href: '/user/vouchers', icon: Gift, badge: '50k' },
+        { name: 'Thẻ & Phương Thức TT', href: '/user/payment-methods', icon: CreditCard },
       ],
     },
     {
@@ -246,8 +245,8 @@ export default function UserSidebar({ user, mobileOpen, onClose }: UserSidebarPr
                       : pathname.startsWith(item.href);
 
                     return (
-                      <a
-                        key={item.name}
+                      <Link
+                        key={`${group.label}-${item.name}-${item.href}`}
                         href={item.href}
                         onClick={onClose}
                         title={isIconOnly ? item.name : undefined}
@@ -284,7 +283,7 @@ export default function UserSidebar({ user, mobileOpen, onClose }: UserSidebarPr
                             {item.badge}
                           </span>
                         )}
-                      </a>
+                      </Link>
                     );
                   })}
                 </div>

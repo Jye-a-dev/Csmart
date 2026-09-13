@@ -9,6 +9,39 @@ interface SimilarProduct {
   price?: number;
 }
 
+export interface OcrJobReturnValue {
+  success?: boolean;
+  status?: string;
+  extracted_words?: string[];
+  raw_text?: string;
+  data?: {
+    raw_text?: string;
+    name?: string;
+    origin?: string;
+    type?: string;
+    color?: string;
+    price?: number;
+    description?: string;
+    document_type?: OcrDocType;
+    order_code?: string;
+    customer_name?: string;
+    phone_number?: string;
+    address?: string;
+  };
+  entities?: {
+    name?: string;
+    origin?: string;
+    category?: string;
+    type?: string;
+    color?: string;
+    price?: number;
+    unit_price?: number;
+    sku_barcode?: string;
+  };
+  similar_products?: SimilarProduct[];
+  confidence_score?: number;
+}
+
 export function useOcrProcessor(showToast: (msg: string, type?: 'ok' | 'err') => void) {
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [currentExtraction, setCurrentExtraction] = useState<OcrExtractedData | null>(null);
@@ -42,7 +75,7 @@ export function useOcrProcessor(showToast: (msg: string, type?: 'ok' | 'err') =>
           const formData = new FormData();
           formData.append('file', blob, 'ocr_document.jpg');
 
-          let resData: any = null;
+          let resData: OcrJobReturnValue | null = null;
 
           // Call NestJS Proxy POST /ai/ocr to enqueue into BullMQ
           try {
@@ -61,7 +94,7 @@ export function useOcrProcessor(showToast: (msg: string, type?: 'ok' | 'err') =>
                 await new Promise((resolve) => setTimeout(resolve, 1500));
                 const statusRes = await apiClient<{
                   state: string;
-                  returnValue?: any;
+                  returnValue?: OcrJobReturnValue;
                   failedReason?: string;
                 }>(`/ai-tasks/status/ocr/${jobId}`);
 
@@ -223,7 +256,6 @@ export function useOcrProcessor(showToast: (msg: string, type?: 'ok' | 'err') =>
                 };
               }
             }
-          }
         } catch (aiErr) {
           console.warn('AI Engine call exception:', aiErr);
         }

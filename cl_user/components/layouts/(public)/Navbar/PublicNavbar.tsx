@@ -4,13 +4,11 @@ import Link from 'next/link';
 import { useState, useSyncExternalStore } from 'react';
 import {
   ShoppingBag,
-  LogOut,
   Menu,
   X,
   Sparkles,
 } from 'lucide-react';
 import SearchBar from './SearchBar';
-import { useAuth } from '@/hooks';
 import { useAuthModal } from '@/contexts/AuthModalContext';
 import type { User } from '@/types/entities/user';
 
@@ -65,7 +63,6 @@ export default function PublicNavbar({
   onOpenSupportConsole,
   onToggleSidebar,
 }: PublicNavbarProps) {
-  const { logout } = useAuth();
   const { openAuthModal, requireAuth } = useAuthModal();
   const user = useSyncExternalStore(subscribe, getUserSnapshot, getServerSnapshot);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);

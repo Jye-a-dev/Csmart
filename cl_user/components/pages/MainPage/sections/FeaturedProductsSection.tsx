@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { ShoppingCart, Star, Sparkles, Check } from 'lucide-react';
 import { useProducts } from '@/hooks';
 import { useAuthModal } from '@/contexts/AuthModalContext';
@@ -329,7 +330,10 @@ export default function FeaturedProductsSection({
                 className="group bg-white rounded-2xl border border-zinc-200 overflow-hidden hover:border-zinc-300 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 flex flex-col justify-between"
               >
                 {/* Top Image Container */}
-                <div className="relative h-48 sm:h-52 w-full bg-zinc-100/80 overflow-hidden flex items-center justify-center border-b border-zinc-100">
+                <Link
+                  href={`/user/products/${'slug' in product && product.slug ? product.slug : product.id}`}
+                  className="relative h-48 sm:h-52 w-full bg-zinc-100/80 overflow-hidden flex items-center justify-center border-b border-zinc-100 cursor-pointer"
+                >
                   {displayImage ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
@@ -345,7 +349,7 @@ export default function FeaturedProductsSection({
                       {displayBadge}
                     </span>
                   )}
-                </div>
+                </Link>
 
                 {/* Body Details */}
                 <div className="p-4 flex-1 flex flex-col justify-between space-y-3">
@@ -356,9 +360,11 @@ export default function FeaturedProductsSection({
                     </span>
 
                     {/* Name */}
-                    <h3 className="font-bold text-sm text-zinc-900 line-clamp-2 mt-1 group-hover:text-orange-600 transition-colors">
-                      {product.name}
-                    </h3>
+                    <Link href={`/user/products/${'slug' in product && product.slug ? product.slug : product.id}`} className="block">
+                      <h3 className="font-bold text-sm text-zinc-900 line-clamp-2 mt-1 group-hover:text-orange-600 transition-colors">
+                        {product.name}
+                      </h3>
+                    </Link>
 
                     {/* Rating */}
                     <div className="flex items-center gap-1 text-xs text-zinc-500 mt-2">

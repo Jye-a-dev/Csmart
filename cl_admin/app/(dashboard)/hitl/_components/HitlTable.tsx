@@ -1,6 +1,6 @@
 'use client';
 
-import { AiRequestLog } from '@/types/ai/log';
+import { ReviewQueueItem } from '@/types/ai/hitl';
 import { Bot, CheckCircle, Trash2 } from 'lucide-react';
 
 export const confidenceBadge = (score?: number) => {
@@ -12,7 +12,7 @@ export const confidenceBadge = (score?: number) => {
 
 interface HitlTableProps {
   loading: boolean;
-  filtered: AiRequestLog[];
+  filtered: ReviewQueueItem[];
   processingId: string | null;
   onApprove: (id: string) => void;
   onReject: (id: string) => void;

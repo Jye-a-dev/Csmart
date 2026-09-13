@@ -22,20 +22,29 @@ export function useOrders() {
     }
   }, []);
 
-  const findAllOrders = useCallback(async (params?: { limit?: number; offset?: number }): Promise<Order[]> => {
-    setLoading(true);
-    setError(null);
-    try {
-      return await apiClient<Order[]>('/orders', {
-        params,
-      });
-    } catch (err) {
-      setError(err as Error);
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const findAllOrders = useCallback(
+    async (params?: {
+      limit?: number;
+      offset?: number;
+      user_id?: string;
+      status?: string;
+      search?: string;
+    }): Promise<Order[]> => {
+      setLoading(true);
+      setError(null);
+      try {
+        return await apiClient<Order[]>('/orders', {
+          params,
+        });
+      } catch (err) {
+        setError(err as Error);
+        throw err;
+      } finally {
+        setLoading(false);
+      }
+    },
+    []
+  );
 
   const findOneOrder = useCallback(async (id: string): Promise<Order> => {
     setLoading(true);

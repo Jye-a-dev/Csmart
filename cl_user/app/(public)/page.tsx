@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import MainPage from '@/components/pages/MainPage/Index';
+import MainPage from '@/components/pages/MainPage/MainPage';
 
 export default function PublicPage() {
   const router = useRouter();

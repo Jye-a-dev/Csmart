@@ -17,6 +17,9 @@ class IntentPipelineComponent(ABC):
     def process(self, context: IntentPipelineContext) -> IntentPipelineContext:
         pass
 
+    async def process_async(self, context: IntentPipelineContext) -> IntentPipelineContext:
+        return self.process(context)
+
 class KeywordMatcherComponent(IntentPipelineComponent):
     def process(self, context: IntentPipelineContext) -> IntentPipelineContext:
         query_lower = context.query.lower()
@@ -56,6 +59,27 @@ class LLMClassifierComponent(IntentPipelineComponent):
 
         return context
 
+    async def process_async(self, context: IntentPipelineContext) -> IntentPipelineContext:
+        if context.intent != "UNKNOWN" and context.confidence_score >= 0.90:
+            return context
+
+        system_prompt = """
+        Phân loại ý định tìm kiếm e-commerce thành 1 trong các intent: [SEARCH_PRODUCT, CANCEL_ORDER, ASK_FAQ, UNKNOWN].
+        Trích xuất entities (color, max_price, category).
+        Trả về JSON: {"intent": "...", "entities": {...}, "confidence_score": 0.95}
+        """
+
+        result = await ai_engine_core.call_llm_async(system_prompt, context.query)
+        if result.get("status") == "error":
+            context.status = "error"
+            context.error_message = result.get("message")
+        else:
+            context.intent = result.get("intent", "UNKNOWN")
+            context.entities = result.get("entities", {})
+            context.confidence_score = result.get("confidence_score", 0.0)
+
+        return context
+
 class ScorerComponent(IntentPipelineComponent):
     def process(self, context: IntentPipelineContext) -> IntentPipelineContext:
         context.flag_for_review = (
@@ -79,6 +103,14 @@ class IntentPipeline:
         context = IntentPipelineContext(query=query)
         for component in self.components:
             context = component.process(context)
+            if context.status == "error":
+                break
+        return context
+
+    async def run_async(self, query: str) -> IntentPipelineContext:
+        context = IntentPipelineContext(query=query)
+        for component in self.components:
+            context = await component.process_async(context)
             if context.status == "error":
                 break
         return context

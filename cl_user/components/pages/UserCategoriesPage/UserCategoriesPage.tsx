@@ -20,7 +20,7 @@ import {
   Filter,
 } from 'lucide-react';
 import type { ElementType } from 'react';
-import { useCategories, useProducts } from '@/hooks';
+import { useCategories } from '@/hooks';
 import type { Category } from '@/types/entities/category';
 import type { Product } from '@/types/entities/product';
 import FeaturedProductsSection from '../MainPage/sections/FeaturedProductsSection';

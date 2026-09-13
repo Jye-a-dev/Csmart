@@ -1,6 +1,8 @@
 import json
 import logging
+import asyncio
 import threading
+from concurrent.futures import ThreadPoolExecutor
 from typing import Generator, Any
 from llama_cpp import Llama
 
@@ -14,6 +16,7 @@ class OneForAllAIEngine:
     def __init__(self):
         self.llm: Any = None
         self._lock = threading.Lock()
+        self._executor = ThreadPoolExecutor(max_workers=1)
         self._initialized = False
         self.initialize()
 
@@ -75,6 +78,11 @@ class OneForAllAIEngine:
                     "flag_for_review": True
                 }
 
+    async def call_llm_async(self, system_prompt: str, user_input: str) -> dict:
+        """Thực thi suy luận CPU trong ThreadPool riêng biệt, không khóa main asyncio Event Loop."""
+        loop = asyncio.get_running_loop()
+        return await loop.run_in_executor(self._executor, self._call_llm, system_prompt, user_input)
+
     # 1. API CLASSIFY INTENT
     def classify_intent(self, query: str):
         system_prompt = """
@@ -83,6 +91,14 @@ class OneForAllAIEngine:
         Trả về JSON: {"intent": "...", "entities": {...}, "confidence_score": 0.95}
         """
         return self._call_llm(system_prompt, query)
+
+    async def classify_intent_async(self, query: str):
+        system_prompt = """
+        Phân loại ý định tìm kiếm e-commerce thành 1 trong các intent: [SEARCH_PRODUCT, CANCEL_ORDER, ASK_FAQ, UNKNOWN].
+        Trích xuất entities (color, max_price, category).
+        Trả về JSON: {"intent": "...", "entities": {...}, "confidence_score": 0.95}
+        """
+        return await self.call_llm_async(system_prompt, query)
 
     # 2. STREAMING CHATBOT COPILOT
     def stream_chat(

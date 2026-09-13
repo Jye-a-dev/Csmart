@@ -1,10 +1,10 @@
 'use client';
 
-import { AiRequestLog } from '@/types/ai/log';
+import { ReviewQueueItem } from '@/types/ai/hitl';
 import { AlertTriangle, Filter, Clock, Zap } from 'lucide-react';
 
 interface HitlStatsProps {
-  logs: AiRequestLog[];
+  logs: ReviewQueueItem[];
   filteredCount: number;
 }
 

@@ -11,7 +11,7 @@ class SearchRequest(BaseModel):
     limit: int = Field(10, description="Giới hạn số lượng kết quả trả về.")
 
 class ProductSearchResult(BaseModel):
-    id: int
+    id: str
     name: str
     sku: str
     base_price: float

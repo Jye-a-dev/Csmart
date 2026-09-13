@@ -13,8 +13,10 @@ export interface SubmitEvaluateResponse {
 export interface JobStatusResponse {
   id: string;
   status: string;
+  state?: 'waiting' | 'active' | 'completed' | 'failed' | 'delayed';
   progress?: number;
   result?: unknown;
+  returnValue?: unknown;
   failedReason?: string;
 }
 

@@ -415,8 +415,15 @@ class ProductMatcherComponent(OCRPipelineComponent):
 
 class OCRScorerComponent(OCRPipelineComponent):
     async def process(self, context: OCRPipelineContext) -> OCRPipelineContext:
-        context.confidence_score = 0.90 if context.extracted_words else 0.20
-        context.flag_for_review = context.confidence_score < 0.50
+        # Giữ nguyên confidence_score thực tế từ EasyOCR character recognition probabilities
+        if not context.extracted_words or len(context.extracted_words) == 0:
+            context.confidence_score = 0.0
+            context.flag_for_review = True
+            context.status = "failed"
+            context.error_message = context.error_message or "Không nhận diện được ký tự văn bản trên hình ảnh"
+        else:
+            context.flag_for_review = context.confidence_score < 0.70
+
         return context
 
 class OCRPipeline:

@@ -111,7 +111,7 @@ class HybridSearchService(BaseAIService):
             results = []
             for r in rows:
                 results.append({
-                    "id": r["id"],
+                    "id": str(r["id"]),
                     "name": r["name"],
                     "sku": r["sku"],
                     "base_price": float(r["base_price"]),
@@ -128,14 +128,14 @@ class HybridSearchService(BaseAIService):
             self.log_error(f"Error executing hybrid search SQL", e)
             return []
 
-    async def update_product_embedding(self, product_id: int, name: str, description: str):
-        """Generates embedding for a product and updates the database."""
+    async def update_product_embedding(self, product_id: str, name: str, description: str):
+        """Generates embedding for a product and updates the database with explicit UUID casting."""
         text_to_embed = f"{name} {description or ''}"
         vector = embedding_service.get_embedding(text_to_embed)
         try:
             await db_service.execute(
-                "UPDATE products SET embedding = $1 WHERE id = $2",
-                vector, product_id
+                "UPDATE products SET embedding = $1 WHERE id = $2::uuid",
+                vector, str(product_id)
             )
             self.log_info(f"Updated vector embedding for product ID: {product_id}")
         except Exception as e:
@@ -150,7 +150,7 @@ class HybridSearchService(BaseAIService):
                 return
             self.log_info(f"Backfilling vector embeddings for {len(rows)} products...")
             for r in rows:
-                await self.update_product_embedding(r["id"], r["name"], r["description"])
+                await self.update_product_embedding(str(r["id"]), r["name"], r["description"])
             self.log_info("Completed embedding backfill.")
         except Exception as e:
             self.logger.warning(f"Embedding backfill failed (likely pgvector is not setup): {e}")

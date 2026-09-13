@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useAiLogs } from '@/hooks';
-import { AiRequestLog } from '@/types/ai/log';
+import { useHitl } from '@/hooks';
+import { ReviewQueueItem } from '@/types/ai/hitl';
 import {
   HitlHeader,
   HitlStats,
@@ -11,9 +11,9 @@ import {
 } from './_components';
 
 export default function HitlPage() {
-  const { loading, findAllLogs, updateLog, removeLog } = useAiLogs();
+  const { loading, findAllQueue, approveQueueItem, rejectQueueItem } = useHitl();
 
-  const [logs, setLogs] = useState<AiRequestLog[]>([]);
+  const [logs, setLogs] = useState<ReviewQueueItem[]>([]);
   const [endpointFilter, setEndpointFilter] = useState<string>('ALL');
   const [confidenceMax, setConfidenceMax] = useState<number>(1.0);
   const [processingId, setProcessingId] = useState<string | null>(null);
@@ -26,13 +26,12 @@ export default function HitlPage() {
 
   const load = useCallback(async () => {
     try {
-      const data = await findAllLogs({ limit: 300 });
-      // Only show flagged for review
-      setLogs((data || []).filter((l) => l.flag_for_review === true));
+      const data = await findAllQueue({ status: 'PENDING', limit: 300 });
+      setLogs(data || []);
     } catch {
-      showToast('Không thể tải dữ liệu HITL', 'err');
+      showToast('Không thể tải dữ liệu HITL Review Queue', 'err');
     }
-  }, [findAllLogs]);
+  }, [findAllQueue]);
 
   useEffect(() => {
     const t = setTimeout(() => void load(), 0);
@@ -42,25 +41,27 @@ export default function HitlPage() {
   const handleApprove = async (id: string) => {
     setProcessingId(id);
     try {
-      await updateLog(id, { flag_for_review: false });
-      showToast(`Log #${id} đã được duyệt ✓`);
+      await approveQueueItem(id, { reviewer_note: 'Đã duyệt qua Admin Dashboard' });
+      showToast(`Hành động #${id} đã duyệt & đồng bộ nghiệp vụ thành công ✓`);
       setLogs((prev) => prev.filter((l) => l.id !== id));
-    } catch {
-      showToast('Lỗi khi duyệt log', 'err');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Lỗi khi duyệt tác vụ';
+      showToast(msg, 'err');
     } finally {
       setProcessingId(null);
     }
   };
 
   const handleReject = async (id: string) => {
-    if (!confirm(`Xác nhận xóa log #${id}?`)) return;
+    if (!confirm(`Xác nhận từ chối tác vụ review #${id}?`)) return;
     setProcessingId(id);
     try {
-      await removeLog(id);
-      showToast(`Log #${id} đã bị từ chối & xóa`);
+      await rejectQueueItem(id, { reviewer_note: 'Từ chối bởi Admin' });
+      showToast(`Tác vụ #${id} đã bị từ chối`);
       setLogs((prev) => prev.filter((l) => l.id !== id));
-    } catch {
-      showToast('Lỗi khi xóa log', 'err');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Lỗi khi từ chối tác vụ';
+      showToast(msg, 'err');
     } finally {
       setProcessingId(null);
     }

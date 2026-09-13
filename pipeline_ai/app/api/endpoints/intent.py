@@ -42,8 +42,8 @@ async def classify_intent(payload: IntentRequest):
 
     start_time = time.time()
 
-    # Chạy qua component-based pipeline
-    result = intent_pipeline.run(query)
+    # Chạy qua component-based pipeline bất đồng bộ giải phóng Event Loop
+    result = await intent_pipeline.run_async(query)
     
     # Kiểm tra nếu mô hình lỗi hoặc chưa khởi tạo
     if result.status == "error":

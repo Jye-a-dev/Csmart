@@ -1,4 +1,4 @@
-import UserCategoriesPage from '@/components/pages/UserCategoriesPage/Index';
+import UserCategoriesPage from '@/components/pages/UserCategoriesPage/UserCategoriesPage';
 
 export default function CategoriesPage() {
   return <UserCategoriesPage />;

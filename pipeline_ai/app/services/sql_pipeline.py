@@ -152,6 +152,46 @@ Trả về định dạng JSON duy nhất:
             
         return context
 
+    async def process_async(self, context: SQLPipelineContext) -> SQLPipelineContext:
+        if context.generated_sql and context.confidence_score >= 0.85:
+            return context
+
+        few_shot = context.few_shot_examples or ""
+        system_prompt = f"""
+Bạn là chuyên gia PostgreSQL của hệ thống CsmartAI.
+DATABASE SCHEMA CHUẨN (MỌI KHÓA CHÍNH VÀ KHÓA NGOẠI LÀ UUID, TUYỆT ĐỐI KHÔNG DÙNG INTEGER CHO ID):
+- categories (id UUID, name VARCHAR, slug VARCHAR, description TEXT, parent_id UUID, image_url_1 TEXT, image_url_2 TEXT, created_at TIMESTAMPTZ)
+- products (id UUID, sku VARCHAR, name VARCHAR, slug VARCHAR, category_id UUID, description TEXT, base_price NUMERIC(12,2), discount_price NUMERIC(12,2), stock_quantity INT, status VARCHAR, is_published BOOLEAN, tags VARCHAR[], attributes JSONB, created_at TIMESTAMPTZ, updated_at TIMESTAMPTZ)
+- users (id UUID, full_name VARCHAR, email VARCHAR, phone VARCHAR, role VARCHAR, is_active BOOLEAN, avatar_url TEXT, last_login_at TIMESTAMPTZ, created_at TIMESTAMPTZ, updated_at TIMESTAMPTZ)
+- user_addresses (id UUID, user_id UUID, recipient_name VARCHAR, phone VARCHAR, street_address TEXT, ward VARCHAR, district VARCHAR, city_province VARCHAR, is_default BOOLEAN, created_at TIMESTAMPTZ)
+- orders (id UUID, order_code VARCHAR, user_id UUID, status VARCHAR, total_amount NUMERIC(12,2), shipping_fee NUMERIC(10,2), discount_amount NUMERIC(10,2), shipping_address TEXT, note TEXT, cancel_reason TEXT, created_at TIMESTAMPTZ, updated_at TIMESTAMPTZ)
+- order_items (id UUID, order_id UUID, product_id UUID, product_name VARCHAR, unit_price NUMERIC(12,2), quantity INT, subtotal NUMERIC(12,2), shipping_status VARCHAR, courier_name VARCHAR, tracking_number VARCHAR, estimated_delivery TIMESTAMPTZ, delivered_at TIMESTAMPTZ)
+- payments (id UUID, order_id UUID, payment_method VARCHAR, payment_status VARCHAR, transaction_code VARCHAR, amount NUMERIC(12,2), paid_at TIMESTAMPTZ, created_at TIMESTAMPTZ)
+- faqs (id UUID, topic VARCHAR, question TEXT, answer TEXT, is_active BOOLEAN, created_at TIMESTAMPTZ)
+
+QUY TẮC BẮT BUỘC:
+1. ID và Khóa ngoại là kiểu UUID. TUYỆT ĐỐI KHÔNG sinh điều kiện dạng `WHERE id = 1` hoặc `WHERE user_id = 5` (PostgreSQL sẽ ném lỗi cast 'operator does not exist: uuid = integer').
+2. Khi người dùng tìm theo mã, bắt buộc lọc theo cột chuỗi: `order_code = 'ORD-...'`, `sku = '...'`, `email = '...'`, `phone = '...'`. Nếu bắt buộc ép UUID literal, phải dùng format: `'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11'::uuid`.
+3. CHỈ SINH CÂU TRUY VẤN READ-ONLY BẮT ĐẦU BẰNG `SELECT` HOẶC `WITH`. Tuyệt đối không sinh INSERT, UPDATE, DELETE, DROP, ALTER, TRUNCATE, EXEC, EXECUTE.
+4. Với câu hỏi Yes/No: Dùng cú pháp `SELECT EXISTS(...) AS answer` hoặc `SELECT COUNT(*) > 0 AS answer ...`.
+{few_shot}
+Trả về định dạng JSON duy nhất:
+{{"generated_sql": "SELECT ...", "confidence_score": 0.95, "flag_for_review": false}}
+"""
+        result = await ai_engine_core.call_llm_async(system_prompt, context.question)
+        if result.get("status") == "error":
+            context.status = "failed"
+            context.error_message = result.get("message")
+            context.generated_sql = "-- INFERENCE_FAILED"
+            context.confidence_score = 0.0
+            context.flag_for_review = True
+        else:
+            context.generated_sql = result.get("generated_sql", "-- INFERENCE_FAILED")
+            context.confidence_score = float(result.get("confidence_score", 0.0))
+            context.flag_for_review = result.get("flag_for_review", True)
+
+        return context
+
 class ValidatorComponent(SQLPipelineComponent):
     """
     Step 4: Strict Security and Semantic Guardrail.

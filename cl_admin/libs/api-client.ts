@@ -65,7 +65,17 @@ export async function apiClient<T = unknown>(
     config.body = body as BodyInit;
   }
 
-  const response = await fetch(url, config);
+  let response: Response;
+  try {
+    response = await fetch(url, config);
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : 'Network error';
+    throw new ApiError(
+      `Cannot connect to API at ${url}: ${errorMsg}`,
+      0,
+      err
+    );
+  }
 
   if (!response.ok) {
     let errorInfo: unknown;

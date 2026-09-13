@@ -10,3 +10,5 @@ export * from './usePayments';
 export * from './useProducts';
 export * from './useUsers';
 export * from './useLandingConfig';
+export * from './useHitl';
+export * from './useOcrRecords';
