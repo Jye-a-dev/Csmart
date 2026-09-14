@@ -1,7 +1,6 @@
 import { useState, useCallback } from 'react';
 import { ChatStreamDto } from '@/types/ai/copilot';
-
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+import { getApiBaseUrl } from '@/libs/api-client';
 
 export function useCopilot() {
   const [loading, setLoading] = useState<boolean>(false);
@@ -19,7 +18,8 @@ export function useCopilot() {
     setLoading(true);
     setError(null);
 
-    const url = `${BASE_URL}/copilot/chat?message=${encodeURIComponent(message)}`;
+    const baseUrl = getApiBaseUrl();
+    const url = `${baseUrl}/copilot/chat?message=${encodeURIComponent(message)}`;
     const eventSource = new EventSource(url);
 
     eventSource.onmessage = (event) => {
@@ -61,7 +61,8 @@ export function useCopilot() {
 
       for (let attempt = 0; attempt < maxRetries; attempt++) {
         try {
-          response = await fetch(`${BASE_URL}/copilot/chat/stream`, {
+          const baseUrl = getApiBaseUrl();
+          response = await fetch(`${baseUrl}/copilot/chat/stream`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',

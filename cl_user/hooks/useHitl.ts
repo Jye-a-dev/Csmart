@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { apiClient } from '@/libs/api-client';
+import { apiClient, getApiBaseUrl } from '@/libs/api-client';
 import {
   HitlItem,
   HitlStatus,
@@ -7,8 +7,6 @@ import {
   RejectReviewDto,
   LabelReviewDto,
 } from '@/types/ai/hitl';
-
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 
 export function useHitl() {
   const [loading, setLoading] = useState<boolean>(false);
@@ -122,7 +120,8 @@ export function useHitl() {
     setError(null);
     try {
       const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
-      const res = await fetch(`${BASE_URL}/hitl/export`, {
+      const baseUrl = getApiBaseUrl();
+      const res = await fetch(`${baseUrl}/hitl/export`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
       if (!res.ok) {

@@ -88,9 +88,136 @@ const FALLBACK_PRODUCTS_CATALOG: Record<string, Partial<Product>> = {
   },
 };
 
-function formatPrice(val?: number): string {
-  if (!val) return '0 ₫';
-  return `${val.toLocaleString('vi-VN')} ₫`;
+function formatPrice(val?: number | string | null): string {
+  if (val === undefined || val === null || val === '') return '0đ';
+  const num = typeof val === 'string' ? parseFloat(val) : Number(val);
+  if (isNaN(num)) return '0đ';
+  return new Intl.NumberFormat('vi-VN').format(Math.round(num)) + 'đ';
+}
+
+function parseProductDescription(desc?: string) {
+  if (!desc) return null;
+  const hasHtml = /<[a-z][\s\S]*>/i.test(desc) || desc.includes('&nbsp;');
+  const isOcr =
+    desc.includes('Sản phẩm quét tự động từ nhãn OCR') ||
+    desc.includes('quét tự động từ nhãn') ||
+    desc.includes('Chi tiết nhãn') ||
+    desc.includes('Chi tiết:');
+
+  // Convert HTML elements and entities to line breaks
+  let text = desc
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<div[^>]*>/gi, '\n')
+    .replace(/<\/div>/gi, '\n')
+    .replace(/<p[^>]*>/gi, '\n')
+    .replace(/<\/p>/gi, '\n')
+    .replace(/<li[^>]*>/gi, '\n- ')
+    .replace(/<\/li>/gi, '\n')
+    .replace(/<[^>]+>/gi, '');
+
+  text = text
+    .replace(/&amp;/gi, '&')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'")
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>');
+
+  // Normalize multiple dashes e.g. "- - " -> "- "
+  text = text.replace(/-\s*-\s+/g, '- ');
+
+  // Split intro header if stuck to "- Tên:"
+  text = text.replace(/:\s*-\s+/g, ':\n- ');
+
+  const lines = text
+    .split('\n')
+    .map((l) => l.trim())
+    .filter(Boolean);
+
+  return { isOcr, hasHtml, lines };
+}
+
+function getSpecificationsList(prod: Product) {
+  if (prod.specifications && prod.specifications.trim().length > 0) {
+    const cleanSpecs = prod.specifications
+      .replace(/<[^>]+>/gi, '')
+      .replace(/&nbsp;/gi, ' ');
+    return cleanSpecs
+      .split('\n')
+      .map((line) => line.trim())
+      .filter(Boolean)
+      .map((line) => {
+        const parts = line.split(':');
+        return {
+          label: parts[0]?.trim() || 'Thông số',
+          value: parts.slice(1).join(':').trim(),
+        };
+      });
+  }
+
+  // Derive specifications dynamically from attributes and OCR data
+  const items: { label: string; value: string }[] = [];
+  const attrs = (prod.attributes as Record<string, unknown>) || {};
+  const cleanDesc = (prod.description || '')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/<[^>]+>/gi, '\n');
+
+  // Origin
+  const originMatch = cleanDesc.match(/(?:Xuất xứ|SẢN XUẤT TẠI):\s*([^\n]+)/i);
+  const originVal =
+    String(attrs.origin || '') ||
+    (originMatch && originMatch[1]?.trim()) ||
+    prod.short_description?.split('•')[0]?.replace('Xuất xứ:', '').trim();
+  if (originVal) items.push({ label: 'Xuất xứ', value: originVal });
+
+  // Colors
+  if (prod.colors && prod.colors.length > 0) {
+    items.push({
+      label: 'Màu sắc',
+      value: prod.colors.map((c) => c.name).join(', '),
+    });
+  } else {
+    const colorMatch = cleanDesc.match(/MÀU SẮC:\s*([^\n\s]+)/i);
+    if (colorMatch && colorMatch[1]) {
+      items.push({ label: 'Màu sắc', value: colorMatch[1].trim() });
+    }
+  }
+
+  // SKU
+  const skuMatch = cleanDesc.match(/MÃ SP:\s*([^\n\s]+)/i);
+  const resolvedSku = prod.sku || (skuMatch && skuMatch[1]?.trim());
+  if (resolvedSku) {
+    items.push({ label: 'Mã sản phẩm (SKU)', value: resolvedSku });
+  }
+
+  // Size
+  const sizeMatch = cleanDesc.match(/SIZE:\s*([A-Za-z0-9]+)/i);
+  if (sizeMatch && sizeMatch[1]) {
+    items.push({ label: 'Kích cỡ (Size)', value: sizeMatch[1].trim() });
+  }
+
+  // Material
+  const materialMatch = cleanDesc.match(/CHẤT LIỆU:\s*([^\n]+)/i);
+  if (materialMatch && materialMatch[1]) {
+    items.push({ label: 'Chất liệu', value: materialMatch[1].trim() });
+  }
+
+  // Care
+  const careMatch = cleanDesc.match(/HƯỚNG DẪN BẢO QUẢN:\s*([^\n]+)/i);
+  if (careMatch && careMatch[1]) {
+    items.push({ label: 'Bảo quản', value: careMatch[1].trim() });
+  }
+
+  if (attrs.ocr_extracted || cleanDesc.includes('nhãn OCR')) {
+    items.push({ label: 'Phương thức nhập', value: 'Quét nhãn tự động (OCR AI)' });
+  }
+
+  Object.entries(attrs).forEach(([k, v]) => {
+    if (['origin', 'ocr_extracted', 'ocr_confidence'].includes(k)) return;
+    items.push({ label: k, value: String(v) });
+  });
+
+  return items;
 }
 
 interface UserProductDetailPageProps {
@@ -194,8 +321,10 @@ export default function UserProductDetailPage({ productId }: UserProductDetailPa
     ];
   }, [product]);
 
-  const currentPrice = product?.discount_price || product?.base_price || 0;
-  const originalPrice = product?.discount_price ? product.base_price : null;
+  const rawBase = Number(product?.base_price) || 0;
+  const rawDiscount = product?.discount_price ? Number(product.discount_price) : undefined;
+  const currentPrice = rawDiscount && rawDiscount > 0 && rawDiscount < rawBase ? rawDiscount : rawBase;
+  const originalPrice = rawDiscount && rawDiscount > 0 && rawDiscount < rawBase ? rawBase : null;
   const discountPercent = originalPrice
     ? Math.round(((originalPrice - currentPrice) / originalPrice) * 100)
     : null;
@@ -356,21 +485,31 @@ export default function UserProductDetailPage({ productId }: UserProductDetailPa
                   <span className="text-xs font-bold text-zinc-800 block">
                     Màu sắc: <span className="text-orange-600 font-extrabold">{selectedColor}</span>
                   </span>
-                  <div className="flex items-center gap-2">
-                    {product.colors.map((c: ProductColor) => (
-                      <button
-                        key={c.name}
-                        type="button"
-                        onClick={() => setSelectedColor(c.name)}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
-                          selectedColor === c.name
-                            ? 'border-orange-600 bg-orange-50 text-orange-700 shadow-2xs font-bold'
-                            : 'border-zinc-200 text-zinc-700 hover:border-zinc-300'
-                        }`}
-                      >
-                        {c.name}
-                      </button>
-                    ))}
+                  <div className="flex flex-wrap items-center gap-2.5">
+                    {product.colors.map((c: ProductColor) => {
+                      const isSelected = selectedColor === c.name;
+                      return (
+                        <button
+                          key={c.name}
+                          type="button"
+                          onClick={() => setSelectedColor(c.name)}
+                          className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
+                            isSelected
+                              ? 'border-orange-600 bg-orange-50 text-orange-700 ring-2 ring-orange-500/20 shadow-xs font-bold'
+                              : 'border-zinc-200 text-zinc-700 hover:border-zinc-300 bg-white'
+                          }`}
+                        >
+                          <span
+                            className="w-3.5 h-3.5 rounded-full border border-black/15 shrink-0 shadow-2xs"
+                            style={{ backgroundColor: c.hex || '#09090B' }}
+                          />
+                          <span>{c.name}</span>
+                          {!c.in_stock && (
+                            <span className="text-[10px] text-zinc-400 font-normal">(Hết)</span>
+                          )}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
               )}
@@ -450,29 +589,124 @@ export default function UserProductDetailPage({ productId }: UserProductDetailPa
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Detailed Description */}
         <div className="lg:col-span-2 bg-white rounded-3xl border border-zinc-200 p-6 sm:p-8 space-y-4 shadow-xs">
-          <h2 className="text-lg font-black text-zinc-900 flex items-center gap-2">
-            <Layers size={18} className="text-orange-600" />
-            Mô Tả Chi Tiết Sản Phẩm
-          </h2>
+          <div className="flex items-center justify-between pb-2 border-b border-zinc-100">
+            <h2 className="text-lg font-black text-zinc-900 flex items-center gap-2">
+              <Layers size={18} className="text-orange-600" />
+              Mô Tả Chi Tiết Sản Phẩm
+            </h2>
+            {product.description?.includes('nhãn OCR') && (
+              <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-orange-50 text-orange-700 border border-orange-200/80 text-[11px] font-bold">
+                <Sparkles size={13} className="text-orange-600" />
+                OCR Nhãn AI
+              </span>
+            )}
+          </div>
+
           <div className="text-xs sm:text-sm text-zinc-700 leading-relaxed space-y-3">
-            <p>{product.description || product.short_description || 'Thông tin mô tả đang được cập nhật.'}</p>
+            {(() => {
+              const parsed = parseProductDescription(product.description);
+              if (!parsed || parsed.lines.length === 0) {
+                return (
+                  <p className="text-zinc-500 italic">
+                    {product.short_description || 'Thông tin mô tả đang được cập nhật.'}
+                  </p>
+                );
+              }
+
+              return (
+                <div className="space-y-2.5">
+                  {parsed.lines.map((line, idx) => {
+                    if (line.includes('Sản phẩm quét tự động từ nhãn OCR')) {
+                      return (
+                        <div
+                          key={idx}
+                          className="flex items-center gap-2 p-2.5 mb-2 rounded-xl bg-orange-50/80 border border-orange-200/80 font-bold text-xs text-orange-800 shadow-2xs"
+                        >
+                          <Sparkles size={14} className="text-orange-600 shrink-0" />
+                          <span>{line.replace(/[:&]/g, '').trim()}</span>
+                        </div>
+                      );
+                    }
+
+                    const isBullet = line.startsWith('- ') || line.startsWith('• ');
+                    const cleanLine = line.replace(/^[-•]\s+/, '').trim();
+                    const colonIdx = cleanLine.indexOf(':');
+
+                    if (colonIdx > 0 && !isBullet) {
+                      const key = cleanLine.slice(0, colonIdx).trim();
+                      const val = cleanLine.slice(colonIdx + 1).trim();
+
+                      if (!val) {
+                        return (
+                          <div key={idx} className="pt-2 pb-1 text-xs sm:text-sm font-bold text-zinc-900 flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full bg-orange-600 shrink-0" />
+                            <span>{key}:</span>
+                          </div>
+                        );
+                      }
+
+                      return (
+                        <div
+                          key={idx}
+                          className="flex flex-col sm:flex-row sm:items-start justify-between py-2 px-3 rounded-xl border border-zinc-100 hover:border-zinc-200 bg-white hover:bg-zinc-50/60 transition-colors gap-1 sm:gap-4"
+                        >
+                          <span className="font-bold text-zinc-900 min-w-37.5 shrink-0 flex items-center gap-2 text-xs sm:text-sm">
+                            <span className="w-1.5 h-1.5 rounded-full bg-orange-500 shrink-0" />
+                            {key}:
+                          </span>
+                          <span className="text-zinc-800 font-medium wrap-break-word text-left sm:text-right flex-1 text-xs sm:text-sm">
+                            {val}
+                          </span>
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <div
+                        key={idx}
+                        className="py-1.5 px-3 pl-6 text-xs sm:text-sm font-medium text-zinc-700 bg-zinc-50/60 rounded-lg flex items-center gap-2"
+                      >
+                        <span className="w-1.5 h-1.5 rounded-full bg-zinc-400 shrink-0" />
+                        <span>{cleanLine}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+
+              return (
+                <p className="whitespace-pre-line leading-relaxed">
+                  {product.description || product.short_description || 'Thông tin mô tả đang được cập nhật.'}
+                </p>
+              );
+            })()}
           </div>
         </div>
 
         {/* Specifications Table */}
         <div className="bg-white rounded-3xl border border-zinc-200 p-6 sm:p-8 space-y-4 shadow-xs">
-          <h2 className="text-lg font-black text-zinc-900">Thông Số Kỹ Thuật</h2>
+          <h2 className="text-lg font-black text-zinc-900 pb-2 border-b border-zinc-100">
+            Thông Số Kỹ Thuật
+          </h2>
           <div className="space-y-2 text-xs sm:text-sm text-zinc-600">
-            {product.specifications ? (
-              product.specifications.split('\n').map((line, idx) => (
-                <div key={idx} className="flex justify-between py-1.5 border-b border-zinc-100 last:border-b-0">
-                  <span className="font-medium text-zinc-500">{line.split(':')[0] || 'Thông số'}</span>
-                  <span className="font-bold text-zinc-800 text-right">{line.split(':')[1] || ''}</span>
+            {(() => {
+              const specs = getSpecificationsList(product);
+              if (specs.length === 0) {
+                return (
+                  <div className="py-2 text-zinc-400 text-xs">Chưa có thông số chi tiết</div>
+                );
+              }
+
+              return specs.map((item, idx) => (
+                <div
+                  key={idx}
+                  className="flex justify-between items-center py-2 border-b border-zinc-100 last:border-b-0 gap-2"
+                >
+                  <span className="font-medium text-zinc-500">{item.label}</span>
+                  <span className="font-bold text-zinc-800 text-right">{item.value}</span>
                 </div>
-              ))
-            ) : (
-              <div className="py-2 text-zinc-400 text-xs">Chưa có thông số chi tiết</div>
-            )}
+              ));
+            })()}
           </div>
         </div>
       </div>

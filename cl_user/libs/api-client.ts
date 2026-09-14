@@ -1,4 +1,16 @@
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+export function getApiBaseUrl(): string {
+  const envUrl = process.env.NEXT_PUBLIC_API_URL;
+  // If explicitly configured with a remote public API URL, use it
+  if (envUrl && !envUrl.includes('localhost') && !envUrl.includes('127.0.0.1')) {
+    return envUrl;
+  }
+  // In the browser, use relative reverse proxy route to prevent Mixed Content & loopback isolation over Dev Tunnels
+  if (typeof window !== 'undefined') {
+    return '/api-backend';
+  }
+  // On server-side (Node.js runtime), call backend directly
+  return process.env.INTERNAL_API_URL || envUrl || 'http://localhost:3000';
+}
 
 export class ApiError extends Error {
   status: number;
@@ -23,7 +35,8 @@ export async function apiClient<T = unknown>(
 ): Promise<T> {
   const { params, headers, body, ...customConfig } = options;
 
-  let url = `${BASE_URL}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
+  const baseUrl = getApiBaseUrl();
+  let url = `${baseUrl}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
 
   if (params) {
     const searchParams = new URLSearchParams();

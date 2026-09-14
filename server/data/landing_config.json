@@ -41,5 +41,13 @@
       "subtitle": "Tư vấn tận tình chu đáo",
       "icon": "headset"
     }
+  ],
+  "featuredCategoryIds": [
+    11,
+    10,
+    9,
+    8,
+    3,
+    5
   ]
 }

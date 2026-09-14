@@ -52,14 +52,18 @@ export class ProductsRepository extends BaseRepository {
       /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
         identifier,
       );
-    if (isUuid) {
+    const isInteger = /^\d+$/.test(identifier);
+
+    if (isUuid || isInteger) {
       const sql = `
         SELECT id, sku, name, slug, category_id, description, short_description, specifications, colors, base_price, 
                discount_price, stock_quantity, status, is_published, tags, attributes, images, created_at, updated_at
         FROM products
         WHERE id = $1
       `;
-      return this.queryOne<Product>(sql, [identifier]);
+      return this.queryOne<Product>(sql, [
+        isInteger ? parseInt(identifier, 10) : identifier,
+      ]);
     } else {
       const sql = `
         SELECT id, sku, name, slug, category_id, description, short_description, specifications, colors, base_price, 
