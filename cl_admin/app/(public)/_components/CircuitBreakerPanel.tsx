@@ -23,8 +23,7 @@ export default function CircuitBreakerPanel({
     <div className="lg:col-span-4 space-y-6">
       {/* Circuit Breaker Status */}
       <div className="border-4 border-[#09090B] bg-zinc-950 text-emerald-400 p-6 shadow-[6px_6px_0px_0px_#09090B] font-mono text-xs relative overflow-hidden">
-        {/* Scanline overlay */}
-        <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%)] bg-size-[100%_4px] z-10 opacity-10" />
+
 
         <div className="flex items-center justify-between border-b border-emerald-900/50 pb-3 mb-4">
           <span className="font-bold uppercase tracking-wider">CIRCUIT_BREAKER_TELEMETRY</span>

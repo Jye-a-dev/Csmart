@@ -676,7 +676,7 @@ export default function UserProductDetailPage({ productId }: UserProductDetailPa
 
               return (
                 <p className="whitespace-pre-line leading-relaxed">
-                  {product.description || product.short_description || 'Thông tin mô tả đang được cập nhật.'}
+                  {product?.description || product?.short_description || 'Thông tin mô tả đang được cập nhật.'}
                 </p>
               );
             })()}

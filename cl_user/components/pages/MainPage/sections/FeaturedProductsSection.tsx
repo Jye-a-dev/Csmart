@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { ShoppingCart, Star, Sparkles, Check } from 'lucide-react';
+import { ShoppingCart, Star, Sparkles, Check, PackageSearch } from 'lucide-react';
 import { useProducts } from '@/hooks';
 import { useAuthModal } from '@/contexts/AuthModalContext';
 import type { Product } from '@/types/entities/product';
@@ -254,162 +254,192 @@ export default function FeaturedProductsSection({
           </div>
         </div>
 
-        {/* Loading */}
+        {/* Skeleton Loading State */}
         {loading && (
-          <div className="py-12 text-center text-sm text-zinc-500 flex items-center justify-center gap-2">
-            <Sparkles size={16} className="animate-spin text-orange-600" />
-            <span>Đang tìm kiếm danh sách sản phẩm...</span>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {Array.from({ length: 8 }).map((_, idx) => (
+              <div
+                key={idx}
+                className="bg-white rounded-2xl border border-zinc-200/90 overflow-hidden shadow-xs animate-pulse flex flex-col justify-between"
+              >
+                <div className="w-full aspect-square bg-zinc-100 relative" />
+                <div className="p-4 space-y-3">
+                  <div className="h-3 w-20 bg-zinc-200 rounded-full" />
+                  <div className="h-4 w-full bg-zinc-200 rounded" />
+                  <div className="h-4 w-2/3 bg-zinc-200 rounded" />
+                  <div className="h-3 w-24 bg-zinc-100 rounded" />
+                  <div className="pt-2 flex items-center justify-between">
+                    <div className="h-5 w-24 bg-zinc-200 rounded" />
+                    <div className="h-9 w-9 bg-zinc-200 rounded-xl" />
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         )}
 
-        {/* Empty state */}
+        {/* Elevated Empty state */}
         {!loading && filteredProducts.length === 0 && (
-          <div className="py-12 text-center bg-white rounded-2xl border border-zinc-200 p-8 space-y-3">
-            <h3 className="font-bold text-base text-zinc-900">
-              Không tìm thấy sản phẩm phù hợp
-            </h3>
-            <p className="text-zinc-500 text-xs">
-              Vui lòng thử tìm với từ khóa khác hoặc bỏ chọn bộ lọc hiện tại.
-            </p>
+          <div className="py-16 text-center bg-white rounded-3xl border border-zinc-200/90 p-8 shadow-xs max-w-xl mx-auto space-y-4">
+            <div className="w-16 h-16 rounded-2xl bg-orange-50 text-orange-600 flex items-center justify-center mx-auto shadow-inner">
+              <PackageSearch size={32} />
+            </div>
+            <div>
+              <h3 className="font-bold text-lg text-zinc-900">
+                Không tìm thấy sản phẩm phù hợp
+              </h3>
+              <p className="text-zinc-500 text-xs sm:text-sm mt-1 max-w-sm mx-auto leading-relaxed">
+                Rất tiếc, CSMART không tìm thấy sản phẩm nào khớp với bộ lọc hoặc từ khóa hiện tại.
+              </p>
+            </div>
             {onClearFilters && (
-              <button
-                type="button"
-                onClick={onClearFilters}
-                className="bg-orange-600 text-white text-xs font-semibold px-4 py-2 rounded-full cursor-pointer hover:bg-orange-700"
-              >
-                Xem tất cả sản phẩm
-              </button>
+              <div className="pt-2">
+                <button
+                  type="button"
+                  onClick={onClearFilters}
+                  className="inline-flex items-center gap-2 bg-orange-600 hover:bg-orange-700 text-white text-xs sm:text-sm font-semibold px-5 py-2.5 rounded-full shadow-sm active:scale-95 transition-all cursor-pointer"
+                >
+                  <Sparkles size={14} />
+                  <span>Xem tất cả sản phẩm</span>
+                </button>
+              </div>
             )}
           </div>
         )}
 
-        {/* Products Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {filteredProducts.map((product, idx) => {
-            const isAdded = !!addedIds[product.id];
-            const fallbackMeta = DEFAULT_PRODUCTS[idx % DEFAULT_PRODUCTS.length];
-            const displayRating = (product as { rating?: number }).rating || fallbackMeta.rating || 4.8;
-            const displayReviews =
-              (product as { reviews_count?: number }).reviews_count || fallbackMeta.reviews_count || (80 + idx * 25);
-            
-            const rawBase = Number(product.base_price) || fallbackMeta.base_price;
-            const rawDiscount = product.discount_price ? Number(product.discount_price) : undefined;
-            const price = rawDiscount || rawBase;
-            const originalPrice = rawDiscount && rawDiscount < rawBase ? rawBase : null;
+        {/* Refined Products Grid */}
+        {!loading && filteredProducts.length > 0 && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {filteredProducts.map((product, idx) => {
+              const isAdded = !!addedIds[product.id];
+              const fallbackMeta = DEFAULT_PRODUCTS[idx % DEFAULT_PRODUCTS.length];
+              const displayRating = (product as { rating?: number }).rating || fallbackMeta.rating || 4.8;
+              const displayReviews =
+                (product as { reviews_count?: number }).reviews_count || fallbackMeta.reviews_count || (80 + idx * 25);
+              
+              const rawBase = Number(product.base_price) || fallbackMeta.base_price;
+              const rawDiscount = product.discount_price ? Number(product.discount_price) : undefined;
+              const price = rawDiscount || rawBase;
+              const originalPrice = rawDiscount && rawDiscount < rawBase ? rawBase : null;
 
-            let displayBadge = (product as { badge?: string | null }).badge;
-            let displayBadgeColor = 'bg-orange-600';
+              let displayBadge = (product as { badge?: string | null }).badge;
+              let displayBadgeColor = 'bg-orange-600 text-white';
 
-            if (displayBadge === undefined) {
-              if (originalPrice && originalPrice > price) {
-                const percent = Math.round(((originalPrice - price) / originalPrice) * 100);
-                displayBadge = `-${percent}%`;
-                displayBadgeColor = 'bg-orange-600';
-              } else if (idx === 0) {
-                displayBadge = 'BÁN CHẠY';
-                displayBadgeColor = 'bg-red-600';
-              } else {
-                displayBadge = fallbackMeta.badge;
+              if (displayBadge === undefined) {
+                if (originalPrice && originalPrice > price) {
+                  const percent = Math.round(((originalPrice - price) / originalPrice) * 100);
+                  displayBadge = `-${percent}%`;
+                  displayBadgeColor = 'bg-orange-600 text-white';
+                } else if (idx === 0) {
+                  displayBadge = 'BÁN CHẠY';
+                  displayBadgeColor = 'bg-rose-600 text-white';
+                } else {
+                  displayBadge = fallbackMeta.badge;
+                }
               }
-            }
 
-            const categoryName =
-              (product as { category_name?: string }).category_name ||
-              (product as { category?: { name?: string } }).category?.name ||
-              fallbackMeta.category_name ||
-              'Sản phẩm CSMART';
+              const categoryName =
+                (product as { category_name?: string }).category_name ||
+                (product as { category?: { name?: string } }).category?.name ||
+                fallbackMeta.category_name ||
+                'Sản phẩm CSMART';
 
-            const displayImage =
-              (product.images && product.images[0]) ||
-              fallbackMeta.images?.[0] ||
-              getProductFallbackImage(product.name, product.sku);
+              const displayImage =
+                (product.images && product.images[0]) ||
+                fallbackMeta.images?.[0] ||
+                getProductFallbackImage(product.name, product.sku);
 
-            return (
-              <div
-                key={product.id}
-                className="group bg-white rounded-2xl border border-zinc-200 overflow-hidden hover:border-zinc-300 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 flex flex-col justify-between"
-              >
-                {/* Top Image Container */}
-                <Link
-                  href={`/user/products/${'slug' in product && product.slug ? product.slug : product.id}`}
-                  className="relative h-48 sm:h-52 w-full bg-zinc-100/80 overflow-hidden flex items-center justify-center border-b border-zinc-100 cursor-pointer"
+              return (
+                <div
+                  key={product.id}
+                  className="group bg-white rounded-2xl border border-zinc-200/90 overflow-hidden hover:border-zinc-300 hover:shadow-lg hover:-translate-y-1 transition-all duration-200 flex flex-col justify-between"
                 >
-                  {displayImage ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={displayImage}
-                      alt={product.name}
-                      className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-300"
-                    />
-                  ) : (
-                    <span className="text-zinc-400 text-xs font-medium">Ảnh Sản Phẩm</span>
-                  )}
-                  {displayBadge && (
-                    <span className={`absolute top-3 left-3 text-white font-bold text-[10px] px-2 py-0.5 rounded-full ${displayBadgeColor} shadow-sm`}>
-                      {displayBadge}
-                    </span>
-                  )}
-                </Link>
+                  {/* Aspect-Ratio Main Image Container */}
+                  <Link
+                    href={`/user/products/${'slug' in product && product.slug ? product.slug : product.id}`}
+                    className="relative w-full aspect-square bg-zinc-50 overflow-hidden flex items-center justify-center border-b border-zinc-100 cursor-pointer"
+                  >
+                    {displayImage ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={displayImage}
+                        alt={product.name}
+                        className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-300 ease-out"
+                      />
+                    ) : (
+                      <span className="text-zinc-400 text-xs font-medium">CSMART Product</span>
+                    )}
 
-                {/* Body Details */}
-                <div className="p-4 flex-1 flex flex-col justify-between space-y-3">
-                  <div>
-                    {/* Category */}
-                    <span className="text-[11px] text-zinc-400 font-medium">
-                      {categoryName}
-                    </span>
-
-                    {/* Name */}
-                    <Link href={`/user/products/${'slug' in product && product.slug ? product.slug : product.id}`} className="block">
-                      <h3 className="font-bold text-sm text-zinc-900 line-clamp-2 mt-1 group-hover:text-orange-600 transition-colors">
-                        {product.name}
-                      </h3>
-                    </Link>
-
-                    {/* Rating */}
-                    <div className="flex items-center gap-1 text-xs text-zinc-500 mt-2">
-                      <Star size={13} className="text-amber-400 fill-amber-400" />
-                      <span className="font-bold text-zinc-800">{displayRating}</span>
-                      <span className="text-zinc-400">({displayReviews} đánh giá)</span>
-                    </div>
-                  </div>
-
-                  {/* Price & Add to Cart */}
-                  <div className="pt-2 flex items-center justify-between">
-                    <div>
-                      <div className="font-bold text-base text-orange-600 leading-tight">
-                        {formatPrice(price)}
+                    {/* Prominent High-Contrast Badge */}
+                    {displayBadge && (
+                      <div className="absolute top-3 left-3 z-10">
+                        <span className={`text-[10px] font-extrabold uppercase px-2.5 py-1 rounded-full shadow-sm tracking-wide ${displayBadgeColor}`}>
+                          {displayBadge}
+                        </span>
                       </div>
-                      {originalPrice && (
-                        <div className="text-xs text-zinc-400 line-through">
-                          {formatPrice(originalPrice)}
-                        </div>
-                      )}
+                    )}
+                  </Link>
+
+                  {/* Body Details */}
+                  <div className="p-4 flex-1 flex flex-col justify-between space-y-3">
+                    <div>
+                      {/* Subtle Category Label */}
+                      <span className="text-[11px] text-zinc-400 uppercase tracking-wider font-semibold">
+                        {categoryName}
+                      </span>
+
+                      {/* Product Name with 2-line clamp */}
+                      <Link href={`/user/products/${'slug' in product && product.slug ? product.slug : product.id}`} className="block">
+                        <h3 className="font-bold text-sm text-zinc-900 line-clamp-2 mt-1 leading-snug group-hover:text-orange-600 transition-colors">
+                          {product.name}
+                        </h3>
+                      </Link>
+
+                      {/* Rating & Review Counter */}
+                      <div className="flex items-center gap-1.5 text-xs text-zinc-500 mt-2">
+                        <Star size={13} className="text-amber-400 fill-amber-400" />
+                        <span className="font-bold text-zinc-900">{displayRating}</span>
+                        <span className="text-zinc-400 font-normal">({displayReviews})</span>
+                      </div>
                     </div>
 
-                    <button
-                      type="button"
-                      onClick={() => handleAdd(product)}
-                      disabled={isAdded}
-                      className={`p-2.5 rounded-xl cursor-pointer transition-all active:scale-95 ${
-                        isAdded
-                          ? 'bg-emerald-600 text-white'
-                          : 'bg-zinc-900 hover:bg-orange-600 text-white shadow-sm'
-                      }`}
-                      title="Thêm vào giỏ hàng"
-                    >
-                      {isAdded ? (
-                        <Check size={16} className="stroke-3" />
-                      ) : (
-                        <ShoppingCart size={16} />
-                      )}
-                    </button>
+                    {/* Price & Tactile Add-to-Cart */}
+                    <div className="pt-2 border-t border-zinc-100 flex items-center justify-between">
+                      <div className="flex flex-col">
+                        <span className="font-extrabold text-base text-orange-600 leading-tight">
+                          {formatPrice(price)}
+                        </span>
+                        {originalPrice && (
+                          <span className="text-xs text-zinc-400 line-through mt-0.5">
+                            {formatPrice(originalPrice)}
+                          </span>
+                        )}
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => handleAdd(product)}
+                        disabled={isAdded}
+                        className={`p-2.5 rounded-xl cursor-pointer transition-all active:scale-95 shadow-xs ${
+                          isAdded
+                            ? 'bg-emerald-600 text-white'
+                            : 'bg-zinc-900 hover:bg-orange-600 text-white'
+                        }`}
+                        title="Thêm vào giỏ hàng"
+                      >
+                        {isAdded ? (
+                          <Check size={16} className="stroke-3" />
+                        ) : (
+                          <ShoppingCart size={16} />
+                        )}
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </section>
   );

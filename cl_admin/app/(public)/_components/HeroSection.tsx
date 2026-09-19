@@ -112,9 +112,8 @@ export default function HeroSection() {
         <div className="lg:col-span-5 flex items-stretch">
           <div className="relative w-full min-h-95 bg-zinc-950 text-emerald-400 border-4 border-[#09090B] p-6 font-mono text-xs overflow-hidden shadow-[8px_8px_0px_0px_#09090B] flex flex-col justify-between">
             
-            {/* Scanline Effect */}
-            <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-size-[100%_4px,6px_100%] z-20" />
-            <div className="absolute left-0 right-0 h-1 bg-emerald-500/10 opacity-30 animate-scanline pointer-events-none z-20" />
+            {/* Console surface overlay */}
+            <div className="absolute inset-0 pointer-events-none bg-zinc-900/10 z-10" />
 
             {/* Header bar */}
             <div className="flex items-center justify-between border-b border-emerald-800/40 pb-3">

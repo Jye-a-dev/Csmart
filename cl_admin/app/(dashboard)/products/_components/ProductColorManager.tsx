@@ -2,24 +2,32 @@
 
 import { useState } from 'react';
 import { ProductColor } from '@/types/entities/product';
-import { Plus, Trash2, Palette } from 'lucide-react';
+import { Plus, Trash2, Palette, Sparkles, Check } from 'lucide-react';
 
 interface ProductColorManagerProps {
   colors: ProductColor[];
   onChange: (colors: ProductColor[]) => void;
 }
 
+const COLOR_PRESETS = [
+  { name: 'Đen Tuyền', hex: '#18181B' },
+  { name: 'Trắng Sữa', hex: '#FFFFFF' },
+  { name: 'Cam CSmart', hex: '#F97316' },
+  { name: 'Xanh Navy', hex: '#1E3A8A' },
+  { name: 'Xám Titan', hex: '#64748B' },
+  { name: 'Đỏ Ruby', hex: '#DC2626' },
+];
+
 export default function ProductColorManager({
   colors = [],
   onChange,
 }: ProductColorManagerProps) {
   const [colorName, setColorName] = useState('');
-  const [hexColor, setHexColor] = useState('#000000');
+  const [hexColor, setHexColor] = useState('#F97316');
   const [inStock, setInStock] = useState(true);
 
   const handleAddColor = () => {
     if (!colorName.trim()) {
-      alert('Vui lòng nhập tên màu sắc.');
       return;
     }
 
@@ -31,8 +39,13 @@ export default function ProductColorManager({
 
     onChange([...colors, newColor]);
     setColorName('');
-    setHexColor('#000000');
+    setHexColor('#F97316');
     setInStock(true);
+  };
+
+  const handlePresetSelect = (preset: { name: string; hex: string }) => {
+    setColorName(preset.name);
+    setHexColor(preset.hex);
   };
 
   const handleUpdateColor = (indexToUpdate: number, patch: Partial<ProductColor>) => {
@@ -56,24 +69,54 @@ export default function ProductColorManager({
   };
 
   return (
-    <div className="border-2 border-[#09090B] p-4 bg-zinc-50 space-y-4 font-mono">
-      <div className="flex items-center gap-2 border-b-2 border-[#09090B] pb-2">
-        <Palette size={16} className="text-[#F97316]" />
-        <label className="text-xs font-bold uppercase text-[#09090B]">
-          🎨 Màu Sắc Sản Phẩm ({colors.length} màu)
-        </label>
+    <div className="border-2 border-zinc-900 bg-white p-5 space-y-4 shadow-[3px_3px_0px_0px_#09090B]">
+      {/* Header */}
+      <div className="flex items-center justify-between border-b-2 border-zinc-900 pb-3">
+        <div className="flex items-center gap-2">
+          <Palette size={16} className="text-orange-500" />
+          <h3 className="text-xs font-black uppercase tracking-wider text-zinc-900 font-sans">
+            Màu Sắc & Biến Thể
+          </h3>
+        </div>
+        <span className="text-[11px] font-mono bg-zinc-100 text-zinc-800 px-2.5 py-0.5 rounded border border-zinc-300 font-bold">
+          {colors.length} màu cấu hình
+        </span>
       </div>
 
-      {/* Add color form */}
-      <div className="grid grid-cols-1 sm:grid-cols-4 gap-2 bg-white p-3 border-2 border-[#09090B] items-end">
-        <div className="sm:col-span-2">
-          <label className="block text-[10px] font-bold text-[#09090B] mb-1">Thêm tên màu *</label>
+      {/* Quick Color Presets */}
+      <div className="flex items-center gap-1.5 flex-wrap">
+        <span className="text-[11px] text-zinc-500 font-medium flex items-center gap-1 mr-1">
+          <Sparkles size={12} className="text-orange-500" /> Chọn nhanh:
+        </span>
+        {COLOR_PRESETS.map((p) => (
+          <button
+            key={p.hex}
+            type="button"
+            onClick={() => handlePresetSelect(p)}
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-zinc-50 hover:bg-orange-50 text-zinc-700 hover:text-orange-700 border border-zinc-200 rounded-md text-[11px] font-medium transition-colors cursor-pointer"
+          >
+            <span
+              className="w-2.5 h-2.5 rounded-full border border-zinc-300 shrink-0"
+              style={{ backgroundColor: p.hex }}
+            />
+            <span>{p.name}</span>
+          </button>
+        ))}
+      </div>
+
+      {/* Add Color Form */}
+      <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 bg-zinc-50/80 p-3.5 border-2 border-zinc-900 items-end">
+        {/* Name input */}
+        <div className="sm:col-span-5">
+          <label className="block text-[10px] font-bold text-zinc-700 uppercase tracking-wider mb-1">
+            Tên màu sắc *
+          </label>
           <input
             type="text"
             value={colorName}
             onChange={(e) => setColorName(e.target.value)}
-            placeholder="Ví dụ: Đỏ cờ, Vàng sao"
-            className="w-full px-2.5 py-1.5 border border-[#09090B] text-xs focus:outline-none"
+            placeholder="Ví dụ: Đen nhám, Xanh rêu..."
+            className="w-full px-3 py-2 border-2 border-zinc-900 text-xs text-zinc-900 bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all font-sans"
             onKeyDown={(e) => {
               if (e.key === 'Enter') {
                 e.preventDefault();
@@ -83,109 +126,125 @@ export default function ProductColorManager({
           />
         </div>
 
-        <div className="flex items-center gap-2">
-          <div>
-            <label className="block text-[10px] font-bold text-[#09090B] mb-1">Mã màu</label>
-            <div className="flex items-center gap-1">
+        {/* Swatch & Hex input */}
+        <div className="sm:col-span-3">
+          <label className="block text-[10px] font-bold text-zinc-700 uppercase tracking-wider mb-1">
+            Mã màu Hex
+          </label>
+          <div className="flex items-center gap-1.5">
+            <div className="relative w-9 h-9 shrink-0 rounded border-2 border-zinc-900 overflow-hidden shadow-xs">
               <input
                 type="color"
                 value={hexColor}
                 onChange={(e) => setHexColor(e.target.value)}
-                className="w-8 h-7 border border-[#09090B] cursor-pointer p-0 bg-transparent"
+                className="absolute -top-2 -left-2 w-14 h-14 cursor-pointer border-none p-0 bg-transparent"
+                title="Chọn mã màu trực quan"
               />
-              <span className="text-[10px] text-zinc-500 font-mono">{hexColor}</span>
             </div>
+            <input
+              type="text"
+              value={hexColor}
+              onChange={(e) => setHexColor(e.target.value)}
+              placeholder="#000000"
+              className="w-full px-2 py-2 border-2 border-zinc-900 font-mono text-xs text-zinc-800 uppercase bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/20"
+            />
           </div>
         </div>
 
-        <div className="flex items-center justify-between gap-2">
-          <label className="flex items-center gap-1.5 cursor-pointer text-[11px] font-bold">
+        {/* In-Stock & Add CTA */}
+        <div className="sm:col-span-4 flex items-center justify-between gap-3">
+          <label className="flex items-center gap-1.5 cursor-pointer text-xs font-bold text-zinc-800 select-none">
             <input
               type="checkbox"
               checked={inStock}
               onChange={(e) => setInStock(e.target.checked)}
-              className="accent-[#F97316] w-4 h-4 border border-[#09090B]"
+              className="accent-orange-600 w-4 h-4 border-2 border-zinc-900 rounded cursor-pointer"
             />
-            Có sẵn
+            <span>Còn hàng</span>
           </label>
 
           <button
             type="button"
             onClick={handleAddColor}
-            className="px-3 py-1.5 border-2 border-[#09090B] bg-[#09090B] text-white text-xs font-bold uppercase hover:bg-zinc-800 shadow-[2px_2px_0px_0px_#F97316] flex items-center gap-1 cursor-pointer"
+            disabled={!colorName.trim()}
+            className="px-4 py-2 border-2 border-zinc-900 bg-zinc-900 text-white text-xs font-black uppercase tracking-wider hover:bg-zinc-800 disabled:bg-zinc-200 disabled:border-zinc-300 disabled:text-zinc-400 shadow-[2px_2px_0px_0px_#F97316] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none flex items-center gap-1.5 cursor-pointer disabled:cursor-not-allowed transition-all"
           >
             <Plus size={14} />
-            Thêm
+            <span>Thêm</span>
           </button>
         </div>
       </div>
 
-      {/* Editable Colors List */}
+      {/* Colors List */}
       <div className="space-y-2 pt-1">
         {colors.map((color, idx) => (
           <div
             key={idx}
-            className={`flex flex-wrap sm:flex-nowrap items-center gap-2 p-2 border-2 border-[#09090B] bg-white shadow-[2px_2px_0px_0px_#09090B] ${
-              !color.in_stock ? 'bg-rose-50/50' : ''
+            className={`flex flex-wrap sm:flex-nowrap items-center gap-3 p-2.5 border-2 border-zinc-900 bg-white shadow-[2px_2px_0px_0px_#09090B] transition-all hover:border-orange-500 ${
+              !color.in_stock ? 'bg-rose-50/40' : ''
             }`}
           >
-            {/* Direct color picker & Hex input */}
+            {/* Swatch & Hex */}
             <div className="flex items-center gap-1.5 shrink-0">
-              <input
-                type="color"
-                value={color.hex || '#000000'}
-                onChange={(e) => handleUpdateColor(idx, { hex: e.target.value })}
-                className="w-8 h-8 border-2 border-[#09090B] cursor-pointer p-0.5 bg-white shrink-0"
-                title="Chọn lại mã màu"
+              <div
+                className="w-7 h-7 rounded border-2 border-zinc-900 shrink-0 shadow-xs"
+                style={{ backgroundColor: color.hex || '#000000' }}
+                title={color.hex}
               />
               <input
                 type="text"
                 value={color.hex || '#000000'}
                 onChange={(e) => handleUpdateColor(idx, { hex: e.target.value })}
-                className="w-20 px-1.5 py-1 border border-[#09090B] font-mono text-xs text-zinc-700 uppercase"
-                title="Nhập mã hex"
-                placeholder="#000000"
+                className="w-20 px-1.5 py-1 border border-zinc-300 font-mono text-[11px] text-zinc-700 uppercase bg-zinc-50 rounded"
+                title="Mã Hex"
               />
             </div>
 
-            {/* Direct name editor */}
+            {/* Name Input */}
             <input
               type="text"
               value={color.name}
               onChange={(e) => handleUpdateColor(idx, { name: e.target.value })}
-              placeholder="Tên màu sắc..."
-              className="flex-1 min-w-30 px-2.5 py-1.5 border border-[#09090B] font-bold text-xs text-[#09090B] focus:outline-none bg-white"
+              placeholder="Tên màu..."
+              className="flex-1 min-w-36 px-2.5 py-1.5 border border-zinc-300 font-bold text-xs text-zinc-900 focus:outline-none focus:border-zinc-900 bg-white rounded"
             />
 
-            {/* Toggle stock button */}
+            {/* Stock Toggle Badge */}
             <button
               type="button"
               onClick={() => handleToggleStock(idx)}
-              className={`px-2.5 py-1.5 text-[10px] font-bold border-2 border-[#09090B] uppercase cursor-pointer shrink-0 transition-all ${
+              className={`px-3 py-1.5 text-[11px] font-bold border rounded uppercase cursor-pointer shrink-0 transition-all flex items-center gap-1.5 ${
                 color.in_stock
-                  ? 'bg-emerald-100 text-emerald-900 shadow-[1px_1px_0px_0px_#09090B]'
-                  : 'bg-rose-100 text-rose-900 shadow-[1px_1px_0px_0px_#09090B]'
+                  ? 'bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-emerald-100'
+                  : 'bg-rose-50 text-rose-800 border-rose-300 hover:bg-rose-100'
               }`}
               title="Nhấp để đổi trạng thái tồn kho"
             >
-              {color.in_stock ? 'Có sẵn' : 'Hết hàng'}
+              {color.in_stock ? (
+                <>
+                  <Check size={12} className="text-emerald-600 stroke-3" />
+                  <span>Có sẵn</span>
+                </>
+              ) : (
+                <span>Hết hàng</span>
+              )}
             </button>
 
-            {/* Remove button */}
+            {/* Delete Button */}
             <button
               type="button"
               onClick={() => handleRemoveColor(idx)}
-              className="p-1.5 text-rose-600 hover:bg-rose-100 border-2 border-[#09090B] cursor-pointer shrink-0 bg-white shadow-[1px_1px_0px_0px_#09090B]"
-              title="Xóa màu"
+              className="p-1.5 text-zinc-400 hover:text-rose-600 hover:bg-rose-50 border border-zinc-200 hover:border-rose-200 rounded cursor-pointer shrink-0 transition-colors"
+              title="Xóa màu này"
             >
-              <Trash2 size={13} />
+              <Trash2 size={14} />
             </button>
           </div>
         ))}
 
         {colors.length === 0 && (
-          <div className="text-xs italic text-zinc-400 py-2">
-            Chưa thiết lập màu sắc cho sản phẩm này.
+          <div className="text-xs text-zinc-400 py-6 text-center border-2 border-dashed border-zinc-200 bg-zinc-50/50 rounded">
+            Chưa có màu sắc nào được thiết lập. Hãy thêm màu sắc ở trên.
           </div>
         )}
       </div>

@@ -76,7 +76,7 @@ export default function PublicNavbar({
   };
 
   return (
-    <header className="sticky top-0 z-40 w-full bg-white/95 backdrop-blur-md border-b border-zinc-200 px-4 sm:px-6 lg:px-8 py-3">
+    <header className="sticky top-0 z-40 w-full bg-white/90 backdrop-blur-md border-b border-zinc-200/80 shadow-xs px-4 sm:px-6 lg:px-8 py-3">
       <div className="mx-auto max-w-7xl flex items-center justify-between gap-4">
         {/* Left: Brand Logo & Sidebar Toggle */}
         <div className="flex items-center gap-2 sm:gap-3">
